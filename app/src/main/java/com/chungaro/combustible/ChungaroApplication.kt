@@ -14,7 +14,7 @@ class ChungaroApplication : Application() {
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             runCatching {
                 crashFile(this).writeText(
-                    "Chungaro ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · " +
+                    "${getString(R.string.app_name)} ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · " +
                         "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}\n\n" +
                         error.stackTraceToString(),
                 )

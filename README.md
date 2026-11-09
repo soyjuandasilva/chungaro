@@ -1,7 +1,8 @@
-# Chungaro
+# Atesta: Preço do Combustível
 
-> Nombre provisional. La interfaz de la app está en **português de Portugal**;
-> el nombre se define en `app/src/main/res/values/strings.xml` (`app_name`).
+> Nombre en el móvil: **Atesta** (`app_name` en `app/src/main/res/values/strings.xml`).
+> Título en Google Play: **Atesta: Preço do Combustível**. La interfaz está en
+> **português de Portugal**.
 
 App Android para ahorrar en combustible en Portugal: precios oficiales cerca de
 ti, registro de cargas, consumo, gráficos y mantenimiento.
@@ -35,7 +36,7 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
 ## Descargar el APK
 
 Cada push compila la app con GitHub Actions. En la pestaña **Actions**, abre
-la última ejecución de **Android** y descarga el artefacto `chungaro-apk`.
+la última ejecución de **Android** y descarga el artefacto `atesta-apk`.
 Los APK se firman con una clave de depuración fija, así que las versiones
 nuevas se instalan encima de la anterior.
 

@@ -173,7 +173,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { exportLauncher.launch("chungaro-${LocalDate.now()}.json") }, modifier = Modifier.weight(1f)) {
+                    Button(onClick = { exportLauncher.launch("atesta-${LocalDate.now()}.json") }, modifier = Modifier.weight(1f)) {
                         Text("Exportar")
                     }
                     OutlinedButton(onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }, modifier = Modifier.weight(1f)) {

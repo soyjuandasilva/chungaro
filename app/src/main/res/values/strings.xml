@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Chungaro</string>
+    <!-- Nombre bajo el icono. En Google Play: «Atesta: Preço do Combustível». -->
+    <string name="app_name">Atesta</string>
 </resources>
