@@ -17,6 +17,18 @@ android {
         versionName = "1.2"
     }
 
+    signingConfigs {
+        // Clave fija (solo de desarrollo) para que cada APK de GitHub Actions
+        // tenga la misma firma y se pueda instalar encima del anterior.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storeType = "pkcs12"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
