@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -44,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import java.text.Normalizer
 import java.util.Locale
 
 private const val MAX_RESULTS = 100
@@ -141,7 +142,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    items(filtered.take(MAX_RESULTS), key = { "st-${it.id}" }) { s ->
+                    items(filtered.take(MAX_RESULTS)) { s ->
                         StationRow(s, isFavorite = s.id in vm.favorites, onClick = { vm.openStation(s.id) })
                     }
                 }
@@ -193,7 +194,10 @@ private fun StationDialog(vm: PricesViewModel) {
         onDismissRequest = { vm.closeStation() },
         title = { Text(d?.name?.ifBlank { null } ?: "Gasolinera") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 when {
                     d != null -> {
                         if (d.brand.isNotBlank()) Text(d.brand, fontWeight = FontWeight.SemiBold)
@@ -287,7 +291,4 @@ private fun ErrorText(text: String) {
     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
 }
 
-private fun normalize(s: String): String =
-    Normalizer.normalize(s.lowercase(Locale.ROOT), Normalizer.Form.NFD)
-        .replace(Regex("\\p{M}+"), "")
-        .trim()
+private fun normalize(s: String): String = DgegApi.normalize(s)

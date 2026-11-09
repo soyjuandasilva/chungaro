@@ -15,6 +15,8 @@ data class Station(
     val municipality: String,
     val locality: String,
     val address: String,
+    /** Nombre del distrito si la API lo informa; vacío si no. */
+    val district: String = "",
 )
 
 data class FuelPrice(
@@ -49,8 +51,27 @@ object DgegApi {
     )
 
     suspend fun stations(districtId: Int): List<Station> = withContext(Dispatchers.IO) {
-        parseStations(get("$BASE/PesquisarPostos?idDistrito=$districtId&qtdPorPagina=99999&pagina=1"))
+        val all = parseStations(get("$BASE/PesquisarPostos?idDistrito=$districtId&qtdPorPagina=99999&pagina=1"))
+        val name = districts.firstOrNull { it.first == districtId }?.second
+        filterByDistrict(all, name)
+            .sortedWith(compareBy({ normalize(it.municipality) }, { normalize(it.locality) }, { normalize(it.name) }))
     }
+
+    /**
+     * Si las filas traen el distrito, se queda solo con las del distrito pedido
+     * (por si la API ignora el filtro). Si no traen distrito, no filtra.
+     */
+    fun filterByDistrict(stations: List<Station>, districtName: String?): List<Station> {
+        if (districtName == null || stations.none { it.district.isNotBlank() }) return stations
+        val target = normalize(districtName)
+        val filtered = stations.filter { it.district.isBlank() || normalize(it.district) == target }
+        return filtered.ifEmpty { stations }
+    }
+
+    fun normalize(s: String): String =
+        java.text.Normalizer.normalize(s.lowercase(java.util.Locale.ROOT), java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .trim()
 
     suspend fun station(id: Long): StationDetail = withContext(Dispatchers.IO) {
         parseStation(id, get("$BASE/GetDadosPosto?id=$id"))
@@ -85,8 +106,11 @@ object DgegApi {
                 municipality = o.str("Municipio"),
                 locality = o.str("Localidade"),
                 address = o.address(),
+                district = o.str("Distrito"),
             )
         }
+            // La API puede repetir la misma gasolinera (una fila por combustible).
+            .distinctBy { it.id }
     }
 
     fun parseStation(id: Long, json: String): StationDetail {

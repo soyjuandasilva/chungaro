@@ -13,7 +13,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import com.chungaro.combustible.ChungaroApplication
 import com.chungaro.combustible.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +37,8 @@ fun ChungaroApp(
     var tab by rememberSaveable { mutableIntStateOf(TAB_REFUELS) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    var crashReport by rememberSaveable { mutableStateOf(ChungaroApplication.takeLastCrash(context)) }
 
     val bottomBar: @Composable () -> Unit = {
         NavigationBar {
@@ -89,6 +93,10 @@ fun ChungaroApp(
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
         )
+    }
+
+    crashReport?.let { report ->
+        CrashDialog(report, onDismiss = { crashReport = null })
     }
 
     if (showSettings) {

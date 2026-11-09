@@ -45,4 +45,25 @@ class DgegApiTest {
         assertEquals("Gasóleo simples", d.fuels[0].fuel)
         assertEquals(1.789, d.fuels[1].price!!, 1e-9)
     }
+
+    @Test
+    fun removesDuplicateStations() {
+        val json = """
+            {"resultado":[
+              {"Id":1,"Nome":"A","Combustivel":"Gasóleo simples","Distrito":"Aveiro"},
+              {"Id":1,"Nome":"A","Combustivel":"Gasolina simples 95","Distrito":"Aveiro"},
+              {"Id":2,"Nome":"B","Distrito":"Bragança"}
+            ]}
+        """.trimIndent()
+        val list = DgegApi.parseStations(json)
+        assertEquals(listOf(1L, 2L), list.map { it.id })
+        assertEquals(listOf(1L), DgegApi.filterByDistrict(list, "Aveiro").map { it.id })
+        assertEquals(listOf(2L), DgegApi.filterByDistrict(list, "Braganca").map { it.id })
+    }
+
+    @Test
+    fun doesNotFilterWhenDistrictMissing() {
+        val list = listOf(Station(1, "A", "", "", "", ""), Station(2, "B", "", "", "", ""))
+        assertEquals(2, DgegApi.filterByDistrict(list, "Aveiro").size)
+    }
 }
