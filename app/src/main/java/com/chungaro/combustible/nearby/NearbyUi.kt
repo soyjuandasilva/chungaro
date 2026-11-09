@@ -59,7 +59,14 @@ fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun FuelDetailDialog(fuel: FuelType, result: NearbyResult, radiusKm: Int, onDismiss: () -> Unit) {
+fun FuelDetailDialog(
+    fuel: FuelType,
+    result: NearbyResult,
+    radiusKm: Int,
+    tankLiters: Double,
+    consumptionL100: Double,
+    onDismiss: () -> Unit,
+) {
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -87,11 +94,12 @@ fun FuelDetailDialog(fuel: FuelType, result: NearbyResult, radiusKm: Int, onDism
                             shape = RoundedCornerShape(12.dp),
                         ) {
                             Text(
-                                comparison(nearest, cheapest),
+                                comparison(nearest, cheapest, tankLiters),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(12.dp),
                             )
                         }
+                        tripAdvice(nearest, cheapest, tankLiters, consumptionL100)?.let { TripAdviceBox(it) }
                     }
                 }
                 if (result.cheapestList.size > 1) {
@@ -150,15 +158,38 @@ fun StationBlock(s: StationAtDistance, context: Context, accent: Boolean) {
     }
 }
 
-fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance): String {
+fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: Double = TANK_LITERS.toDouble()): String {
     if (nearest.station.id == cheapest.station.id) return "La más cercana es también la más barata. ¡Perfecto!"
     val diff = nearest.station.price - cheapest.station.price
     if (abs(diff) < 0.0005) return "La más cercana tiene el mismo precio que la más barata."
     return if (diff > 0) {
-        "La más cercana cuesta ${formatEuro(diff)}/L más: en $TANK_LITERS L pagarías ${formatMoney(diff * TANK_LITERS)} más. " +
+        "La más cercana cuesta ${formatEuro(diff)}/L más: en ${liters.toInt()} L pagarías ${formatMoney(diff * liters)} más. " +
             "La más barata está ${formatKm(cheapest.km - nearest.km)} más lejos."
     } else {
         "La más cercana es ${formatEuro(-diff)}/L más barata que la mejor dentro del radio."
+    }
+}
+
+@Composable
+fun TripAdviceBox(a: TripAdvice) {
+    val good = a.worthIt
+    Surface(
+        color = if (good) Color(0xFF16A34A).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                if (good) "✅ Merece la pena ir a la más barata" else "✋ No compensa el desvío",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "Ahorras ${formatMoney(a.savings)} en el depósito; el desvío (~${formatKm(a.extraKm)} ida y vuelta) " +
+                    "gasta unos ${formatMoney(a.tripCost)} de combustible. " +
+                    if (good) "Ganas ${formatMoney(a.net)}." else "Perderías ${formatMoney(-a.net)}.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 

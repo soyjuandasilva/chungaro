@@ -15,10 +15,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -27,9 +31,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -38,9 +49,15 @@ import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.data.AppSettings
 import com.chungaro.combustible.data.Refuel
 import com.chungaro.combustible.data.RefuelRow
+import com.chungaro.combustible.data.Reminder
 import com.chungaro.combustible.data.Stats
 import com.chungaro.combustible.data.Summary
+import com.chungaro.combustible.data.Vehicle
 import com.chungaro.combustible.data.pricePerUnit
+
+private const val SECTION_HISTORY = 0
+private const val SECTION_CHARTS = 1
+private const val SECTION_MAINTENANCE = 2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,16 +65,55 @@ fun MainScreen(
     stats: Stats,
     loading: Boolean,
     settings: AppSettings,
+    vehicles: List<Vehicle>,
+    vehicle: Vehicle?,
+    reminders: List<Reminder>,
     onAdd: () -> Unit,
     onOpen: (Refuel) -> Unit,
     onOpenSettings: () -> Unit,
+    onSelectVehicle: (Long) -> Unit,
+    onEditVehicle: (Vehicle?) -> Unit,
+    onSaveReminder: (Reminder) -> Unit,
+    onDeleteReminder: (Reminder) -> Unit,
     bottomBar: @Composable () -> Unit = {},
-    header: @Composable () -> Unit = {},
 ) {
+    var section by rememberSaveable { mutableIntStateOf(SECTION_HISTORY) }
+    var menu by rememberSaveable { mutableStateOf(false) }
+    var editingReminder by rememberSaveable { mutableStateOf<Long?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis cargas", fontWeight = FontWeight.Bold) },
+                title = {
+                    Box {
+                        Row(
+                            Modifier.clickable { menu = true }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(vehicle?.name ?: "Mis cargas", fontWeight = FontWeight.Bold)
+                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Cambiar vehículo")
+                        }
+                        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            vehicles.forEach { v ->
+                                DropdownMenuItem(
+                                    text = { Text(v.name, fontWeight = if (v.id == vehicle?.id) FontWeight.Bold else FontWeight.Normal) },
+                                    onClick = { menu = false; onSelectVehicle(v.id) },
+                                )
+                            }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Editar este vehículo") },
+                                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                                onClick = { menu = false; onEditVehicle(vehicle) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Añadir vehículo") },
+                                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                                onClick = { menu = false; onEditVehicle(null) },
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
@@ -67,47 +123,75 @@ fun MainScreen(
         },
         bottomBar = bottomBar,
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAdd,
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Abastecer") },
-            )
+            when (section) {
+                SECTION_HISTORY -> ExtendedFloatingActionButton(
+                    onClick = onAdd,
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("Abastecer") },
+                )
+                SECTION_MAINTENANCE -> ExtendedFloatingActionButton(
+                    onClick = { editingReminder = 0L },
+                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    text = { Text("Recordatorio") },
+                )
+            }
         },
     ) { padding ->
-        if (loading) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            TabRow(selectedTabIndex = section) {
+                listOf("Historial", "Gráficos", "Mantenimiento").forEachIndexed { i, label ->
+                    Tab(selected = section == i, onClick = { section = i }, text = { Text(label) })
+                }
             }
-            return@Scaffold
+            if (loading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                return@Column
+            }
+            when (section) {
+                SECTION_HISTORY -> HistoryList(stats, settings, onOpen)
+                SECTION_CHARTS -> ChartsSection(stats, settings)
+                else -> MaintenanceSection(
+                    reminders = reminders,
+                    lastOdometer = stats.rows.lastOrNull()?.refuel?.odometer,
+                    onEdit = { editingReminder = it.id },
+                    onToggleDone = { onSaveReminder(it.copy(done = !it.done)) },
+                )
+            }
         }
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item { header() }
-            item { SummaryCard(stats.summary, settings) }
-            if (stats.rows.isEmpty()) {
-                item {
-                    Text(
-                        "Todavía no hay abastecimientos.\nToca «Abastecer» para registrar el primero.",
-                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                item {
-                    Text(
-                        "Historial",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                items(stats.rows.asReversed(), key = { it.refuel.id }) { row ->
-                    RefuelCard(row, settings, onClick = { onOpen(row.refuel) })
-                }
+    }
+
+    editingReminder?.let { rid ->
+        ReminderDialog(
+            existing = reminders.firstOrNull { it.id == rid },
+            vehicleId = vehicle?.id ?: 1L,
+            onDismiss = { editingReminder = null },
+            onSave = { onSaveReminder(it); editingReminder = null },
+            onDelete = { onDeleteReminder(it); editingReminder = null },
+        )
+    }
+}
+
+@Composable
+private fun HistoryList(stats: Stats, settings: AppSettings, onOpen: (Refuel) -> Unit) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item { SummaryCard(stats.summary, settings) }
+        if (stats.rows.isEmpty()) {
+            item {
+                Text(
+                    "Todavía no hay abastecimientos.\nToca «Abastecer» para registrar el primero.",
+                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            items(stats.rows.asReversed(), key = { it.refuel.id }) { row ->
+                RefuelCard(row, settings, onClick = { onOpen(row.refuel) })
             }
         }
     }
@@ -118,7 +202,10 @@ private fun SummaryCard(s: Summary, settings: AppSettings) {
     val u = settings.unitLabel
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
     ) {
         Column(Modifier.padding(16.dp)) {
             Text("Gastado este mes", style = MaterialTheme.typography.labelLarge)
@@ -127,15 +214,12 @@ private fun SummaryCard(s: Summary, settings: AppSettings) {
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
             )
-            Text(
-                "${formatNumber(s.monthQuantity)} $u cargados",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            Text("${formatNumber(s.monthQuantity)} $u cargados", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f))
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth()) {
-                Stat("Rendimiento", s.avgEfficiency?.let { "${formatNumber(it)} km/$u" } ?: "—", Modifier.weight(1f))
+                Stat("Consumo medio", s.avgEfficiency?.let { settings.consumption(it) } ?: "—", Modifier.weight(1f))
                 Stat("Costo por km", s.avgCostPerKm?.let { settings.money(it) } ?: "—", Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
@@ -167,15 +251,12 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    formatDate(r.epochDay),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
+                Text(formatDate(r.epochDay), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Text(
                     settings.money(r.totalCost),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             Text(
@@ -185,7 +266,7 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
             )
             val details = buildList {
                 row.distance?.let { add("+${formatNumber(it, 0)} km") }
-                row.efficiency?.let { add("${formatNumber(it)} km/$u") }
+                row.efficiency?.let { add(settings.consumption(it)) }
                 row.costPerKm?.let { add("${settings.money(it)}/km") }
             }
             if (details.isNotEmpty()) {
@@ -194,9 +275,7 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
             if (!r.fullTank || r.notes.isNotBlank()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (!r.fullTank) SuggestionChip(onClick = onClick, label = { Text("Carga parcial") })
-                    if (r.notes.isNotBlank()) {
-                        Text(r.notes, style = MaterialTheme.typography.bodySmall, maxLines = 2)
-                    }
+                    if (r.notes.isNotBlank()) Text(r.notes, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                 }
             }
         }

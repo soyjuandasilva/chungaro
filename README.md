@@ -1,43 +1,37 @@
 # Chungaro
 
-App Android para llevar el control del combustible: cuánto cargas, cuánto pagas
-y cuánto rinde tu vehículo.
+App Android para ahorrar en combustible en Portugal: precios oficiales cerca de
+ti, registro de cargas, consumo, gráficos y mantenimiento.
 
-## Qué hace
+## Pestañas
 
-- Registra cada abastecimiento: fecha, kilometraje, cantidad, precio y total
-  (si escribes cantidad y precio, el total se calcula solo, y viceversa).
-- Calcula el **rendimiento** (km por litro o galón) y el **costo por km**
-  usando el método de tanque lleno: las cargas parciales se suman al siguiente
-  llenado completo.
-- Muestra lo **gastado este mes**, el gasto total, el combustible total y el
-  precio promedio.
-- **Precios del día en Portugal**: pestaña «Precios» con los precios oficiales
-  de cada gasolinera según la DGEG (precoscombustiveis.dgeg.gov.pt). Eliges
-  distrito, buscas la gasolinera y la marcas como favorita; sus precios se
-  actualizan al abrir la app y aparecen como atajos al registrar una carga.
-- **Inicio**: con tu ubicación, una tabla con todos los combustibles (Gasolina
-  95, 95+, 98, Gasóleo, Gasóleo+ y GPL) que compara el precio de la gasolinera
-  más cercana con la más barata dentro de 5, 10 o 20 km. Tocando una fila se
-  ve el detalle, el ahorro en un depósito de 50 L, el top 5 y «Cómo llegar».
-- **Mis cargas**: registro de abastecimientos en su propia pestaña.
-- Ajustes: litros o galones y símbolo de moneda (por defecto L y €).
-- Tus cargas se guardan en el teléfono, sin cuenta. Solo la pestaña de precios
-  usa internet.
+- **Inicio**: con tu ubicación, tabla con todos los combustibles (Gasolina 95,
+  95+, 98, Gasóleo, Gasóleo+ y GPL) que compara la gasolinera más cercana con
+  la más barata en 5, 10 o 20 km. Tu combustible aparece primero, con una
+  tarjeta que dice si **merece la pena** ir a la más barata (ahorro en el
+  depósito menos lo que cuesta el desvío). Los precios se guardan en el
+  teléfono y se muestran al instante al abrir.
+- **Mapa**: gasolineras de la zona en OpenStreetMap con su precio, en verde las
+  baratas y en rojo las caras. «Cómo llegar» abre Maps.
+- **Cargas**: por vehículo. Historial de abastecimientos, **gráficos** (gasto
+  mensual, precio pagado y consumo) y **mantenimiento** (recordatorios por
+  fecha o kilometraje con aviso).
+- **Favoritas**: busca gasolineras por distrito y guarda tus favoritas.
+
+## Ajustes
+
+- Litros o galones, consumo en **L/100 km** o km/L, símbolo de moneda.
+- **Avisos de precio**: notificación cuando tu combustible baje de un precio
+  cerca de tu última ubicación (se revisa cada 6 h).
+- **Copia de seguridad**: exportar e importar vehículos, cargas y recordatorios
+  en un archivo JSON (por ejemplo, a Google Drive).
 
 ## Descargar el APK
 
-Cada push compila la app con GitHub Actions. En la pestaña **Actions** del
-repositorio, abre la última ejecución de **Android** y descarga el artefacto
-`chungaro-apk`. Descomprime el zip e instala `app-debug.apk` en el teléfono
-(hay que permitir la instalación de apps de origen desconocido).
+Cada push compila la app con GitHub Actions. En la pestaña **Actions**, abre
+la última ejecución de **Android** y descarga el artefacto `chungaro-apk`.
+Los APK se firman con una clave de depuración fija, así que las versiones
+nuevas se instalan encima de la anterior.
 
-## Compilar localmente
-
-Con Android Studio, abre la carpeta del proyecto, o desde la terminal:
-
-```
-./gradlew assembleDebug
-```
-
-Tecnología: Kotlin, Jetpack Compose (Material 3) y Room.
+Fuentes de datos: DGEG (precoscombustiveis.dgeg.gov.pt) y © OpenStreetMap.
+Tecnología: Kotlin, Jetpack Compose (Material 3), Room, WorkManager y osmdroid.

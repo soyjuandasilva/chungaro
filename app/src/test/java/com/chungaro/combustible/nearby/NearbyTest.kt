@@ -57,4 +57,25 @@ class NearbyTest {
         assertEquals(1.679, page.stations[0].price, 1e-9)
         assertEquals(38.75, page.stations[1].lat, 1e-9)
     }
+
+    @Test
+    fun tripAdviceWorthIt() {
+        val near = StationAtDistance(st(1, 0.0, 0.0, 1.80), 1.0)
+        val cheap = StationAtDistance(st(2, 0.0, 0.0, 1.70), 3.0)
+        // 0,10 €/L x 50 L = 5 € ; desvío 2 km x 2 x 1,3 = 5,2 km ; 5,2 x 6/100 x 1,70 = 0,5304 €
+        val a = tripAdvice(near, cheap, liters = 50.0, consumptionL100 = 6.0)!!
+        assertEquals(5.0, a.savings, 1e-9)
+        assertEquals(5.2, a.extraKm, 1e-9)
+        assertEquals(0.5304, a.tripCost, 1e-9)
+        assertEquals(true, a.worthIt)
+    }
+
+    @Test
+    fun tripAdviceNotWorthIt() {
+        val near = StationAtDistance(st(1, 0.0, 0.0, 1.705), 0.5)
+        val cheap = StationAtDistance(st(2, 0.0, 0.0, 1.700), 15.0)
+        val a = tripAdvice(near, cheap, liters = 40.0, consumptionL100 = 7.0)!!
+        assertEquals(false, a.worthIt)
+        assertNull(tripAdvice(near, near, 40.0, 7.0))
+    }
 }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,7 +56,15 @@ import java.util.Date
 private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF0F766E), Color(0xFF0E7490), Color(0xFF1D4ED8)))
 
 @Composable
-fun HomeScreen(vm: NearbyViewModel, bottomBar: @Composable () -> Unit) {
+fun HomeScreen(
+    vm: NearbyViewModel,
+    myFuelId: Int,
+    vehicleName: String,
+    tankLiters: Double,
+    consumptionL100: Double,
+    onOpenSettings: () -> Unit,
+    bottomBar: @Composable () -> Unit,
+) {
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(LocationHelper.hasPermission(context)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
@@ -76,7 +85,7 @@ fun HomeScreen(vm: NearbyViewModel, bottomBar: @Composable () -> Unit) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Header(vm, hasPermission)
+            Header(vm, hasPermission, onOpenSettings)
 
             if (!hasPermission) {
                 PermissionCard {
@@ -94,8 +103,9 @@ fun HomeScreen(vm: NearbyViewModel, bottomBar: @Composable () -> Unit) {
                 }
             }
 
+            MyFuelCard(vm, myFuelId, vehicleName, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
             NearestStationCard(vm)
-            PriceTable(vm, onRowClick = { detailFuel = it })
+            PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
                 "Toca un combustible para ver las gasolineras y cómo llegar.\nFuente: DGEG — precoscombustiveis.dgeg.gov.pt",
@@ -110,12 +120,12 @@ fun HomeScreen(vm: NearbyViewModel, bottomBar: @Composable () -> Unit) {
     val fuel = FUEL_TYPES.firstOrNull { it.id == detailFuel }
     val state = detailFuel?.let { vm.rows[it] }
     if (fuel != null && state is FuelRowState.Ready) {
-        FuelDetailDialog(fuel, state.result, vm.radiusKm, onDismiss = { detailFuel = null })
+        FuelDetailDialog(fuel, state.result, vm.radiusKm, tankLiters, consumptionL100, onDismiss = { detailFuel = null })
     }
 }
 
 @Composable
-private fun Header(vm: NearbyViewModel, hasPermission: Boolean) {
+private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -129,8 +139,8 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean) {
                     Text("Chungaro", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     val sub = when {
                         vm.locating -> "Buscando tu ubicación…"
-                        vm.updatedAt != null -> "Precios de hoy cerca de ti · " +
-                            DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(vm.updatedAt!!))
+                        vm.pricesTime != null -> "Precios cerca de ti · " +
+                            DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(vm.pricesTime!!))
                         else -> "Precios de hoy cerca de ti"
                     }
                     Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
@@ -139,6 +149,9 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean) {
                     IconButton(onClick = { vm.refresh(force = true) }) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Actualizar", tint = Color.White)
                     }
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes", tint = Color.White)
                 }
             }
             if (hasPermission) {
@@ -212,7 +225,60 @@ private fun NearestStationCard(vm: NearbyViewModel) {
 }
 
 @Composable
-private fun PriceTable(vm: NearbyViewModel, onRowClick: (Int) -> Unit) {
+private fun MyFuelCard(
+    vm: NearbyViewModel,
+    myFuelId: Int,
+    vehicleName: String,
+    tankLiters: Double,
+    consumptionL100: Double,
+    onClick: () -> Unit,
+) {
+    val fuel = FUEL_TYPES.firstOrNull { it.id == myFuelId } ?: return
+    val r = (vm.rows[myFuelId] as? FuelRowState.Ready)?.result ?: return
+    val cheapest = r.cheapest ?: return
+    val nearest = r.nearest
+    val advice = nearest?.let { tripAdvice(it, cheapest, tankLiters, consumptionL100) }
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FuelPill(fuel)
+                Text(
+                    "  $vehicleName",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f)) {
+                    Text("Mejor precio a ≤ ${vm.radiusKm} km", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(formatKm(cheapest.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text(
+                    formatEuro(cheapest.station.price),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            when {
+                nearest?.station?.id == cheapest.station.id ->
+                    Text("✅ Es también la más cercana.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                advice != null -> Text(
+                    if (advice.worthIt) "✅ Merece la pena: ganas ${formatMoney(advice.net)} llenando ${tankLiters.toInt()} L"
+                    else "✋ No compensa ir: mejor la más cercana (${nearest?.km?.let { formatKm(it) } ?: ""})",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (advice.worthIt) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column {
             Row(
@@ -226,9 +292,10 @@ private fun PriceTable(vm: NearbyViewModel, onRowClick: (Int) -> Unit) {
                 HeaderCell("Más cercana", Modifier.weight(1f), TextAlign.End)
                 HeaderCell("Más barata\n≤ ${vm.radiusKm} km", Modifier.weight(1f), TextAlign.End)
             }
-            FUEL_TYPES.forEachIndexed { i, fuel ->
+            val ordered = FUEL_TYPES.sortedByDescending { it.id == myFuelId }
+            ordered.forEachIndexed { i, fuel ->
                 if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                FuelRow(fuel, vm.rows[fuel.id], onClick = { onRowClick(fuel.id) })
+                FuelRow(fuel, vm.rows[fuel.id], highlight = fuel.id == myFuelId, onClick = { onRowClick(fuel.id) })
             }
         }
     }
@@ -247,11 +314,12 @@ private fun HeaderCell(text: String, modifier: Modifier, align: TextAlign) {
 }
 
 @Composable
-private fun FuelRow(fuel: FuelType, state: FuelRowState?, onClick: () -> Unit) {
+private fun FuelRow(fuel: FuelType, state: FuelRowState?, highlight: Boolean, onClick: () -> Unit) {
     val ready = state as? FuelRowState.Ready
     Row(
         Modifier
             .fillMaxWidth()
+            .background(if (highlight) fuel.uiColor.copy(alpha = 0.08f) else Color.Transparent)
             .clickable(enabled = ready != null, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

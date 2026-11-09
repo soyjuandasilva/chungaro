@@ -18,6 +18,18 @@ fun AppSettings.money(v: Double): String = currency + formatNumber(v)
 /** Con 3 decimales, para precios por litro/galón. */
 fun AppSettings.moneyPrecise(v: Double): String = currency + formatNumber(v, 3)
 
+/** Consumo a partir del rendimiento (km por unidad), en la unidad elegida. */
+fun AppSettings.consumption(kmPerUnit: Double): String =
+    if (consumptionUnit == "L100") "${formatNumber(100.0 / kmPerUnit, 1)} $unitLabel/100 km"
+    else "${formatNumber(kmPerUnit)} km/$unitLabel"
+
+/** Valor numérico del consumo en la unidad elegida (para gráficos). */
+fun AppSettings.consumptionValue(kmPerUnit: Double): Double =
+    if (consumptionUnit == "L100") 100.0 / kmPerUnit else kmPerUnit
+
+val AppSettings.consumptionLabel: String
+    get() = if (consumptionUnit == "L100") "$unitLabel/100 km" else "km/$unitLabel"
+
 /** Nombre corto de la unidad: "L" o "gal". */
 val AppSettings.unitLabel: String get() = if (unit == "gal") "gal" else "L"
 

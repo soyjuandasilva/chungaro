@@ -8,6 +8,8 @@ import java.io.File
 class ChungaroApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        com.chungaro.combustible.alerts.Notifier.ensureChannels(this)
+        com.chungaro.combustible.alerts.AlertScheduler.schedule(this)
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             runCatching {

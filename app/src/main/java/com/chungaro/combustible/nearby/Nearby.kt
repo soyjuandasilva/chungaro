@@ -74,3 +74,34 @@ fun computeNearby(
         countInRadius = inRadius.size,
     )
 }
+
+/** Resultado de comparar ir a la más barata frente a la más cercana. */
+data class TripAdvice(
+    /** Lo que se ahorra en el depósito por el precio. */
+    val savings: Double,
+    /** Lo que cuesta el combustible del desvío (ida y vuelta). */
+    val tripCost: Double,
+    /** Km extra estimados por carretera (ida y vuelta). */
+    val extraKm: Double,
+) {
+    val net: Double get() = savings - tripCost
+    val worthIt: Boolean get() = net > 0.05
+}
+
+/**
+ * Estima si compensa ir a [cheapest] en vez de a [nearest].
+ * La distancia en línea recta se multiplica por [roadFactor] para aproximar la carretera.
+ */
+fun tripAdvice(
+    nearest: StationAtDistance,
+    cheapest: StationAtDistance,
+    liters: Double,
+    consumptionL100: Double,
+    roadFactor: Double = 1.3,
+): TripAdvice? {
+    if (nearest.station.id == cheapest.station.id) return null
+    val diff = nearest.station.price - cheapest.station.price
+    val extraKm = ((cheapest.km - nearest.km) * 2 * roadFactor).coerceAtLeast(0.0)
+    val tripCost = extraKm * consumptionL100 / 100.0 * cheapest.station.price
+    return TripAdvice(savings = diff * liters, tripCost = tripCost, extraKm = extraKm)
+}
