@@ -19,6 +19,8 @@ import com.chungaro.combustible.ChungaroApplication
 import com.chungaro.combustible.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.chungaro.combustible.nearby.NearbyCard
+import com.chungaro.combustible.nearby.NearbyViewModel
 import com.chungaro.combustible.prices.PricesScreen
 import com.chungaro.combustible.prices.PricesViewModel
 
@@ -31,6 +33,7 @@ private const val TAB_PRICES = 1
 fun ChungaroApp(
     vm: RefuelViewModel = viewModel(),
     pricesVm: PricesViewModel = viewModel(),
+    nearbyVm: NearbyViewModel = viewModel(),
 ) {
     val loaded by vm.stats.collectAsStateWithLifecycle()
     val stats = loaded ?: EmptyStats
@@ -92,6 +95,7 @@ fun ChungaroApp(
             onOpen = { editingId = it.id },
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
+            header = { NearbyCard(nearbyVm) },
         )
     }
 

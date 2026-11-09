@@ -52,6 +52,7 @@ fun MainScreen(
     onOpen: (Refuel) -> Unit,
     onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit = {},
+    header: @Composable () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -84,6 +85,7 @@ fun MainScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item { header() }
             item { SummaryCard(stats.summary, settings) }
             if (stats.rows.isEmpty()) {
                 item {

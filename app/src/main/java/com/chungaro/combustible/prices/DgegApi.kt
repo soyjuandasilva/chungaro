@@ -3,6 +3,7 @@ package com.chungaro.combustible.prices
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import com.chungaro.combustible.nearby.PricedStation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -72,6 +73,64 @@ object DgegApi {
         java.text.Normalizer.normalize(s.lowercase(java.util.Locale.ROOT), java.text.Normalizer.Form.NFD)
             .replace(Regex("\\p{M}+"), "")
             .trim()
+
+    /**
+     * Todas las gasolineras de Portugal que venden [fuelTypeId], con su precio
+     * y coordenadas. La API pagina de 500 en 500; "Quantidade" indica el total.
+     */
+    suspend fun pricedStations(fuelTypeId: Int): List<PricedStation> = withContext(Dispatchers.IO) {
+        val all = ArrayList<PricedStation>()
+        var page = 1
+        var total = Int.MAX_VALUE
+        while ((page - 1) * PAGE_SIZE < total && page <= MAX_PAGES) {
+            val (rows, quantity) = parsePricedStations(
+                get("$BASE/PesquisarPostos?idsTiposComb=$fuelTypeId&qtdPorPagina=$PAGE_SIZE&pagina=$page"),
+            )
+            all += rows.stations
+            if (quantity != null) total = quantity
+            if (rows.rawCount < PAGE_SIZE) break
+            page++
+        }
+        all.distinctBy { it.id }
+    }
+
+    private const val PAGE_SIZE = 500
+    private const val MAX_PAGES = 20
+
+    data class PricedPage(val stations: List<PricedStation>, val rawCount: Int)
+
+    /** Devuelve las filas válidas (con precio y coordenadas en Portugal) y el total informado. */
+    fun parsePricedStations(json: String): Pair<PricedPage, Int?> {
+        val arr = JSONObject(json).optJSONArray("resultado") ?: JSONArray()
+        var quantity: Int? = null
+        val list = (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            if (quantity == null && o.has("Quantidade")) quantity = o.optInt("Quantidade", 0).takeIf { it > 0 }
+            val id = o.optLong("Id", -1L).takeIf { it > 0 } ?: return@mapNotNull null
+            val lat = o.coord("Latitude") ?: return@mapNotNull null
+            val lon = o.coord("Longitude") ?: return@mapNotNull null
+            if (lat !in 32.0..43.0 || lon !in -32.0..-6.0) return@mapNotNull null
+            val price = parsePrice(o.str("Preco"))?.takeIf { it > 0 } ?: return@mapNotNull null
+            PricedStation(
+                id = id,
+                name = o.str("Nome"),
+                brand = o.str("Marca"),
+                address = o.str("Morada"),
+                locality = o.str("Localidade").ifBlank { o.str("Municipio") },
+                lat = lat,
+                lon = lon,
+                price = price,
+                updated = o.str("DataAtualizacao"),
+            )
+        }
+        return PricedPage(list, arr.length()) to quantity
+    }
+
+    private fun JSONObject.coord(key: String): Double? = when (val v = opt(key)) {
+        is Number -> v.toDouble()
+        is String -> v.trim().replace(',', '.').toDoubleOrNull()
+        else -> null
+    }?.takeIf { it != 0.0 && !it.isNaN() }
 
     suspend fun station(id: Long): StationDetail = withContext(Dispatchers.IO) {
         parseStation(id, get("$BASE/GetDadosPosto?id=$id"))
