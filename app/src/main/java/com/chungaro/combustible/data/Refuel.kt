@@ -33,6 +33,11 @@ data class Vehicle(
     val tankLiters: Double,
     /** Consumo estimado en L/100 km, usado mientras no haya historial. */
     val consumption: Double,
+    /** Tipo: car, moto, van, truck, camper, other (ver VEHICLE_TYPES). */
+    @ColumnInfo(defaultValue = "'car'") val type: String = "car",
+    @ColumnInfo(defaultValue = "''") val brand: String = "",
+    @ColumnInfo(defaultValue = "''") val model: String = "",
+    val year: Int? = null,
 )
 
 /** Recordatorio de mantenimiento: vence por fecha, por kilometraje o por ambos. */

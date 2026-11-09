@@ -14,7 +14,9 @@ object Backup {
         root.put("vehicles", JSONArray().apply {
             vehicles.forEach {
                 put(JSONObject().put("id", it.id).put("name", it.name).put("fuelTypeId", it.fuelTypeId)
-                    .put("tankLiters", it.tankLiters).put("consumption", it.consumption))
+                    .put("tankLiters", it.tankLiters).put("consumption", it.consumption)
+                    .put("type", it.type).put("brand", it.brand).put("model", it.model)
+                    .put("year", it.year ?: JSONObject.NULL))
             }
         })
         root.put("refuels", JSONArray().apply {
@@ -47,6 +49,10 @@ object Backup {
                 fuelTypeId = it.optInt("fuelTypeId", 3201),
                 tankLiters = it.optDouble("tankLiters", 50.0),
                 consumption = it.optDouble("consumption", 6.5),
+                type = it.optString("type", "car"),
+                brand = it.optString("brand", ""),
+                model = it.optString("model", ""),
+                year = if (it.isNull("year") || !it.has("year")) null else it.getInt("year"),
             )
         }.ifEmpty { listOf(Vehicle(1, "Mi coche", 3201, 50.0, 6.5)) }
         val refuels = root.optJSONArray("refuels").objects().map {

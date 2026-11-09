@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -46,6 +47,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.data.AppSettings
 import com.chungaro.combustible.data.Refuel
+import com.chungaro.combustible.data.Vehicle
+import com.chungaro.combustible.data.emoji
 import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
@@ -60,6 +63,8 @@ fun RefuelFormScreen(
     lastOdometer: Double?,
     settings: AppSettings,
     priceSuggestions: List<PriceSuggestion> = emptyList(),
+    vehicles: List<Vehicle> = emptyList(),
+    initialVehicleId: Long = 1L,
     onSave: (Refuel) -> Unit,
     onDelete: (Refuel) -> Unit,
     onBack: () -> Unit,
@@ -74,6 +79,7 @@ fun RefuelFormScreen(
     var total by rememberSaveable { mutableStateOf(existing?.let { editableNumber(it.totalCost, 2) } ?: "") }
     var fullTank by rememberSaveable { mutableStateOf(existing?.fullTank ?: true) }
     var notes by rememberSaveable { mutableStateOf(existing?.notes ?: "") }
+    var vehicleId by rememberSaveable { mutableLongStateOf(existing?.vehicleId ?: initialVehicleId) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
@@ -122,6 +128,18 @@ fun RefuelFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (vehicles.size > 1) {
+                Text("Vehículo", style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    vehicles.forEach { v ->
+                        FilterChip(
+                            selected = v.id == vehicleId,
+                            onClick = { vehicleId = v.id },
+                            label = { Text("${v.emoji} ${v.name}") },
+                        )
+                    }
+                }
+            }
             OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.DateRange, contentDescription = null)
                 Text("  " + formatDate(epochDay))
@@ -197,6 +215,7 @@ fun RefuelFormScreen(
                             totalCost = tot!!,
                             fullTank = fullTank,
                             notes = notes.trim(),
+                            vehicleId = vehicleId,
                         ),
                     )
                 },

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Edit
@@ -53,6 +54,8 @@ import com.chungaro.combustible.data.Reminder
 import com.chungaro.combustible.data.Stats
 import com.chungaro.combustible.data.Summary
 import com.chungaro.combustible.data.Vehicle
+import com.chungaro.combustible.data.description
+import com.chungaro.combustible.data.emoji
 import com.chungaro.combustible.data.pricePerUnit
 
 private const val SECTION_HISTORY = 0
@@ -73,6 +76,7 @@ fun MainScreen(
     onOpenSettings: () -> Unit,
     onSelectVehicle: (Long) -> Unit,
     onEditVehicle: (Vehicle?) -> Unit,
+    onManageVehicles: () -> Unit,
     onSaveReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
     bottomBar: @Composable () -> Unit = {},
@@ -90,13 +94,18 @@ fun MainScreen(
                             Modifier.clickable { menu = true }.padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(vehicle?.name ?: "Mis cargas", fontWeight = FontWeight.Bold)
+                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Mis cargas", fontWeight = FontWeight.Bold)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Cambiar vehículo")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             vehicles.forEach { v ->
                                 DropdownMenuItem(
-                                    text = { Text(v.name, fontWeight = if (v.id == vehicle?.id) FontWeight.Bold else FontWeight.Normal) },
+                                    text = {
+                                        Column {
+                                            Text("${v.emoji} ${v.name}", fontWeight = if (v.id == vehicle?.id) FontWeight.Bold else FontWeight.Normal)
+                                            if (v.description.isNotBlank()) Text(v.description, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    },
                                     onClick = { menu = false; onSelectVehicle(v.id) },
                                 )
                             }
@@ -110,6 +119,11 @@ fun MainScreen(
                                 text = { Text("Añadir vehículo") },
                                 leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
                                 onClick = { menu = false; onEditVehicle(null) },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Mis vehículos") },
+                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                                onClick = { menu = false; onManageVehicles() },
                             )
                         }
                     }

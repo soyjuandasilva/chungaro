@@ -13,7 +13,10 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
   teléfono y se muestran al instante al abrir.
 - **Mapa**: gasolineras de la zona en OpenStreetMap con su precio, en verde las
   baratas y en rojo las caras. «Cómo llegar» abre Maps.
-- **Cargas**: por vehículo. Historial de abastecimientos, **gráficos** (gasto
+- **Vehículos**: varios, cada uno con tipo (coche, moto, furgoneta, camión,
+  autocaravana), marca y modelo (con sugerencias), año, combustible, litros al
+  llenar y consumo.
+- **Cargas**: por vehículo; al registrar una carga eliges el vehículo. Historial de abastecimientos, **gráficos** (gasto
   mensual, precio pagado y consumo) y **mantenimiento** (recordatorios por
   fecha o kilometraje con aviso).
 - **Favoritas**: busca gasolineras por distrito y guarda tus favoritas.

@@ -55,6 +55,7 @@ fun ChungaroApp(
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingVehicle by rememberSaveable { mutableStateOf<Long?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showVehicles by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     var crashReport by rememberSaveable { mutableStateOf(ChungaroApplication.takeLastCrash(context)) }
 
@@ -95,7 +96,29 @@ fun ChungaroApp(
     }
 
     val id = editingId
+    val editVehicleId = editingVehicle
     when {
+        editVehicleId != null -> {
+            BackHandler { editingVehicle = null }
+            VehicleEditScreen(
+                existing = vehicles.firstOrNull { it.id == editVehicleId },
+                canDelete = vehicles.size > 1,
+                onSave = { vm.saveVehicle(it); editingVehicle = null },
+                onDelete = { vm.deleteVehicle(it); editingVehicle = null },
+                onBack = { editingVehicle = null },
+            )
+        }
+        showVehicles -> {
+            BackHandler { showVehicles = false }
+            VehiclesScreen(
+                vehicles = vehicles,
+                selectedId = vehicle?.id ?: 0L,
+                onSelect = { vm.selectVehicle(it) },
+                onEdit = { editingVehicle = it },
+                onAdd = { editingVehicle = NEW_VEHICLE },
+                onBack = { showVehicles = false },
+            )
+        }
         showSettings -> {
             BackHandler { showSettings = false; vm.message = null }
             SettingsScreen(
@@ -104,6 +127,7 @@ fun ChungaroApp(
                 message = vm.message,
                 onChange = { vm.updateSettings(it) },
                 onExport = { vm.exportTo(it) },
+                onManageVehicles = { showVehicles = true },
                 onImport = { vm.importFrom(it) },
                 onBack = { showSettings = false; vm.message = null },
             )
@@ -130,7 +154,13 @@ fun ChungaroApp(
                 lastOdometer = if (id == NEW) latest?.odometer else null,
                 settings = vm.settings,
                 priceSuggestions = suggestions,
-                onSave = { vm.save(it.copy(vehicleId = existing?.vehicleId ?: vehicle?.id ?: 1L)); editingId = null },
+                vehicles = vehicles,
+                initialVehicleId = vehicle?.id ?: 1L,
+                onSave = {
+                    vm.save(it)
+                    if (it.vehicleId != vm.selectedVehicleId) vm.selectVehicle(it.vehicleId)
+                    editingId = null
+                },
                 onDelete = { vm.delete(it); editingId = null },
                 onBack = { editingId = null },
             )
@@ -157,6 +187,7 @@ fun ChungaroApp(
                 onOpenSettings = { showSettings = true },
                 onSelectVehicle = { vm.selectVehicle(it) },
                 onEditVehicle = { editingVehicle = it?.id ?: NEW_VEHICLE },
+                onManageVehicles = { showVehicles = true },
                 onSaveReminder = { vm.saveReminder(it) },
                 onDeleteReminder = { vm.deleteReminder(it) },
                 bottomBar = bottomBar,
@@ -170,16 +201,6 @@ fun ChungaroApp(
             consumptionL100 = consumptionL100,
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
-        )
-    }
-
-    editingVehicle?.let { vid ->
-        VehicleDialog(
-            existing = vehicles.firstOrNull { it.id == vid },
-            canDelete = vehicles.size > 1,
-            onDismiss = { editingVehicle = null },
-            onSave = { vm.saveVehicle(it); editingVehicle = null },
-            onDelete = { vm.deleteVehicle(it); editingVehicle = null },
         )
     }
 

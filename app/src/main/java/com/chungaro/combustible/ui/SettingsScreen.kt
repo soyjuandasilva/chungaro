@@ -55,6 +55,7 @@ fun SettingsScreen(
     onChange: (AppSettings) -> Unit,
     onExport: (android.net.Uri) -> Unit,
     onImport: (android.net.Uri) -> Unit,
+    onManageVehicles: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -87,6 +88,15 @@ fun SettingsScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Section("Vehículos") {
+                Text(
+                    "Tipo, marca, modelo, año, combustible y consumo de cada vehículo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedButton(onClick = onManageVehicles, modifier = Modifier.fillMaxWidth()) { Text("Mis vehículos") }
+            }
+
             Section("Unidades") {
                 Label("Combustible")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

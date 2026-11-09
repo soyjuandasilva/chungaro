@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Refuel::class, Vehicle::class, Reminder::class], version = 2, exportSchema = false)
+@Database(entities = [Refuel::class, Vehicle::class, Reminder::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun refuelDao(): RefuelDao
 
@@ -15,6 +15,7 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var instance: AppDatabase? = null
 
+        /** Tabla de vehículos tal como era en la versión 2 (la 2->3 añade columnas). */
         private const val CREATE_VEHICLES =
             "CREATE TABLE IF NOT EXISTS `vehicles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                 "`name` TEXT NOT NULL, `fuelTypeId` INTEGER NOT NULL, `tankLiters` REAL NOT NULL, `consumption` REAL NOT NULL)"
@@ -35,6 +36,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v2 -> v3: tipo, marca, modelo y año del vehículo. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `type` TEXT NOT NULL DEFAULT 'car'")
+                db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `brand` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `model` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `year` INTEGER")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -42,7 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "chungaro.db",
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             db.execSQL(DEFAULT_VEHICLE_SQL)
