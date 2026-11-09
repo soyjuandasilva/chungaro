@@ -165,12 +165,16 @@ private fun StationCard(
         border = if (best) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(14.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandBadge(s.station.brand, size = 34.dp)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     String.format(Locale.getDefault(), "%.3f", s.station.price),
@@ -309,6 +313,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
                 color = if (index < 3) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        BrandBadge(s.station.brand, size = 30.dp, modifier = Modifier.padding(start = 8.dp))
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Text(stationTitle(s.station), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {

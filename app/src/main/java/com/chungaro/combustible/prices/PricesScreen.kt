@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+import com.chungaro.combustible.nearby.BrandBadge
 
 private const val MAX_RESULTS = 100
 
@@ -200,7 +201,10 @@ private fun StationDialog(vm: PricesViewModel) {
             ) {
                 when {
                     d != null -> {
-                        if (d.brand.isNotBlank()) Text(d.brand, fontWeight = FontWeight.SemiBold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            BrandBadge(d.brand, size = 32.dp, modifier = Modifier.padding(end = 8.dp))
+                            Text(d.brand.ifBlank { "Sin marca" }, fontWeight = FontWeight.SemiBold)
+                        }
                         if (d.address.isNotBlank()) Text(d.address, style = MaterialTheme.typography.bodySmall)
                         HorizontalDivider()
                         if (d.fuels.isEmpty()) Text("Esta gasolinera no informa precios.")
@@ -230,10 +234,13 @@ private fun StationDialog(vm: PricesViewModel) {
 private fun FavoriteCard(d: StationDetail, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                listOf(d.brand, d.name).filter { it.isNotBlank() }.distinct().joinToString(" · "),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandBadge(d.brand, size = 40.dp, modifier = Modifier.padding(end = 12.dp))
+                Text(
+                    listOf(d.brand, d.name).filter { it.isNotBlank() }.distinct().joinToString(" · "),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
             if (d.address.isNotBlank()) {
                 Text(d.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -263,6 +270,7 @@ private fun FuelLine(f: FuelPrice) {
 private fun StationRow(s: Station, isFavorite: Boolean, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            BrandBadge(s.brand, size = 36.dp, modifier = Modifier.padding(end = 12.dp))
             Column(Modifier.weight(1f)) {
                 Text(s.name.ifBlank { "Gasolinera ${s.id}" }, style = MaterialTheme.typography.titleSmall)
                 Text(
