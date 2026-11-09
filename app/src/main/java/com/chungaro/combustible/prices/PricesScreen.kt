@@ -67,7 +67,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Precios en Portugal") },
+                title = { Text("Precios en Portugal", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { vm.refreshFavorites() }, enabled = vm.favorites.isNotEmpty()) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Actualizar precios")

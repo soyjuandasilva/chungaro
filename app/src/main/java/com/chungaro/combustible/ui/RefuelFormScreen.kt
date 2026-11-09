@@ -148,7 +148,7 @@ fun RefuelFormScreen(
                 prefix = settings.currency,
             )
             if (priceSuggestions.isNotEmpty()) {
-                Text("Precios de hoy en tus gasolineras", style = MaterialTheme.typography.labelMedium)
+                Text("Precios de hoy (toca para usar)", style = MaterialTheme.typography.labelMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     priceSuggestions.forEach { sug ->
                         AssistChip(

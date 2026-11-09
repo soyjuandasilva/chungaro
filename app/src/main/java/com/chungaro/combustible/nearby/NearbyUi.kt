@@ -1,0 +1,184 @@
+package com.chungaro.combustible.nearby
+
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import java.util.Locale
+import kotlin.math.abs
+
+/** Litros usados para mostrar cuánto se ahorra en un depósito. */
+const val TANK_LITERS = 50
+
+val FuelType.uiColor: Color get() = Color(color)
+
+@Composable
+fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier) {
+    Surface(
+        color = fuel.uiColor.copy(alpha = 0.15f),
+        contentColor = fuel.uiColor,
+        shape = RoundedCornerShape(50),
+        modifier = modifier,
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).background(fuel.uiColor, CircleShape))
+            Text(
+                "  " + fuel.short,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+fun FuelDetailDialog(fuel: FuelType, result: NearbyResult, radiusKm: Int, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { FuelPill(fuel) },
+        text = {
+            Column(
+                Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val cheapest = result.cheapest
+                val nearest = result.nearest
+                if (cheapest != null) {
+                    Text("Más barata a menos de $radiusKm km", style = MaterialTheme.typography.labelLarge)
+                    StationBlock(cheapest, context, accent = true)
+                } else {
+                    Text("No hay gasolineras con precio a menos de $radiusKm km.")
+                }
+                if (nearest != null) {
+                    HorizontalDivider()
+                    Text("Más cercana", style = MaterialTheme.typography.labelLarge)
+                    StationBlock(nearest, context, accent = false)
+                    if (cheapest != null) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(12.dp),
+                        ) {
+                            Text(
+                                comparison(nearest, cheapest),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp),
+                            )
+                        }
+                    }
+                }
+                if (result.cheapestList.size > 1) {
+                    HorizontalDivider()
+                    Text("Top ${result.cheapestList.size} de la zona (${result.countInRadius} gasolineras)", style = MaterialTheme.typography.labelLarge)
+                    result.cheapestList.forEachIndexed { i, s ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${i + 1}. ${stationTitle(s.station)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                "${formatKm(s.km)} · ${formatEuro(s.station.price)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                    }
+                    result.averageInRadius?.let {
+                        Text(
+                            "Precio medio en la zona: ${formatEuro(it)}/L",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } },
+    )
+}
+
+@Composable
+fun StationBlock(s: StationAtDistance, context: Context, accent: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stationTitle(s.station), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOf(formatKm(s.km), s.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                "${formatEuro(s.station.price)}/L",
+                style = if (accent) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+            TextButton(onClick = { openMaps(context, s.station) }) { Text("Cómo llegar") }
+        }
+    }
+}
+
+fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance): String {
+    if (nearest.station.id == cheapest.station.id) return "La más cercana es también la más barata. ¡Perfecto!"
+    val diff = nearest.station.price - cheapest.station.price
+    if (abs(diff) < 0.0005) return "La más cercana tiene el mismo precio que la más barata."
+    return if (diff > 0) {
+        "La más cercana cuesta ${formatEuro(diff)}/L más: en $TANK_LITERS L pagarías ${formatMoney(diff * TANK_LITERS)} más. " +
+            "La más barata está ${formatKm(cheapest.km - nearest.km)} más lejos."
+    } else {
+        "La más cercana es ${formatEuro(-diff)}/L más barata que la mejor dentro del radio."
+    }
+}
+
+fun stationTitle(s: PricedStation): String =
+    listOf(s.brand, s.name).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifBlank { "Gasolinera ${s.id}" }
+
+fun formatEuro(v: Double): String = String.format(Locale.getDefault(), "%.3f €", v)
+fun formatMoney(v: Double): String = String.format(Locale.getDefault(), "%.2f €", v)
+fun formatKm(v: Double): String =
+    if (v < 1) String.format(Locale.getDefault(), "%.0f m", v * 1000)
+    else String.format(Locale.getDefault(), "%.1f km", v)
+
+fun openMaps(context: Context, s: PricedStation) {
+    val label = Uri.encode(stationTitle(s))
+    val uri = Uri.parse("geo:${s.lat},${s.lon}?q=${s.lat},${s.lon}($label)")
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+    } catch (e: ActivityNotFoundException) {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}")),
+        )
+    }
+}

@@ -36,11 +36,6 @@ class SettingsStore(context: Context) {
         prefs.edit().putInt("district", id).apply()
     }
 
-    fun loadNearbyFuel(): Int = prefs.getInt("nearby_fuel", com.chungaro.combustible.nearby.DEFAULT_FUEL_ID)
-
-    fun saveNearbyFuel(id: Int) {
-        prefs.edit().putInt("nearby_fuel", id).apply()
-    }
 
     fun loadRadius(): Int = prefs.getInt("nearby_radius", 10)
 

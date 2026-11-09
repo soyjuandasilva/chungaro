@@ -16,9 +16,11 @@ y cuánto rinde tu vehículo.
   de cada gasolinera según la DGEG (precoscombustiveis.dgeg.gov.pt). Eliges
   distrito, buscas la gasolinera y la marcas como favorita; sus precios se
   actualizan al abrir la app y aparecen como atajos al registrar una carga.
-- **Cerca de ti** (pantalla principal): con tu ubicación muestra la gasolinera
-  más barata dentro de 5, 10 o 20 km y la más cercana, cuánto más cara es por
-  litro y en un depósito de 50 L, y el top 5 de la zona. Botón «Cómo llegar».
+- **Inicio**: con tu ubicación, una tabla con todos los combustibles (Gasolina
+  95, 95+, 98, Gasóleo, Gasóleo+ y GPL) que compara el precio de la gasolinera
+  más cercana con la más barata dentro de 5, 10 o 20 km. Tocando una fila se
+  ve el detalle, el ahorro en un depósito de 50 L, el top 5 y «Cómo llegar».
+- **Mis cargas**: registro de abastecimientos en su propia pestaña.
 - Ajustes: litros o galones y símbolo de moneda (por defecto L y €).
 - Tus cargas se guardan en el teléfono, sin cuenta. Solo la pestaña de precios
   usa internet.

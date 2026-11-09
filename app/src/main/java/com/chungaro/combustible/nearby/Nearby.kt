@@ -33,16 +33,16 @@ data class NearbyResult(
     val countInRadius: Int,
 )
 
-/** Tipos de combustible de la DGEG (id usado en idsTiposComb). */
-data class FuelType(val id: Int, val name: String)
+/** Tipos de combustible de la DGEG (id usado en idsTiposComb). [color] en ARGB. */
+data class FuelType(val id: Int, val name: String, val short: String, val color: Long)
 
 val FUEL_TYPES = listOf(
-    FuelType(3201, "Gasolina 95"),
-    FuelType(3205, "Gasolina 95 especial"),
-    FuelType(3400, "Gasolina 98"),
-    FuelType(2101, "Gasóleo"),
-    FuelType(2105, "Gasóleo especial"),
-    FuelType(1120, "GPL Auto"),
+    FuelType(3201, "Gasolina simples 95", "Gasolina 95", 0xFF16A34A),
+    FuelType(3205, "Gasolina especial 95", "Gasolina 95+", 0xFF0D9488),
+    FuelType(3400, "Gasolina 98", "Gasolina 98", 0xFF7C3AED),
+    FuelType(2101, "Gasóleo simples", "Gasóleo", 0xFFD97706),
+    FuelType(2105, "Gasóleo especial", "Gasóleo+", 0xFFB45309),
+    FuelType(1120, "GPL Auto", "GPL", 0xFF2563EB),
 )
 const val DEFAULT_FUEL_ID = 3201
 

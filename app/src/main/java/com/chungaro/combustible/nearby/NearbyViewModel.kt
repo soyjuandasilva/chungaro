@@ -13,75 +13,86 @@ import com.chungaro.combustible.prices.DgegApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
-sealed interface NearbyState {
-    data object Idle : NearbyState
-    data object Loading : NearbyState
-    data class Error(val message: String) : NearbyState
-    data class Ready(val result: NearbyResult) : NearbyState
+sealed interface FuelRowState {
+    data object Loading : FuelRowState
+    data class Error(val message: String) : FuelRowState
+    data class Ready(val result: NearbyResult) : FuelRowState
 }
 
 class NearbyViewModel(app: Application) : AndroidViewModel(app) {
     private val store = SettingsStore(app)
     private val cache = mutableMapOf<Int, Pair<Long, List<PricedStation>>>()
+    private val downloads = Semaphore(3)
     private var job: Job? = null
+    private var location: Location? = null
 
-    var fuelId by mutableIntStateOf(store.loadNearbyFuel())
-        private set
     var radiusKm by mutableIntStateOf(store.loadRadius())
         private set
-    var state by mutableStateOf<NearbyState>(NearbyState.Idle)
+    var locating by mutableStateOf(false)
         private set
-    private var location: Location? = null
+    var locationError by mutableStateOf<String?>(null)
+        private set
+    var rows by mutableStateOf<Map<Int, FuelRowState>>(emptyMap())
+        private set
+    var updatedAt by mutableStateOf<Long?>(null)
+        private set
+
+    val started: Boolean get() = job != null
 
     fun refresh(force: Boolean = false) {
         job?.cancel()
         job = viewModelScope.launch {
-            state = NearbyState.Loading
+            locating = true
+            locationError = null
             val loc = LocationHelper.current(getApplication<Application>())
+            locating = false
             if (loc == null) {
-                state = NearbyState.Error("No se pudo obtener tu ubicación. Activa la ubicación del teléfono y vuelve a intentarlo.")
+                locationError = "No se pudo obtener tu ubicación. Activa la ubicación del teléfono y vuelve a intentarlo."
                 return@launch
             }
             location = loc
-            val fuel = fuelId
-            val stations = try {
-                stationsFor(fuel, force)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                state = NearbyState.Error("No se pudieron descargar los precios. Revisa tu conexión.")
-                return@launch
+            rows = FUEL_TYPES.associate { f ->
+                val cached = cache[f.id]?.second
+                f.id to (if (cached != null && !force) FuelRowState.Ready(compute(cached, loc)) else FuelRowState.Loading)
             }
-            recompute(stations)
+            updatedAt = System.currentTimeMillis()
+            FUEL_TYPES.forEach { f ->
+                launch {
+                    val state = try {
+                        FuelRowState.Ready(compute(stationsFor(f.id, force), loc))
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        FuelRowState.Error("Sin conexión")
+                    }
+                    rows = rows + (f.id to state)
+                }
+            }
         }
-    }
-
-    fun selectFuel(id: Int) {
-        if (id == fuelId) return
-        fuelId = id
-        store.saveNearbyFuel(id)
-        refresh()
     }
 
     fun selectRadius(km: Int) {
         if (km == radiusKm) return
         radiusKm = km
         store.saveRadius(km)
-        val cached = cache[fuelId]?.second
-        if (cached != null && location != null) recompute(cached) else refresh()
+        val loc = location ?: return
+        rows = rows.mapValues { (id, state) ->
+            val cached = cache[id]?.second
+            if (state is FuelRowState.Ready && cached != null) FuelRowState.Ready(compute(cached, loc)) else state
+        }
     }
 
-    private fun recompute(stations: List<PricedStation>) {
-        val loc = location ?: return
-        state = NearbyState.Ready(computeNearby(stations, loc.latitude, loc.longitude, radiusKm.toDouble()))
-    }
+    private fun compute(stations: List<PricedStation>, loc: Location) =
+        computeNearby(stations, loc.latitude, loc.longitude, radiusKm.toDouble())
 
     private suspend fun stationsFor(fuel: Int, force: Boolean): List<PricedStation> {
         val now = System.currentTimeMillis()
         val hit = cache[fuel]
         if (!force && hit != null && now - hit.first < CACHE_MS) return hit.second
-        val fresh = DgegApi.pricedStations(fuel)
+        val fresh = downloads.withPermit { DgegApi.pricedStations(fuel) }
         cache[fuel] = now to fresh
         return fresh
     }

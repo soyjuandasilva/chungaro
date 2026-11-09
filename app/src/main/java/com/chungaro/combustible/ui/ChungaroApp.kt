@@ -3,6 +3,7 @@ package com.chungaro.combustible.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,15 +20,18 @@ import com.chungaro.combustible.ChungaroApplication
 import com.chungaro.combustible.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.chungaro.combustible.nearby.NearbyCard
+import com.chungaro.combustible.nearby.FUEL_TYPES
+import com.chungaro.combustible.nearby.FuelRowState
+import com.chungaro.combustible.nearby.HomeScreen
 import com.chungaro.combustible.nearby.NearbyViewModel
 import com.chungaro.combustible.prices.PricesScreen
 import com.chungaro.combustible.prices.PricesViewModel
 
 /** Valor de editingId para un abastecimiento nuevo. */
 private const val NEW = 0L
-private const val TAB_REFUELS = 0
-private const val TAB_PRICES = 1
+private const val TAB_HOME = 0
+private const val TAB_REFUELS = 1
+private const val TAB_PRICES = 2
 
 @Composable
 fun ChungaroApp(
@@ -37,7 +41,7 @@ fun ChungaroApp(
 ) {
     val loaded by vm.stats.collectAsStateWithLifecycle()
     val stats = loaded ?: EmptyStats
-    var tab by rememberSaveable { mutableIntStateOf(TAB_REFUELS) }
+    var tab by rememberSaveable { mutableIntStateOf(TAB_HOME) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
@@ -45,6 +49,12 @@ fun ChungaroApp(
 
     val bottomBar: @Composable () -> Unit = {
         NavigationBar {
+            NavigationBarItem(
+                selected = tab == TAB_HOME,
+                onClick = { tab = TAB_HOME },
+                icon = { Icon(Icons.Filled.Home, contentDescription = null) },
+                label = { Text("Inicio") },
+            )
             NavigationBarItem(
                 selected = tab == TAB_REFUELS,
                 onClick = { tab = TAB_REFUELS },
@@ -67,11 +77,17 @@ fun ChungaroApp(
             val existing = stats.rows.firstOrNull { it.refuel.id == id }?.refuel
             val latest = stats.rows.lastOrNull()?.refuel
             val suggestions = if (vm.settings.unit == "L") {
-                pricesVm.favorites.mapNotNull { pricesVm.favoriteDetails[it] }.flatMap { d ->
+                // Precios de hoy en la gasolinera más cercana y en tus favoritas.
+                val nearby = FUEL_TYPES.mapNotNull { f ->
+                    val near = (nearbyVm.rows[f.id] as? FuelRowState.Ready)?.result?.nearest ?: return@mapNotNull null
+                    PriceSuggestion("Más cercana · ${f.short}", near.station.price)
+                }
+                val favorites = pricesVm.favorites.mapNotNull { pricesVm.favoriteDetails[it] }.flatMap { d ->
                     d.fuels.mapNotNull { f ->
                         f.price?.let { PriceSuggestion("${d.brand.ifBlank { d.name }} · ${f.fuel}", it) }
                     }
                 }
+                nearby + favorites
             } else emptyList()
             RefuelFormScreen(
                 existing = if (id == NEW) null else existing,
@@ -84,19 +100,22 @@ fun ChungaroApp(
             )
         }
         tab == TAB_PRICES -> {
-            BackHandler { tab = TAB_REFUELS }
+            BackHandler { tab = TAB_HOME }
             PricesScreen(pricesVm, bottomBar)
         }
-        else -> MainScreen(
-            stats = stats,
-            loading = loaded == null,
-            settings = vm.settings,
-            onAdd = { editingId = NEW },
-            onOpen = { editingId = it.id },
-            onOpenSettings = { showSettings = true },
-            bottomBar = bottomBar,
-            header = { NearbyCard(nearbyVm) },
-        )
+        tab == TAB_REFUELS -> {
+            BackHandler { tab = TAB_HOME }
+            MainScreen(
+                stats = stats,
+                loading = loaded == null,
+                settings = vm.settings,
+                onAdd = { editingId = NEW },
+                onOpen = { editingId = it.id },
+                onOpenSettings = { showSettings = true },
+                bottomBar = bottomBar,
+            )
+        }
+        else -> HomeScreen(nearbyVm, bottomBar)
     }
 
     crashReport?.let { report ->
