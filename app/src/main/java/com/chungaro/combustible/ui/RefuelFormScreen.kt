@@ -2,6 +2,8 @@ package com.chungaro.combustible.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -47,12 +50,16 @@ import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Precio de hoy de una gasolinera favorita, para rellenar el formulario. */
+data class PriceSuggestion(val label: String, val price: Double)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RefuelFormScreen(
     existing: Refuel?,
     lastOdometer: Double?,
     settings: AppSettings,
+    priceSuggestions: List<PriceSuggestion> = emptyList(),
     onSave: (Refuel) -> Unit,
     onDelete: (Refuel) -> Unit,
     onBack: () -> Unit,
@@ -140,6 +147,17 @@ fun RefuelFormScreen(
                 label = "Precio por ${if (u == "gal") "galón" else "litro"}",
                 prefix = settings.currency,
             )
+            if (priceSuggestions.isNotEmpty()) {
+                Text("Precios de hoy en tus gasolineras", style = MaterialTheme.typography.labelMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    priceSuggestions.forEach { sug ->
+                        AssistChip(
+                            onClick = { price = editableNumber(sug.price); recalcTotal() },
+                            label = { Text("${sug.label}: ${formatNumber(sug.price, 3)}") },
+                        )
+                    }
+                }
+            }
             NumberField(
                 value = total,
                 onValueChange = { total = it; recalcPrice() },

@@ -12,8 +12,13 @@ y cuánto rinde tu vehículo.
   llenado completo.
 - Muestra lo **gastado este mes**, el gasto total, el combustible total y el
   precio promedio.
-- Ajustes: litros o galones y símbolo de moneda.
-- Todo se guarda en el teléfono, sin internet ni cuenta.
+- **Precios del día en Portugal**: pestaña «Precios» con los precios oficiales
+  de cada gasolinera según la DGEG (precoscombustiveis.dgeg.gov.pt). Eliges
+  distrito, buscas la gasolinera y la marcas como favorita; sus precios se
+  actualizan al abrir la app y aparecen como atajos al registrar una carga.
+- Ajustes: litros o galones y símbolo de moneda (por defecto L y €).
+- Tus cargas se guardan en el teléfono, sin cuenta. Solo la pestaña de precios
+  usa internet.
 
 ## Descargar el APK
 

@@ -15,6 +15,9 @@ fun formatNumber(v: Double, decimals: Int = 2): String =
 
 fun AppSettings.money(v: Double): String = currency + formatNumber(v)
 
+/** Con 3 decimales, para precios por litro/galón. */
+fun AppSettings.moneyPrecise(v: Double): String = currency + formatNumber(v, 3)
+
 /** Nombre corto de la unidad: "L" o "gal". */
 val AppSettings.unitLabel: String get() = if (unit == "gal") "gal" else "L"
 

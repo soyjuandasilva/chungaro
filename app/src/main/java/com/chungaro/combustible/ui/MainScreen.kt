@@ -51,6 +51,7 @@ fun MainScreen(
     onAdd: () -> Unit,
     onOpen: (Refuel) -> Unit,
     onOpenSettings: () -> Unit,
+    bottomBar: @Composable () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -63,6 +64,7 @@ fun MainScreen(
                 },
             )
         },
+        bottomBar = bottomBar,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAdd,
@@ -141,7 +143,7 @@ private fun SummaryCard(s: Summary, settings: AppSettings) {
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth()) {
-                Stat("Precio promedio", s.avgPrice?.let { "${settings.money(it)}/$u" } ?: "—", Modifier.weight(1f))
+                Stat("Precio promedio", s.avgPrice?.let { "${settings.moneyPrecise(it)}/$u" } ?: "—", Modifier.weight(1f))
                 Stat("Km registrados", formatNumber(s.totalDistance, 0), Modifier.weight(1f))
             }
         }
@@ -175,7 +177,7 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
                 )
             }
             Text(
-                "${formatNumber(r.quantity)} $u · ${settings.money(r.pricePerUnit())}/$u · ${formatNumber(r.odometer, 0)} km",
+                "${formatNumber(r.quantity)} $u · ${settings.moneyPrecise(r.pricePerUnit())}/$u · ${formatNumber(r.odometer, 0)} km",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

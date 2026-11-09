@@ -5,7 +5,7 @@ import android.content.Context
 data class AppSettings(
     /** "L" o "gal". */
     val unit: String = "L",
-    val currency: String = "$",
+    val currency: String = "€",
 )
 
 class SettingsStore(context: Context) {
@@ -13,10 +13,26 @@ class SettingsStore(context: Context) {
 
     fun load() = AppSettings(
         unit = prefs.getString("unit", "L") ?: "L",
-        currency = prefs.getString("currency", "$") ?: "$",
+        currency = prefs.getString("currency", "€") ?: "€",
     )
 
     fun save(s: AppSettings) {
         prefs.edit().putString("unit", s.unit).putString("currency", s.currency).apply()
+    }
+
+    /** Ids de gasolineras favoritas (DGEG), en el orden en que se agregaron. */
+    fun loadFavorites(): List<Long> =
+        prefs.getString("favorites", "").orEmpty()
+            .split(',')
+            .mapNotNull { it.trim().toLongOrNull() }
+
+    fun saveFavorites(ids: List<Long>) {
+        prefs.edit().putString("favorites", ids.joinToString(",")).apply()
+    }
+
+    fun loadDistrict(): Int? = prefs.getInt("district", 0).takeIf { it > 0 }
+
+    fun saveDistrict(id: Int) {
+        prefs.edit().putInt("district", id).apply()
     }
 }
