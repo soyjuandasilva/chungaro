@@ -103,10 +103,10 @@ fun RefuelFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (existing == null) "Nuevo abastecimiento" else "Editar abastecimiento") },
+                title = { Text(if (existing == null) "Novo abastecimento" else "Editar abastecimento") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
                 actions = {
@@ -129,7 +129,7 @@ fun RefuelFormScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (vehicles.size > 1) {
-                Text("Vehículo", style = MaterialTheme.typography.labelLarge)
+                Text("Veículo", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     vehicles.forEach { v ->
                         FilterChip(
@@ -148,25 +148,25 @@ fun RefuelFormScreen(
             NumberField(
                 value = odometer,
                 onValueChange = { odometer = it },
-                label = "Kilometraje (odómetro)",
+                label = "Quilometragem (conta-quilómetros)",
                 suffix = "km",
-                supporting = lastOdometer?.let { "Último registro: ${formatNumber(it, 0)} km" },
+                supporting = lastOdometer?.let { "Último registo: ${formatNumber(it, 0)} km" },
                 isError = odo != null && lastOdometer != null && odo < lastOdometer,
             )
             NumberField(
                 value = quantity,
                 onValueChange = { quantity = it; recalcTotal() },
-                label = "Cantidad cargada",
+                label = "Quantidade abastecida",
                 suffix = u,
             )
             NumberField(
                 value = price,
                 onValueChange = { price = it; recalcTotal() },
-                label = "Precio por ${if (u == "gal") "galón" else "litro"}",
+                label = "Preço por ${if (u == "gal") "galão" else "litro"}",
                 prefix = settings.currency,
             )
             if (priceSuggestions.isNotEmpty()) {
-                Text("Precios de hoy (toca para usar)", style = MaterialTheme.typography.labelMedium)
+                Text("Preços de hoje (toque para usar)", style = MaterialTheme.typography.labelMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     priceSuggestions.forEach { sug ->
                         AssistChip(
@@ -179,16 +179,16 @@ fun RefuelFormScreen(
             NumberField(
                 value = total,
                 onValueChange = { total = it; recalcPrice() },
-                label = "Total pagado",
+                label = "Total pago",
                 prefix = settings.currency,
                 imeAction = ImeAction.Done,
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Tanque lleno", style = MaterialTheme.typography.bodyLarge)
+                    Text("Depósito cheio", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Llena el tanque para que la app calcule el rendimiento.",
+                        "Encha o depósito para que a app calcule o consumo.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -200,7 +200,7 @@ fun RefuelFormScreen(
                 value = notes,
                 onValueChange = { notes = it },
                 label = { Text("Notas (opcional)") },
-                placeholder = { Text("Estación, tipo de combustible…") },
+                placeholder = { Text("Posto, tipo de combustível…") },
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -235,7 +235,7 @@ fun RefuelFormScreen(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { epochDay = Math.floorDiv(it, MILLIS_PER_DAY) }
                     showDatePicker = false
-                }) { Text("Aceptar") }
+                }) { Text("OK") }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
@@ -248,8 +248,8 @@ fun RefuelFormScreen(
     if (confirmDelete && existing != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("¿Eliminar este abastecimiento?") },
-            text = { Text("No se puede deshacer.") },
+            title = { Text("Eliminar este abastecimento?") },
+            text = { Text("Esta ação não pode ser anulada.") },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete(existing) }) { Text("Eliminar") }
             },
@@ -277,7 +277,7 @@ private fun NumberField(
         label = { Text(label) },
         prefix = prefix?.let { { Text(it) } },
         suffix = suffix?.let { { Text(it) } },
-        supportingText = (if (isError) "Es menor que el último kilometraje registrado" else supporting)
+        supportingText = (if (isError) "É inferior à última quilometragem registada" else supporting)
             ?.let { msg -> { Text(msg) } },
         isError = isError,
         singleLine = true,

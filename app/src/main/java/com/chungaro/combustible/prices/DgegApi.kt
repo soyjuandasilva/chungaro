@@ -174,7 +174,7 @@ object DgegApi {
 
     fun parseStation(id: Long, json: String): StationDetail {
         val o = JSONObject(json).optJSONObject("resultado")
-            ?: throw IOException("Respuesta sin datos de la gasolinera")
+            ?: throw IOException("Resposta sem dados da bomba")
         val fuelsArr = o.optJSONArray("Combustiveis") ?: JSONArray()
         val fuels = (0 until fuelsArr.length()).mapNotNull { i ->
             val f = fuelsArr.optJSONObject(i) ?: return@mapNotNull null

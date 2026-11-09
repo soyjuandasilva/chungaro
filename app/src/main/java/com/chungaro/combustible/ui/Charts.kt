@@ -42,7 +42,7 @@ fun ChartsSection(stats: Stats, settings: AppSettings) {
     ) {
         if (refuels.isEmpty()) {
             Text(
-                "Registra algunos abastecimientos para ver tus gráficos.",
+                "Registe alguns abastecimentos para ver os seus gráficos.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -59,13 +59,13 @@ fun ChartsSection(stats: Stats, settings: AppSettings) {
         val monthly = months.map { byMonth[it] ?: 0.0 }
         val active = monthly.filter { it > 0 }
         ChartCard(
-            title = "Gasto por mes",
+            title = "Gasto por mês",
             subtitle = "Últimos 12 meses: ${settings.money(monthly.sum())}" +
-                (if (active.isNotEmpty()) " · media ${settings.money(active.average())}/mes" else ""),
+                (if (active.isNotEmpty()) " · média ${settings.money(active.average())}/mês" else ""),
         ) {
             BarChart(
                 values = monthly,
-                labels = months.map { it.month.getDisplayName(TextStyle.NARROW, Locale.getDefault()) },
+                labels = months.map { it.month.getDisplayName(TextStyle.NARROW, APP_LOCALE) },
             )
         }
 
@@ -73,7 +73,7 @@ fun ChartsSection(stats: Stats, settings: AppSettings) {
         val prices = refuels.takeLast(24).map { it.pricePerUnit() }
         if (prices.size >= 2) {
             ChartCard(
-                title = "Precio por ${settings.unitLabel}",
+                title = "Preço por ${settings.unitLabel}",
                 subtitle = "Último ${settings.moneyPrecise(prices.last())} · mín ${settings.moneyPrecise(prices.min())} · máx ${settings.moneyPrecise(prices.max())}",
             ) { LineChart(prices, MaterialTheme.colorScheme.secondary) }
         }
@@ -83,11 +83,11 @@ fun ChartsSection(stats: Stats, settings: AppSettings) {
         if (consumption.size >= 2) {
             ChartCard(
                 title = "Consumo (${settings.consumptionLabel})",
-                subtitle = "Último ${formatNumber(consumption.last(), 1)} · media ${formatNumber(consumption.average(), 1)}",
+                subtitle = "Último ${formatNumber(consumption.last(), 1)} · média ${formatNumber(consumption.average(), 1)}",
             ) { LineChart(consumption, MaterialTheme.colorScheme.tertiary) }
         } else {
             Text(
-                "El gráfico de consumo aparece con al menos tres cargas de tanque lleno.",
+                "O gráfico de consumo aparece com pelo menos três abastecimentos de depósito cheio.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

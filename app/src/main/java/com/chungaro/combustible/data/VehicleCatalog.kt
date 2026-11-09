@@ -4,12 +4,12 @@ package com.chungaro.combustible.data
 data class VehicleType(val id: String, val label: String, val emoji: String, val typicalConsumption: Double)
 
 val VEHICLE_TYPES = listOf(
-    VehicleType("car", "Coche", "🚗", 6.5),
-    VehicleType("moto", "Moto", "🏍️", 4.0),
-    VehicleType("van", "Furgoneta", "🚐", 8.5),
-    VehicleType("truck", "Camión", "🚚", 28.0),
+    VehicleType("car", "Carro", "🚗", 6.5),
+    VehicleType("moto", "Mota", "🏍️", 4.0),
+    VehicleType("van", "Carrinha", "🚐", 8.5),
+    VehicleType("truck", "Camião", "🚚", 28.0),
     VehicleType("camper", "Autocaravana", "🏕️", 11.0),
-    VehicleType("other", "Otro", "🚙", 7.0),
+    VehicleType("other", "Outro", "🚙", 7.0),
 )
 
 fun vehicleType(id: String): VehicleType = VEHICLE_TYPES.firstOrNull { it.id == id } ?: VEHICLE_TYPES.first()

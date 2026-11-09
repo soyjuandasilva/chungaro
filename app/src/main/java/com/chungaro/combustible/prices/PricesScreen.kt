@@ -68,10 +68,10 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gasolineras favoritas", fontWeight = FontWeight.Bold) },
+                title = { Text("Bombas favoritas", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { vm.refreshFavorites() }, enabled = vm.favorites.isNotEmpty()) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Actualizar precios")
+                        Icon(Icons.Filled.Refresh, contentDescription = "Atualizar preços")
                     }
                 },
             )
@@ -83,12 +83,12 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SectionTitle("Mis gasolineras") }
+            item { SectionTitle("As minhas bombas") }
             if (vm.favoritesLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             vm.favoritesError?.let { msg -> item { ErrorText(msg) } }
             if (vm.favorites.isEmpty()) {
                 item {
-                    Hint("Busca tu gasolinera abajo y márcala con ♥ para ver aquí sus precios cada vez que abras la app.")
+                    Hint("Procure a sua bomba abaixo e marque-a com ♥ para ver aqui os preços sempre que abrir a app.")
                 }
             } else {
                 items(vm.favorites, key = { "fav-$it" }) { id ->
@@ -97,17 +97,17 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                         FavoriteCard(d, onClick = { vm.openStation(id) })
                     } else if (!vm.favoritesLoading) {
                         Card(Modifier.fillMaxWidth().clickable { vm.openStation(id) }) {
-                            Text("Gasolinera $id: sin datos", Modifier.padding(16.dp))
+                            Text("Bomba $id: sem dados", Modifier.padding(16.dp))
                         }
                     }
                 }
             }
 
-            item { SectionTitle("Buscar gasolinera", Modifier.padding(top = 12.dp)) }
+            item { SectionTitle("Procurar bomba", Modifier.padding(top = 12.dp)) }
             item {
                 OutlinedButton(onClick = { pickDistrict = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.LocationOn, contentDescription = null)
-                    Text("  " + (districtName ?: "Elegir distrito"))
+                    Text("  " + (districtName ?: "Escolher distrito"))
                 }
             }
             if (vm.districtId != null) {
@@ -115,7 +115,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                     OutlinedTextField(
                         value = vm.query,
                         onValueChange = { vm.query = it },
-                        label = { Text("Nombre, marca o localidad") },
+                        label = { Text("Nome, marca ou localidade") },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -131,14 +131,14 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                 vm.stationsError != null -> item {
                     Column {
                         ErrorText(vm.stationsError!!)
-                        TextButton(onClick = { vm.retryStations() }) { Text("Reintentar") }
+                        TextButton(onClick = { vm.retryStations() }) { Text("Tentar novamente") }
                     }
                 }
                 vm.districtId != null -> {
                     item {
                         Text(
-                            if (filtered.size > MAX_RESULTS) "${filtered.size} gasolineras, mostrando $MAX_RESULTS. Escribe para filtrar."
-                            else "${filtered.size} gasolineras",
+                            if (filtered.size > MAX_RESULTS) "${filtered.size} bombas, a mostrar $MAX_RESULTS. Escreva para filtrar."
+                            else "${filtered.size} bombas",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -150,7 +150,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
             }
             item {
                 Text(
-                    "Fuente: DGEG — precoscombustiveis.dgeg.gov.pt",
+                    "Fonte: DGEG — precoscombustiveis.dgeg.gov.pt",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -179,7 +179,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { pickDistrict = false }) { Text("Cerrar") } },
+            confirmButton = { TextButton(onClick = { pickDistrict = false }) { Text("Fechar") } },
         )
     }
 
@@ -193,7 +193,7 @@ private fun StationDialog(vm: PricesViewModel) {
     val d = vm.selected
     AlertDialog(
         onDismissRequest = { vm.closeStation() },
-        title = { Text(d?.name?.ifBlank { null } ?: "Gasolinera") },
+        title = { Text(d?.name?.ifBlank { null } ?: "Bomba") },
         text = {
             Column(
                 Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
@@ -203,11 +203,11 @@ private fun StationDialog(vm: PricesViewModel) {
                     d != null -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             BrandBadge(d.brand, size = 32.dp, modifier = Modifier.padding(end = 8.dp))
-                            Text(d.brand.ifBlank { "Sin marca" }, fontWeight = FontWeight.SemiBold)
+                            Text(d.brand.ifBlank { "Sem marca" }, fontWeight = FontWeight.SemiBold)
                         }
                         if (d.address.isNotBlank()) Text(d.address, style = MaterialTheme.typography.bodySmall)
                         HorizontalDivider()
-                        if (d.fuels.isEmpty()) Text("Esta gasolinera no informa precios.")
+                        if (d.fuels.isEmpty()) Text("Esta bomba não indica preços.")
                         d.fuels.forEach { FuelLine(it) }
                     }
                     vm.selectedError != null -> ErrorText(vm.selectedError!!)
@@ -222,11 +222,11 @@ private fun StationDialog(vm: PricesViewModel) {
                 val fav = d.id in vm.favorites
                 TextButton(onClick = { vm.toggleFavorite(d) }) {
                     Icon(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, contentDescription = null)
-                    Text(if (fav) "  Quitar de favoritas" else "  Agregar a favoritas")
+                    Text(if (fav) "  Remover dos favoritos" else "  Adicionar aos favoritos")
                 }
             }
         },
-        dismissButton = { TextButton(onClick = { vm.closeStation() }) { Text("Cerrar") } },
+        dismissButton = { TextButton(onClick = { vm.closeStation() }) { Text("Fechar") } },
     )
 }
 
@@ -255,7 +255,7 @@ private fun FuelLine(f: FuelPrice) {
         Column(Modifier.weight(1f)) {
             Text(f.fuel, style = MaterialTheme.typography.bodyMedium)
             if (f.updated.isNotBlank()) {
-                Text("Actualizado: ${f.updated}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Atualizado: ${f.updated}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Text(
@@ -272,7 +272,7 @@ private fun StationRow(s: Station, isFavorite: Boolean, onClick: () -> Unit) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(s.brand, size = 36.dp, modifier = Modifier.padding(end = 12.dp))
             Column(Modifier.weight(1f)) {
-                Text(s.name.ifBlank { "Gasolinera ${s.id}" }, style = MaterialTheme.typography.titleSmall)
+                Text(s.name.ifBlank { "Bomba ${s.id}" }, style = MaterialTheme.typography.titleSmall)
                 Text(
                     listOf(s.brand, s.locality.ifBlank { s.municipality }).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,

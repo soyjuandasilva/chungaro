@@ -54,10 +54,10 @@ object Notifier {
     fun ensureChannels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_PRICES, "Avisos de precio", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_PRICES, "Alertas de preço", NotificationManager.IMPORTANCE_DEFAULT),
         )
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_MAINTENANCE, "Mantenimiento", NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel(CHANNEL_MAINTENANCE, "Manutenção", NotificationManager.IMPORTANCE_DEFAULT),
         )
     }
 
@@ -141,7 +141,7 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             fuel.id,
             "${fuel.short} a ${String.format(Locale.getDefault(), "%.3f €", cheapest.station.price)}",
             "$name, a ${String.format(Locale.getDefault(), "%.1f km", cheapest.km)}. " +
-                "Está por debajo de tu aviso (${String.format(Locale.getDefault(), "%.3f €", threshold)}).",
+                "Está abaixo do seu alerta (${String.format(Locale.getDefault(), "%.3f €", threshold)}).",
         )
     }
 }
@@ -152,18 +152,18 @@ fun reminderStatus(dueEpochDay: Long?, dueOdometer: Double?, today: Long, odomet
     dueEpochDay?.let {
         val days = it - today
         parts += when {
-            days < 0 -> "venció hace ${-days} día(s)"
-            days == 0L -> "vence hoy"
-            else -> "vence en $days día(s)"
+            days < 0 -> "venceu há ${-days} dia(s)"
+            days == 0L -> "vence hoje"
+            else -> "vence daqui a $days dia(s)"
         }
     }
     if (dueOdometer != null) {
         if (odometer != null) {
             val left = dueOdometer - odometer
-            parts += if (left <= 0) "pasado por ${String.format(Locale.getDefault(), "%,.0f", -left)} km"
-            else "faltan ${String.format(Locale.getDefault(), "%,.0f", left)} km"
+            parts += if (left <= 0) "ultrapassado em ${String.format(Locale.getDefault(), "%,.0f", -left)} km"
+            else "faltam ${String.format(Locale.getDefault(), "%,.0f", left)} km"
         } else {
-            parts += "a los ${String.format(Locale.getDefault(), "%,.0f", dueOdometer)} km"
+            parts += "aos ${String.format(Locale.getDefault(), "%,.0f", dueOdometer)} km"
         }
     }
     return parts.joinToString(" · ").replaceFirstChar { it.uppercase() }

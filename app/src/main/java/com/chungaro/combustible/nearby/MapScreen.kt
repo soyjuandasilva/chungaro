@@ -84,9 +84,9 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable ()
                     }
                     Text(
                         when {
-                            location == null -> "Activa la ubicación en Inicio para ver el mapa de precios."
-                            stations.isEmpty() && rowState !is FuelRowState.Ready -> "Cargando precios…"
-                            else -> "${stations.size} gasolineras · verde = más barata, rojo = más cara"
+                            location == null -> "Ative a localização no Início para ver o mapa de preços."
+                            stations.isEmpty() && rowState !is FuelRowState.Ready -> "A carregar preços…"
+                            else -> "${stations.size} bombas · verde = mais barata, vermelho = mais cara"
                         },
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -109,7 +109,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable ()
                             )
                             Text("${formatEuro(s.station.price)}/L", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
-                        TextButton(onClick = { openMaps(context, s.station) }) { Text("Cómo llegar") }
+                        TextButton(onClick = { openMaps(context, s.station) }) { Text("Como chegar") }
                     }
                 }
             }

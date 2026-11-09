@@ -41,11 +41,11 @@ object Backup {
 
     fun fromJson(json: String): Content {
         val root = JSONObject(json)
-        require(root.optString("app") == "chungaro") { "El archivo no es una copia de Chungaro" }
+        require(root.optString("app") == "chungaro") { "O ficheiro não é uma cópia de segurança desta app" }
         val vehicles = root.optJSONArray("vehicles").objects().map {
             Vehicle(
                 id = it.getLong("id"),
-                name = it.optString("name", "Mi coche"),
+                name = it.optString("name", "O meu carro"),
                 fuelTypeId = it.optInt("fuelTypeId", 3201),
                 tankLiters = it.optDouble("tankLiters", 50.0),
                 consumption = it.optDouble("consumption", 6.5),
@@ -54,7 +54,7 @@ object Backup {
                 model = it.optString("model", ""),
                 year = if (it.isNull("year") || !it.has("year")) null else it.getInt("year"),
             )
-        }.ifEmpty { listOf(Vehicle(1, "Mi coche", 3201, 50.0, 6.5)) }
+        }.ifEmpty { listOf(Vehicle(1, "O meu carro", 3201, 50.0, 6.5)) }
         val refuels = root.optJSONArray("refuels").objects().map {
             Refuel(
                 id = it.getLong("id"),

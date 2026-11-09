@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.BuildConfig
+import com.chungaro.combustible.R
+import androidx.compose.ui.res.stringResource
 import com.chungaro.combustible.alerts.Notifier
 import com.chungaro.combustible.data.AppSettings
 import com.chungaro.combustible.data.Vehicle
@@ -77,9 +79,9 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ajustes", fontWeight = FontWeight.Bold) },
+                title = { Text("Definições", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
             )
         },
@@ -88,20 +90,20 @@ fun SettingsScreen(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Section("Vehículos") {
+            Section("Veículos") {
                 Text(
-                    "Tipo, marca, modelo, año, combustible y consumo de cada vehículo.",
+                    "Tipo, marca, modelo, ano, combustível e consumo de cada veículo.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedButton(onClick = onManageVehicles, modifier = Modifier.fillMaxWidth()) { Text("Mis vehículos") }
+                OutlinedButton(onClick = onManageVehicles, modifier = Modifier.fillMaxWidth()) { Text("Os meus veículos") }
             }
 
             Section("Unidades") {
-                Label("Combustible")
+                Label("Combustível")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = settings.unit == "L", onClick = { onChange(settings.copy(unit = "L")) }, label = { Text("Litros") })
-                    FilterChip(selected = settings.unit == "gal", onClick = { onChange(settings.copy(unit = "gal")) }, label = { Text("Galones") })
+                    FilterChip(selected = settings.unit == "gal", onClick = { onChange(settings.copy(unit = "gal")) }, label = { Text("Galões") })
                 }
                 Label("Consumo")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -122,18 +124,18 @@ fun SettingsScreen(
                         currency = it.take(4)
                         if (currency.isNotBlank()) onChange(settings.copy(currency = currency.trim()))
                     },
-                    label = { Text("Símbolo de moneda") },
+                    label = { Text("Símbolo da moeda") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            Section("Avisos de precio") {
+            Section("Alertas de preço") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Avisarme cuando baje el precio", style = MaterialTheme.typography.bodyLarge)
+                        Text("Avisar-me quando o preço descer", style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "De ${fuel?.short ?: "tu combustible"} (el de ${vehicle?.name ?: "tu vehículo"}), cerca de tu última ubicación. Se revisa cada 6 horas.",
+                            "De ${fuel?.short ?: "o seu combustível"} (o de ${vehicle?.name ?: "o seu veículo"}), perto da sua última localização. Verificado a cada 6 horas.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -155,7 +157,7 @@ fun SettingsScreen(
                         threshold = v.filter { it.isDigit() || it == '.' || it == ',' }
                         onChange(settings.copy(alertThreshold = parseNumber(threshold)?.takeIf { it > 0 }))
                     },
-                    label = { Text("Avisar si baja de") },
+                    label = { Text("Avisar se descer abaixo de") },
                     suffix = { Text("€/L") },
                     placeholder = { Text("1.650") },
                     singleLine = true,
@@ -164,9 +166,9 @@ fun SettingsScreen(
                 )
             }
 
-            Section("Copia de seguridad") {
+            Section("Cópia de segurança") {
                 Text(
-                    "Guarda tus vehículos, cargas y recordatorios en un archivo (por ejemplo en Google Drive) para no perderlos si cambias de móvil o reinstalas la app.",
+                    "Guarde os seus veículos, abastecimentos e lembretes num ficheiro (por exemplo no Google Drive) para não os perder se mudar de telemóvel ou reinstalar a app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -179,7 +181,7 @@ fun SettingsScreen(
                     }
                 }
                 Text(
-                    "Importar reemplaza todos los datos actuales por los del archivo.",
+                    "Importar substitui todos os dados atuais pelos do ficheiro.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -187,7 +189,7 @@ fun SettingsScreen(
             }
 
             Text(
-                "Chungaro ${BuildConfig.VERSION_NAME} · Precios: DGEG · Mapa: © OpenStreetMap",
+                stringResource(R.string.app_name) + " ${BuildConfig.VERSION_NAME} · Preços: DGEG · Mapa: © OpenStreetMap",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

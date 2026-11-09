@@ -94,8 +94,8 @@ fun MainScreen(
                             Modifier.clickable { menu = true }.padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Mis cargas", fontWeight = FontWeight.Bold)
-                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Cambiar vehículo")
+                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Abastecimentos", fontWeight = FontWeight.Bold)
+                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Mudar de veículo")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             vehicles.forEach { v ->
@@ -111,17 +111,17 @@ fun MainScreen(
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Editar este vehículo") },
+                                text = { Text("Editar este veículo") },
                                 leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
                                 onClick = { menu = false; onEditVehicle(vehicle) },
                             )
                             DropdownMenuItem(
-                                text = { Text("Añadir vehículo") },
+                                text = { Text("Adicionar veículo") },
                                 leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
                                 onClick = { menu = false; onEditVehicle(null) },
                             )
                             DropdownMenuItem(
-                                text = { Text("Mis vehículos") },
+                                text = { Text("Os meus veículos") },
                                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                                 onClick = { menu = false; onManageVehicles() },
                             )
@@ -130,7 +130,7 @@ fun MainScreen(
                 },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
+                        Icon(Icons.Filled.Settings, contentDescription = "Definições")
                     }
                 },
             )
@@ -146,14 +146,14 @@ fun MainScreen(
                 SECTION_MAINTENANCE -> ExtendedFloatingActionButton(
                     onClick = { editingReminder = 0L },
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text("Recordatorio") },
+                    text = { Text("Lembrete") },
                 )
             }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             TabRow(selectedTabIndex = section) {
-                listOf("Historial", "Gráficos", "Mantenimiento").forEachIndexed { i, label ->
+                listOf("Histórico", "Gráficos", "Manutenção").forEachIndexed { i, label ->
                     Tab(selected = section == i, onClick = { section = i }, text = { Text(label) })
                 }
             }
@@ -196,7 +196,7 @@ private fun HistoryList(stats: Stats, settings: AppSettings, onOpen: (Refuel) ->
         if (stats.rows.isEmpty()) {
             item {
                 Text(
-                    "Todavía no hay abastecimientos.\nToca «Abastecer» para registrar el primero.",
+                    "Ainda não há abastecimentos.\nToque em «Abastecer» para registar o primeiro.",
                     modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
@@ -222,29 +222,29 @@ private fun SummaryCard(s: Summary, settings: AppSettings) {
         ),
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Gastado este mes", style = MaterialTheme.typography.labelLarge)
+            Text("Gasto este mês", style = MaterialTheme.typography.labelLarge)
             Text(
                 settings.money(s.monthCost),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
             )
-            Text("${formatNumber(s.monthQuantity)} $u cargados", style = MaterialTheme.typography.bodyMedium)
+            Text("${formatNumber(s.monthQuantity)} $u abastecidos", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(12.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f))
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth()) {
-                Stat("Consumo medio", s.avgEfficiency?.let { settings.consumption(it) } ?: "—", Modifier.weight(1f))
-                Stat("Costo por km", s.avgCostPerKm?.let { settings.money(it) } ?: "—", Modifier.weight(1f))
+                Stat("Consumo médio", s.avgEfficiency?.let { settings.consumption(it) } ?: "—", Modifier.weight(1f))
+                Stat("Custo por km", s.avgCostPerKm?.let { settings.money(it) } ?: "—", Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth()) {
                 Stat("Gasto total", settings.money(s.totalCost), Modifier.weight(1f))
-                Stat("Combustible total", "${formatNumber(s.totalQuantity)} $u", Modifier.weight(1f))
+                Stat("Combustível total", "${formatNumber(s.totalQuantity)} $u", Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth()) {
-                Stat("Precio promedio", s.avgPrice?.let { "${settings.moneyPrecise(it)}/$u" } ?: "—", Modifier.weight(1f))
-                Stat("Km registrados", formatNumber(s.totalDistance, 0), Modifier.weight(1f))
+                Stat("Preço médio", s.avgPrice?.let { "${settings.moneyPrecise(it)}/$u" } ?: "—", Modifier.weight(1f))
+                Stat("Km registados", formatNumber(s.totalDistance, 0), Modifier.weight(1f))
             }
         }
     }
@@ -288,7 +288,7 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
             }
             if (!r.fullTank || r.notes.isNotBlank()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (!r.fullTank) SuggestionChip(onClick = onClick, label = { Text("Carga parcial") })
+                    if (!r.fullTank) SuggestionChip(onClick = onClick, label = { Text("Abastecimento parcial") })
                     if (r.notes.isNotBlank()) Text(r.notes, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                 }
             }

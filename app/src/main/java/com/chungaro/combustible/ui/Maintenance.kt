@@ -74,9 +74,9 @@ fun MaintenanceSection(
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Activa las notificaciones para que te avise cuando se acerque cada mantenimiento.")
+                        Text("Ative as notificações para ser avisado quando se aproximar cada manutenção.")
                         TextButton(onClick = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
-                            Text("Activar notificaciones")
+                            Text("Ativar notificações")
                         }
                     }
                 }
@@ -85,8 +85,8 @@ fun MaintenanceSection(
         if (reminders.isEmpty()) {
             item {
                 Text(
-                    "Sin recordatorios. Añade el cambio de aceite, la inspeção, el seguro…\n" +
-                        "Te avisaré unos días o unos 500 km antes.",
+                    "Sem lembretes. Adicione a mudança de óleo, a inspeção, o seguro…\n" +
+                        "Será avisado alguns dias ou cerca de 500 km antes.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 24.dp),
@@ -134,7 +134,7 @@ fun MaintenanceSection(
     }
 }
 
-private val QUICK_TITLES = listOf("Cambio de aceite", "Inspeção (IPO)", "Seguro", "Neumáticos", "Revisión", "IUC")
+private val QUICK_TITLES = listOf("Mudança de óleo", "Inspeção (IPO)", "Seguro", "Pneus", "Revisão", "IUC")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -155,13 +155,13 @@ fun ReminderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existing == null) "Nuevo recordatorio" else "Editar recordatorio") },
+        title = { Text(if (existing == null) "Novo lembrete" else "Editar lembrete") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("¿Qué hay que hacer?") },
+                    label = { Text("O que é preciso fazer?") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -170,14 +170,14 @@ fun ReminderDialog(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedButton(onClick = { pickDate = true }, modifier = Modifier.weight(1f)) {
-                        Text(dueDay?.let { "Fecha: ${formatDate(it)}" } ?: "Elegir fecha")
+                        Text(dueDay?.let { "Data: ${formatDate(it)}" } ?: "Escolher data")
                     }
-                    if (dueDay != null) TextButton(onClick = { dueDay = null }) { Text("Quitar") }
+                    if (dueDay != null) TextButton(onClick = { dueDay = null }) { Text("Remover") }
                 }
                 OutlinedTextField(
                     value = km,
                     onValueChange = { v -> km = v.filter { it.isDigit() } },
-                    label = { Text("Al llegar a (km)") },
+                    label = { Text("Aos (km)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -189,13 +189,13 @@ fun ReminderDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    "Pon una fecha, un kilometraje o ambos.",
+                    "Indique uma data, uma quilometragem ou ambas.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (existing != null) {
                     TextButton(onClick = { onDelete(existing) }) {
-                        Text("Eliminar recordatorio", color = MaterialTheme.colorScheme.error)
+                        Text("Eliminar lembrete", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -231,7 +231,7 @@ fun ReminderDialog(
                 TextButton(onClick = {
                     state.selectedDateMillis?.let { dueDay = Math.floorDiv(it, DAY_MS) }
                     pickDate = false
-                }) { Text("Aceptar") }
+                }) { Text("OK") }
             },
             dismissButton = { TextButton(onClick = { pickDate = false }) { Text("Cancelar") } },
         ) { DatePicker(state = state) }

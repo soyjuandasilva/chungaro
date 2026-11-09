@@ -19,7 +19,7 @@ fun CrashDialog(report: String, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("La app se cerró la última vez") },
+        title = { Text("A app fechou-se inesperadamente da última vez") },
         text = {
             SelectionContainer(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
                 Text(report, style = MaterialTheme.typography.bodySmall)
@@ -27,9 +27,9 @@ fun CrashDialog(report: String, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = { clipboard.setText(AnnotatedString(report)); onDismiss() }) {
-                Text("Copiar error")
+                Text("Copiar erro")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Fechar") } },
     )
 }

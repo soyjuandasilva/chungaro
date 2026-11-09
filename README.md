@@ -1,5 +1,8 @@
 # Chungaro
 
+> Nombre provisional. La interfaz de la app está en **português de Portugal**;
+> el nombre se define en `app/src/main/res/values/strings.xml` (`app_name`).
+
 App Android para ahorrar en combustible en Portugal: precios oficiales cerca de
 ti, registro de cargas, consumo, gráficos y mantenimiento.
 

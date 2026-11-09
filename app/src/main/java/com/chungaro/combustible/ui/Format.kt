@@ -6,7 +6,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToLong
 
-private val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+/** A app está em português de Portugal: datas e meses neste idioma. */
+val APP_LOCALE: Locale = Locale.forLanguageTag("pt-PT")
+
+private val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", APP_LOCALE)
 
 fun formatDate(epochDay: Long): String = LocalDate.ofEpochDay(epochDay).format(dateFormatter)
 

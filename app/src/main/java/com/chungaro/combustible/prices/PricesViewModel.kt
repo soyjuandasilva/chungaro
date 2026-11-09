@@ -57,7 +57,7 @@ class PricesViewModel(app: Application) : AndroidViewModel(app) {
             // Conserva los datos anteriores de las que fallaron.
             favoriteDetails = favoriteDetails.filterKeys { it in favorites } + ok
             if (results.any { it.second.isFailure }) {
-                favoritesError = "No se pudieron actualizar algunos precios. Revisa tu conexión."
+                favoritesError = "Não foi possível atualizar alguns preços. Verifique a ligação."
             }
             favoritesLoading = false
         }
@@ -84,7 +84,7 @@ class PricesViewModel(app: Application) : AndroidViewModel(app) {
                     stationCache[id] = it
                     if (districtId == id) stations = it
                 }
-                .onFailure { if (districtId == id) stationsError = "No se pudo cargar la lista de gasolineras. Revisa tu conexión." }
+                .onFailure { if (districtId == id) stationsError = "Não foi possível carregar a lista de bombas. Verifique a ligação." }
             stationsLoading = false
         }
     }
@@ -99,7 +99,7 @@ class PricesViewModel(app: Application) : AndroidViewModel(app) {
                     if (selectedId == id) selected = it
                     if (id in favorites) favoriteDetails = favoriteDetails + (id to it)
                 }
-                .onFailure { if (selectedId == id) selectedError = "No se pudieron cargar los precios." }
+                .onFailure { if (selectedId == id) selectedError = "Não foi possível carregar os preços." }
         }
     }
 

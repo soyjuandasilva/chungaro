@@ -70,9 +70,9 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
             locating = false
             if (loc == null) {
                 locationError = if (location != null) {
-                    "No se pudo actualizar tu ubicación; se usa la última conocida."
+                    "Não foi possível atualizar a localização; é usada a última conhecida."
                 } else {
-                    "No se pudo obtener tu ubicación. Activa la ubicación del teléfono y vuelve a intentarlo."
+                    "Não foi possível obter a sua localização. Ative a localização do telemóvel e tente novamente."
                 }
                 if (location == null) return@launch
             } else {
@@ -96,7 +96,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        if (rows[f.id] !is FuelRowState.Ready) rows = rows + (f.id to FuelRowState.Error("Sin conexión"))
+                        if (rows[f.id] !is FuelRowState.Ready) rows = rows + (f.id to FuelRowState.Error("Sem ligação"))
                     }
                 }
             }

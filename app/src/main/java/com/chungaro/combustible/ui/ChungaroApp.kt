@@ -72,7 +72,7 @@ fun ChungaroApp(
                 selected = tab == TAB_HOME,
                 onClick = { tab = TAB_HOME },
                 icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-                label = { Text("Inicio") },
+                label = { Text("Início") },
             )
             NavigationBarItem(
                 selected = tab == TAB_MAP,
@@ -84,13 +84,13 @@ fun ChungaroApp(
                 selected = tab == TAB_REFUELS,
                 onClick = { tab = TAB_REFUELS },
                 icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
-                label = { Text("Cargas") },
+                label = { Text("Abastecimentos") },
             )
             NavigationBarItem(
                 selected = tab == TAB_FAVORITES,
                 onClick = { tab = TAB_FAVORITES },
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                label = { Text("Favoritas") },
+                label = { Text("Favoritos") },
             )
         }
     }
@@ -140,7 +140,7 @@ fun ChungaroApp(
                 // Precios de hoy: tu combustible primero, luego el resto y tus favoritas.
                 val nearby = FUEL_TYPES.sortedByDescending { it.id == myFuelId }.mapNotNull { f ->
                     val near = (nearbyVm.rows[f.id] as? FuelRowState.Ready)?.result?.nearest ?: return@mapNotNull null
-                    PriceSuggestion("Más cercana · ${f.short}", near.station.price)
+                    PriceSuggestion("Mais próxima · ${f.short}", near.station.price)
                 }
                 val favorites = pricesVm.favorites.mapNotNull { pricesVm.favoriteDetails[it] }.flatMap { d ->
                     d.fuels.mapNotNull { f ->

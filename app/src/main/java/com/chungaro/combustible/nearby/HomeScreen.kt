@@ -50,6 +50,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.chungaro.combustible.R
 import java.text.DateFormat
 import java.util.Date
 
@@ -98,7 +100,7 @@ fun HomeScreen(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
                         Text(msg, color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = { vm.refresh(force = true) }) { Text("Reintentar") }
+                        TextButton(onClick = { vm.refresh(force = true) }) { Text("Tentar novamente") }
                     }
                 }
             }
@@ -108,7 +110,7 @@ fun HomeScreen(
             PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
-                "Toca un combustible para ver las gasolineras y cómo llegar.\nFuente: DGEG — precoscombustiveis.dgeg.gov.pt",
+                "Toque num combustível para ver as bombas e como lá chegar.\nFonte: DGEG — precoscombustiveis.dgeg.gov.pt",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -136,27 +138,27 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Chungaro", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     val sub = when {
-                        vm.locating -> "Buscando tu ubicación…"
-                        vm.pricesTime != null -> "Precios cerca de ti · " +
+                        vm.locating -> "A obter a sua localização…"
+                        vm.pricesTime != null -> "Preços perto de si · " +
                             DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(vm.pricesTime!!))
-                        else -> "Precios de hoy cerca de ti"
+                        else -> "Preços de hoje perto de si"
                     }
                     Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
                 }
                 if (hasPermission) {
                     IconButton(onClick = { vm.refresh(force = true) }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Actualizar", tint = Color.White)
+                        Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = Color.White)
                     }
                 }
                 IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes", tint = Color.White)
+                    Icon(Icons.Filled.Settings, contentDescription = "Definições", tint = Color.White)
                 }
             }
             if (hasPermission) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Radio", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    Text("Raio", style = MaterialTheme.typography.labelLarge, color = Color.White)
                     NearbyViewModel.RADIUS_OPTIONS.forEach { km ->
                         val selected = km == vm.radiusKm
                         Surface(
@@ -184,12 +186,12 @@ private fun PermissionCard(onRequest: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Filled.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
-            Text("¿Dónde está la gasolina más barata?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Onde está o combustível mais barato?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Activa tu ubicación para comparar, para cada combustible, la gasolinera más cercana con la más barata de tu zona. Precios oficiales de la DGEG.",
+                "Ative a localização para comparar, para cada combustível, a bomba mais próxima com a mais barata da sua zona. Preços oficiais da DGEG.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Usar mi ubicación") }
+            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Usar a minha localização") }
         }
     }
 }
@@ -204,7 +206,7 @@ private fun NearestStationCard(vm: NearbyViewModel, onClick: () -> Unit) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(nearest.station.brand, size = 44.dp)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text("Gasolinera más cercana", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Bomba mais próxima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stationTitle(nearest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     listOf(formatKm(nearest.km), nearest.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
@@ -245,7 +247,7 @@ private fun MyFuelCard(
             Row(verticalAlignment = Alignment.Bottom) {
                 BrandBadge(cheapest.station.brand, size = 44.dp, modifier = Modifier.padding(end = 10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Mejor precio a ≤ ${vm.radiusKm} km", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Melhor preço a ≤ ${vm.radiusKm} km", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(formatKm(cheapest.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -258,10 +260,10 @@ private fun MyFuelCard(
             }
             when {
                 nearest?.station?.id == cheapest.station.id ->
-                    Text("✅ Es también la más cercana.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Text("✅ É também a mais próxima.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                 advice != null -> Text(
-                    if (advice.worthIt) "✅ Merece la pena: ganas ${formatMoney(advice.net)} llenando ${tankLiters.toInt()} L"
-                    else "✋ No compensa ir: mejor la más cercana (${nearest?.km?.let { formatKm(it) } ?: ""})",
+                    if (advice.worthIt) "✅ Compensa: poupa ${formatMoney(advice.net)} ao encher ${tankLiters.toInt()} L"
+                    else "✋ Não compensa ir: melhor a mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""})",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = if (advice.worthIt) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
@@ -282,9 +284,9 @@ private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> 
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HeaderCell("Combustible", Modifier.weight(1.25f), TextAlign.Start)
-                HeaderCell("Más cercana", Modifier.weight(1f), TextAlign.End)
-                HeaderCell("Más barata\n≤ ${vm.radiusKm} km", Modifier.weight(1f), TextAlign.End)
+                HeaderCell("Combustível", Modifier.weight(1.25f), TextAlign.Start)
+                HeaderCell("Mais próxima", Modifier.weight(1f), TextAlign.End)
+                HeaderCell("Mais barata\n≤ ${vm.radiusKm} km", Modifier.weight(1f), TextAlign.End)
             }
             val ordered = FUEL_TYPES.sortedByDescending { it.id == myFuelId }
             ordered.forEachIndexed { i, fuel ->

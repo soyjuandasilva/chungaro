@@ -85,7 +85,7 @@ class RefuelViewModel(app: Application) : AndroidViewModel(app) {
             dao.deleteVehicle(v.id)
             val remaining = dao.vehicles()
             val next = remaining.firstOrNull()
-                ?: Vehicle(name = "Mi coche", fuelTypeId = 3201, tankLiters = 50.0, consumption = 6.5)
+                ?: Vehicle(name = "O meu carro", fuelTypeId = 3201, tankLiters = 50.0, consumption = 6.5)
                     .let { it.copy(id = dao.upsertVehicle(it)) }
             selectVehicle(next.id)
         }
@@ -119,9 +119,9 @@ class RefuelViewModel(app: Application) : AndroidViewModel(app) {
                         it.write(json.toByteArray(Charsets.UTF_8))
                     }
                 }
-                "Copia guardada"
+                "Cópia guardada"
             } catch (e: Exception) {
-                "No se pudo guardar la copia: ${e.message}"
+                "Não foi possível guardar a cópia: ${e.message}"
             }
         }
     }
@@ -137,9 +137,9 @@ class RefuelViewModel(app: Application) : AndroidViewModel(app) {
                 val c = Backup.fromJson(json)
                 dao.replaceAll(c.vehicles, c.refuels, c.reminders)
                 selectVehicle(c.vehicles.first().id)
-                "Copia restaurada: ${c.refuels.size} cargas, ${c.vehicles.size} vehículo(s)"
+                "Cópia restaurada: ${c.refuels.size} abastecimentos, ${c.vehicles.size} veículo(s)"
             } catch (e: Exception) {
-                "No se pudo restaurar: ${e.message}"
+                "Não foi possível restaurar: ${e.message}"
             }
         }
     }

@@ -76,20 +76,20 @@ fun StationBlock(s: StationAtDistance, context: Context, accent: Boolean) {
                 fontWeight = FontWeight.Bold,
                 color = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             )
-            TextButton(onClick = { openMaps(context, s.station) }) { Text("Cómo llegar") }
+            TextButton(onClick = { openMaps(context, s.station) }) { Text("Como chegar") }
         }
     }
 }
 
 fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: Double = TANK_LITERS.toDouble()): String {
-    if (nearest.station.id == cheapest.station.id) return "La más cercana es también la más barata. ¡Perfecto!"
+    if (nearest.station.id == cheapest.station.id) return "A mais próxima é também a mais barata. Perfeito!"
     val diff = nearest.station.price - cheapest.station.price
-    if (abs(diff) < 0.0005) return "La más cercana tiene el mismo precio que la más barata."
+    if (abs(diff) < 0.0005) return "A mais próxima tem o mesmo preço que a mais barata."
     return if (diff > 0) {
-        "La más cercana cuesta ${formatEuro(diff)}/L más: en ${liters.toInt()} L pagarías ${formatMoney(diff * liters)} más. " +
-            "La más barata está ${formatKm(cheapest.km - nearest.km)} más lejos."
+        "A mais próxima custa mais ${formatEuro(diff)}/L: em ${liters.toInt()} L pagaria mais ${formatMoney(diff * liters)}. " +
+            "A mais barata fica ${formatKm(cheapest.km - nearest.km)} mais longe."
     } else {
-        "La más cercana es ${formatEuro(-diff)}/L más barata que la mejor dentro del radio."
+        "A mais próxima é ${formatEuro(-diff)}/L mais barata que a melhor dentro do raio."
     }
 }
 
@@ -102,14 +102,14 @@ fun TripAdviceBox(a: TripAdvice) {
     ) {
         Column(Modifier.padding(12.dp)) {
             Text(
-                if (good) "✅ Merece la pena ir a la más barata" else "✋ No compensa el desvío",
+                if (good) "✅ Compensa ir à mais barata" else "✋ O desvio não compensa",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "Ahorras ${formatMoney(a.savings)} en el depósito; el desvío (~${formatKm(a.extraKm)} ida y vuelta) " +
-                    "gasta unos ${formatMoney(a.tripCost)} de combustible. " +
-                    if (good) "Ganas ${formatMoney(a.net)}." else "Perderías ${formatMoney(-a.net)}.",
+                "Poupa ${formatMoney(a.savings)} no depósito; o desvio (~${formatKm(a.extraKm)} ida e volta) " +
+                    "gasta cerca de ${formatMoney(a.tripCost)} de combustível. " +
+                    if (good) "Ganha ${formatMoney(a.net)}." else "Perderia ${formatMoney(-a.net)}.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -117,7 +117,7 @@ fun TripAdviceBox(a: TripAdvice) {
 }
 
 fun stationTitle(s: PricedStation): String =
-    listOf(s.brand, s.name).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifBlank { "Gasolinera ${s.id}" }
+    listOf(s.brand, s.name).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifBlank { "Bomba ${s.id}" }
 
 fun formatEuro(v: Double): String = String.format(Locale.getDefault(), "%.3f €", v)
 fun formatMoney(v: Double): String = String.format(Locale.getDefault(), "%.2f €", v)

@@ -25,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                 "`done` INTEGER NOT NULL, `notes` TEXT NOT NULL)"
         const val DEFAULT_VEHICLE_SQL =
             "INSERT OR IGNORE INTO `vehicles` (`id`, `name`, `fuelTypeId`, `tankLiters`, `consumption`) " +
-                "VALUES (1, 'Mi coche', 3201, 50.0, 6.5)"
+                "VALUES (1, 'O meu carro', 3201, 50.0, 6.5)"
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

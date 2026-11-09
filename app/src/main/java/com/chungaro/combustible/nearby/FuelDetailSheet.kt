@@ -82,24 +82,24 @@ fun FuelDetailDialog(
             val cheapest = result.cheapest
             val nearest = result.nearest
             when {
-                cheapest == null && nearest == null -> Text("No hay datos de precios para este combustible.")
+                cheapest == null && nearest == null -> Text("Não há dados de preços para este combustível.")
                 cheapest == null -> {
                     Text(
-                        "No hay gasolineras con precio a menos de $radiusKm km. La más cercana:",
+                        "Não há bombas com preço a menos de $radiusKm km. A mais próxima:",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    StationCard("📍 Más cercana", nearest!!, context, best = false, fuel = fuel, modifier = Modifier.fillMaxWidth())
+                    StationCard("📍 Mais próxima", nearest!!, context, best = false, fuel = fuel, modifier = Modifier.fillMaxWidth())
                 }
                 nearest == null || nearest.station.id == cheapest.station.id -> {
-                    StationCard("⭐ La más cercana y la más barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.fillMaxWidth())
+                    StationCard("⭐ A mais próxima e a mais barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.fillMaxWidth())
                 }
                 else -> {
                     Row(
                         Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        StationCard("📍 Más cercana", nearest, context, best = false, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
-                        StationCard("💰 Más barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
+                        StationCard("📍 Mais próxima", nearest, context, best = false, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
+                        StationCard("💰 Mais barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
                     }
                     SavingsBanner(nearest, cheapest, tankLiters, consumptionL100)
                 }
@@ -110,7 +110,7 @@ fun FuelDetailDialog(
             }
 
             Text(
-                "Precios oficiales DGEG. Distancias en línea recta desde tu ubicación.",
+                "Preços oficiais da DGEG. Distâncias em linha reta desde a sua localização.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -133,14 +133,14 @@ private fun SheetHeader(fuel: FuelType, result: NearbyResult, radiusKm: Int) {
             Column(Modifier.weight(1f)) {
                 Text(fuel.short, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
                 Text(
-                    "${result.countInRadius} gasolineras a ≤ $radiusKm km",
+                    "${result.countInRadius} bombas a ≤ $radiusKm km",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.9f),
                 )
             }
             result.averageInRadius?.let {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Precio medio", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
+                    Text("Preço médio", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
                     Text(formatEuro(it), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
@@ -228,12 +228,12 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
                 Text(if (good) "✅" else "✋", style = MaterialTheme.typography.headlineSmall)
                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                     Text(
-                        if (good) "Merece la pena ir a la más barata" else "Mejor quédate con la más cercana",
+                        if (good) "Compensa ir à mais barata" else "Mais vale ficar pela mais próxima",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        "Diferencia: ${formatEuro(diff)}/L",
+                        "Diferença: ${formatEuro(diff)}/L",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -241,8 +241,8 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
             }
             if (advice != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MiniStat("Ahorro en ${tankLiters.toInt()} L", formatMoney(advice.savings), Modifier.weight(1f))
-                    MiniStat("Coste del desvío", "−" + formatMoney(advice.tripCost), Modifier.weight(1f))
+                    MiniStat("Poupança em ${tankLiters.toInt()} L", formatMoney(advice.savings), Modifier.weight(1f))
+                    MiniStat("Custo do desvio", "−" + formatMoney(advice.tripCost), Modifier.weight(1f))
                     MiniStat(
                         "Balance",
                         (if (advice.net >= 0) "+" else "−") + formatMoney(kotlin.math.abs(advice.net)),
@@ -251,7 +251,7 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
                     )
                 }
                 Text(
-                    "Desvío estimado: ${formatKm(advice.extraKm)} ida y vuelta con un consumo de " +
+                    "Desvio estimado: ${formatKm(advice.extraKm)} ida e volta com um consumo de " +
                         String.format(Locale.getDefault(), "%.1f", consumptionL100) + " L/100 km.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -277,13 +277,13 @@ private fun Ranking(result: NearbyResult, context: Context) {
     val best = list.first().station.price
     val worst = list.last().station.price
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Ranking de la zona", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Ranking da zona", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         list.forEachIndexed { i, s ->
             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             RankRow(i, s, best, worst, onClick = { openMaps(context, s.station) })
         }
         Text(
-            "Toca una gasolinera para ir con Maps.",
+            "Toque numa bomba para ir com o Maps.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -339,7 +339,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
         Column(horizontalAlignment = Alignment.End) {
             Text(formatEuro(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(
-                if (index == 0) "mejor" else "+" + String.format(Locale.getDefault(), "%.3f", diff),
+                if (index == 0) "melhor" else "+" + String.format(Locale.getDefault(), "%.3f", diff),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (index == 0) GoodGreen else MaterialTheme.colorScheme.error,
             )

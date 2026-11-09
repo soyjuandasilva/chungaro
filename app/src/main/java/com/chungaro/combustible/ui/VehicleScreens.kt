@@ -72,9 +72,9 @@ fun VehiclesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis vehículos", fontWeight = FontWeight.Bold) },
+                title = { Text("Os meus veículos", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
             )
         },
@@ -82,7 +82,7 @@ fun VehiclesScreen(
             ExtendedFloatingActionButton(
                 onClick = onAdd,
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Añadir vehículo") },
+                text = { Text("Adicionar veículo") },
             )
         },
     ) { padding ->
@@ -93,7 +93,7 @@ fun VehiclesScreen(
         ) {
             item {
                 Text(
-                    "Toca un vehículo para usarlo en Inicio y en Cargas, o «Editar» para cambiar sus datos.",
+                    "Toque num veículo para o usar no Início e nos Abastecimentos, ou em «Editar» para alterar os dados.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -112,7 +112,7 @@ fun VehiclesScreen(
                             if (desc.isNotBlank()) Text(desc, style = MaterialTheme.typography.bodyMedium)
                             FUEL_TYPES.firstOrNull { it.id == v.fuelTypeId }?.let { FuelPill(it) }
                             if (selected) {
-                                Text("En uso", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Text("Em uso", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                         }
                         TextButton(onClick = { onEdit(v.id) }) { Text("Editar") }
@@ -164,9 +164,9 @@ fun VehicleEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (existing == null) "Nuevo vehículo" else "Editar vehículo", fontWeight = FontWeight.Bold) },
+                title = { Text(if (existing == null) "Novo veículo" else "Editar veículo", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
                 },
                 actions = {
                     if (existing != null && canDelete) {
@@ -180,7 +180,7 @@ fun VehicleEditScreen(
             Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SectionTitle("Tipo de vehículo")
+            SectionTitle("Tipo de veículo")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 VEHICLE_TYPES.forEach { t ->
                     FilterChip(
@@ -227,10 +227,10 @@ fun VehicleEditScreen(
             OutlinedTextField(
                 value = year,
                 onValueChange = { v -> year = v.filter { it.isDigit() }.take(4) },
-                label = { Text("Año") },
+                label = { Text("Ano") },
                 placeholder = { Text("$thisYear") },
                 isError = !yearOk,
-                supportingText = (if (!yearOk) "Año entre 1900 y ${thisYear + 1}" else null)?.let { msg -> { Text(msg) } },
+                supportingText = (if (!yearOk) "Ano entre 1900 e ${thisYear + 1}" else null)?.let { msg -> { Text(msg) } },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -239,13 +239,13 @@ fun VehicleEditScreen(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nombre o apodo (opcional)") },
-                placeholder = { Text(autoName.ifBlank { "Mi coche" }) },
+                label = { Text("Nome ou alcunha (opcional)") },
+                placeholder = { Text(autoName.ifBlank { "O meu carro" }) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            SectionTitle("Combustible")
+            SectionTitle("Combustível")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 FUEL_TYPES.forEach { f ->
                     FilterChip(selected = fuel == f.id, onClick = { fuel = f.id }, label = { Text(f.short) })
@@ -256,7 +256,7 @@ fun VehicleEditScreen(
                 OutlinedTextField(
                     value = tank,
                     onValueChange = { v -> tank = v.filter { it.isDigit() || it == '.' || it == ',' } },
-                    label = { Text("Al llenar") },
+                    label = { Text("Ao encher") },
                     suffix = { Text("L") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -273,8 +273,8 @@ fun VehicleEditScreen(
                 )
             }
             Text(
-                "Los litros al llenar y el consumo se usan para calcular si merece la pena ir a la gasolinera más barata. " +
-                    "Cuando tengas historial de cargas, se usa tu consumo real.",
+                "Os litros ao encher e o consumo servem para calcular se compensa ir à bomba mais barata. " +
+                    "Quando tiver histórico de abastecimentos, é usado o seu consumo real.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -304,8 +304,8 @@ fun VehicleEditScreen(
     if (confirmDelete && existing != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("¿Eliminar «${existing.name}»?") },
-            text = { Text("Se borrarán también sus cargas y recordatorios. No se puede deshacer.") },
+            title = { Text("Eliminar «${existing.name}»?") },
+            text = { Text("Os abastecimentos e lembretes deste veículo também serão apagados. Esta ação não pode ser anulada.") },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; onDelete(existing) }) {
                     Text("Eliminar", color = MaterialTheme.colorScheme.error)
