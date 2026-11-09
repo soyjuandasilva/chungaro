@@ -11,7 +11,7 @@ class StatsTest {
         Refuel(epochDay = day.toEpochDay(), odometer = odo, quantity = qty, totalCost = cost, fullTank = full)
 
     @Test
-    fun emptyList() {
+    fun noRefuels() {
         val s = computeStats(emptyList(), today)
         assertEquals(0, s.summary.count)
         assertNull(s.summary.avgEfficiency)
