@@ -117,7 +117,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
     private fun updateRow(fuelId: Int) {
         val (lat, lon) = location ?: return
         val list = cache[fuelId]?.second ?: return
-        rows = rows + (fuelId to FuelRowState.Ready(computeNearby(list, lat, lon, radiusKm.toDouble())))
+        rows = rows + (fuelId to FuelRowState.Ready(computeNearby(list, lat, lon, radiusKm.toDouble(), listSize = 10)))
         pricesTime = cache.values.minOfOrNull { it.first }
     }
 

@@ -104,7 +104,7 @@ fun HomeScreen(
             }
 
             MyFuelCard(vm, myFuelId, vehicleName, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
-            NearestStationCard(vm)
+            NearestStationCard(vm, onClick = { detailFuel = myFuelId })
             PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
@@ -195,12 +195,12 @@ private fun PermissionCard(onRequest: () -> Unit) {
 }
 
 @Composable
-private fun NearestStationCard(vm: NearbyViewModel) {
+private fun NearestStationCard(vm: NearbyViewModel, onClick: () -> Unit) {
     val context = LocalContext.current
     val nearest = vm.rows.values
         .mapNotNull { (it as? FuelRowState.Ready)?.result?.nearest }
         .minByOrNull { it.km } ?: return
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                 Icon(
