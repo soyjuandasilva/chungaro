@@ -72,25 +72,25 @@ fun ChungaroApp(
                 selected = tab == TAB_HOME,
                 onClick = { tab = TAB_HOME },
                 icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-                label = { Text("Início") },
+                label = { Text("Início", maxLines = 1) },
             )
             NavigationBarItem(
                 selected = tab == TAB_MAP,
                 onClick = { tab = TAB_MAP },
                 icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
-                label = { Text("Mapa") },
+                label = { Text("Mapa", maxLines = 1) },
             )
             NavigationBarItem(
                 selected = tab == TAB_REFUELS,
                 onClick = { tab = TAB_REFUELS },
                 icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
-                label = { Text("Abastecimentos") },
+                label = { Text("Registos", maxLines = 1) },
             )
             NavigationBarItem(
                 selected = tab == TAB_FAVORITES,
                 onClick = { tab = TAB_FAVORITES },
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                label = { Text("Favoritos") },
+                label = { Text("Favoritos", maxLines = 1) },
             )
         }
     }
@@ -198,6 +198,9 @@ fun ChungaroApp(
             myFuelId = myFuelId,
             tankLiters = vehicle?.tankLiters ?: 50.0,
             consumptionL100 = consumptionL100,
+            vehicles = vehicles,
+            selectedVehicleId = vehicle?.id ?: 0L,
+            onSelectVehicle = { vm.selectVehicle(it) },
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
         )

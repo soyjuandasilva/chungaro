@@ -34,6 +34,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.FilterChip
+import com.chungaro.combustible.data.Vehicle
+import com.chungaro.combustible.data.emoji
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -69,6 +75,9 @@ fun HomeScreen(
     myFuelId: Int,
     tankLiters: Double,
     consumptionL100: Double,
+    vehicles: List<Vehicle>,
+    selectedVehicleId: Long,
+    onSelectVehicle: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -127,8 +136,17 @@ fun HomeScreen(
                 }
             }
 
-            MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
-            NearestStationCard(vm, onOpen = { stationSheet = it })
+            // 1) Lo de tu vehículo
+            VehicleSection(vehicles, selectedVehicleId, onSelectVehicle) {
+                MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
+                NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
+            }
+
+            // 2) El resto de combustibles
+            SectionHeader(
+                "Outros combustíveis",
+                "Bomba mais próxima e mais barata para cada tipo. Preços em €/L.",
+            )
             PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
@@ -237,11 +255,9 @@ private fun PermissionCard(onRequest: () -> Unit) {
 }
 
 @Composable
-private fun NearestStationCard(vm: NearbyViewModel, onOpen: (Long) -> Unit) {
+private fun NearestStationCard(vm: NearbyViewModel, myFuelId: Int, onOpen: (Long) -> Unit) {
     val context = LocalContext.current
-    val nearest = vm.rows.values
-        .mapNotNull { (it as? FuelRowState.Ready)?.result?.nearest }
-        .minByOrNull { it.km } ?: return
+    val nearest = (vm.rows[myFuelId] as? FuelRowState.Ready)?.result?.nearest ?: return
     Card(Modifier.fillMaxWidth().clickable { onOpen(nearest.station.id) }) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(nearest.station.brand, size = 44.dp)
@@ -254,8 +270,64 @@ private fun NearestStationCard(vm: NearbyViewModel, onOpen: (Long) -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            TextButton(onClick = { openMaps(context, nearest.station) }) { Text("Ir") }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(formatEuro(nearest.station.price), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                TextButton(onClick = { openMaps(context, nearest.station) }) { Text("Ir") }
+            }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VehicleSection(
+    vehicles: List<Vehicle>,
+    selectedId: Long,
+    onSelect: (Long) -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val current = vehicles.firstOrNull { it.id == selectedId } ?: vehicles.firstOrNull()
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.padding(horizontal = 4.dp)) {
+                Text(
+                    "Melhores opções para o seu veículo",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                if (vehicles.size <= 1) {
+                    current?.let {
+                        Text("${it.emoji} ${it.name}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+            if (vehicles.size > 1) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    vehicles.forEach { v ->
+                        FilterChip(
+                            selected = v.id == current?.id,
+                            onClick = { onSelect(v.id) },
+                            label = { Text("${v.emoji} ${v.name}", maxLines = 1) },
+                        )
+                    }
+                }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, subtitle: String) {
+    Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -315,14 +387,14 @@ private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> 
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HeaderCell("Combustível", Modifier.weight(1.25f), TextAlign.Start)
-                HeaderCell("Mais próxima", Modifier.weight(1f), TextAlign.End)
-                HeaderCell("Mais barata\n≤ ${vm.radiusKm} km", Modifier.weight(1f), TextAlign.End)
+                HeaderCell("Tipo", Modifier.weight(1.4f), TextAlign.Start)
+                HeaderCell("Mais\npróxima", Modifier.weight(1f), TextAlign.End)
+                HeaderCell("Mais barata\n≤ ${vm.radiusKm} km", Modifier.weight(1.1f), TextAlign.End)
             }
-            val ordered = FUEL_TYPES.sortedByDescending { it.id == myFuelId }
-            ordered.forEachIndexed { i, fuel ->
+            val others = FUEL_TYPES.filter { it.id != myFuelId }
+            others.forEachIndexed { i, fuel ->
                 if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                FuelRow(fuel, vm.rows[fuel.id], highlight = fuel.id == myFuelId, onClick = { onRowClick(fuel.id) })
+                FuelRow(fuel, vm.rows[fuel.id], highlight = false, onClick = { onRowClick(fuel.id) })
             }
         }
     }
@@ -351,9 +423,9 @@ private fun FuelRow(fuel: FuelType, state: FuelRowState?, highlight: Boolean, on
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.weight(1.25f)) { FuelPill(fuel) }
+        Box(Modifier.weight(1.4f)) { FuelPill(fuel, compact = true) }
         when (state) {
-            null, FuelRowState.Loading -> Box(Modifier.weight(2f), contentAlignment = Alignment.CenterEnd) {
+            null, FuelRowState.Loading -> Box(Modifier.weight(2.1f), contentAlignment = Alignment.CenterEnd) {
                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
             }
             is FuelRowState.Error -> Text(
@@ -361,12 +433,12 @@ private fun FuelRow(fuel: FuelType, state: FuelRowState?, highlight: Boolean, on
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.End,
-                modifier = Modifier.weight(2f),
+                modifier = Modifier.weight(2.1f),
             )
             is FuelRowState.Ready -> {
                 val r = state.result
                 PriceCell(r.nearest, Modifier.weight(1f), highlight = false)
-                PriceCell(r.cheapest, Modifier.weight(1f), highlight = true)
+                PriceCell(r.cheapest, Modifier.weight(1.1f), highlight = true)
             }
         }
     }
@@ -386,14 +458,16 @@ private fun PriceCell(s: StationAtDistance?, modifier: Modifier, highlight: Bool
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text(
-                    formatEuro(s.station.price),
+                    tablePrice(s.station.price),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         } else {
-            Text(formatEuro(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(tablePrice(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
         }
         Spacer(Modifier.height(2.dp))
         Text(formatKm(s.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -409,3 +483,5 @@ private fun updatedAgo(time: Long, now: Long): String {
         else -> "atualizado há ${min / 60} h"
     }
 }
+
+private fun tablePrice(v: Double): String = String.format(java.util.Locale.getDefault(), "%.3f", v)

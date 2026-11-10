@@ -39,20 +39,24 @@ const val TANK_LITERS = 50
 val FuelType.uiColor: Color get() = Color(color)
 
 @Composable
-fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier) {
+fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier, compact: Boolean = false) {
     Surface(
         color = fuel.uiColor.copy(alpha = 0.15f),
         contentColor = fuel.uiColor,
         shape = RoundedCornerShape(50),
         modifier = modifier,
     ) {
-        Row(Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).background(fuel.uiColor, CircleShape))
+        Row(
+            Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(if (compact) 6.dp else 8.dp).background(fuel.uiColor, CircleShape))
             Text(
-                "  " + fuel.short,
-                style = MaterialTheme.typography.labelLarge,
+                (if (compact) " " else "  ") + fuel.short,
+                style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
+                softWrap = false,
             )
         }
     }
