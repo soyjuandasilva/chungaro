@@ -34,6 +34,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -190,14 +193,30 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(28.dp))
             .background(HeaderBrush)
-            .padding(16.dp),
+            .drawBehind { drawHeaderScene() }
+            .padding(start = 18.dp, end = 8.dp, top = 18.dp, bottom = 18.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Surface(shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(44.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painterResource(R.drawable.ic_fuel),
+                            contentDescription = null,
+                            tint = Color(0xFF0F766E),
+                            modifier = Modifier.size(26.dp),
+                        )
+                    }
+                }
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                    )
                     val sub = when {
                         vm.locating -> "A obter a sua localização…"
                         vm.pricesTime != null -> "Preços perto de si · " + updatedAgo(vm.pricesTime!!, now)
@@ -215,6 +234,7 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
                 }
             }
             if (hasPermission) {
+                Spacer(Modifier.height(18.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Raio", style = MaterialTheme.typography.labelLarge, color = Color.White)
                     NearbyViewModel.RADIUS_OPTIONS.forEach { km ->
@@ -324,6 +344,27 @@ private fun VehicleSection(
 }
 
 @Composable
+private fun AdviceLine(good: Boolean, title: String, detail: String) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (good) Color(0xFF16A34A).copy(alpha = 0.10f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+    ) {
+        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(if (good) "✅" else "✋", style = MaterialTheme.typography.titleMedium)
+            Column(Modifier.padding(start = 10.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (good) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
+                )
+                Text(detail, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
 private fun SectionHeader(title: String, subtitle: String) {
     Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -345,31 +386,50 @@ private fun MyFuelCard(
     val nearest = r.nearest
     val advice = nearest?.let { tripAdvice(it, cheapest, tankLiters, consumptionL100) }
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FuelPill(fuel)
-            Row(verticalAlignment = Alignment.Bottom) {
-                BrandBadge(cheapest.station.brand, size = 44.dp, modifier = Modifier.padding(end = 10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Melhor preço a ≤ ${vm.radiusKm} km", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(formatKm(cheapest.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FuelPill(fuel)
                 Text(
-                    formatEuro(cheapest.station.price),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    "  Melhor preço a ≤ ${vm.radiusKm} km",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BrandBadge(cheapest.station.brand, size = 44.dp)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        listOf(formatKm(cheapest.km), cheapest.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        tablePrice(cheapest.station.price),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Text("€/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             when {
-                nearest?.station?.id == cheapest.station.id ->
-                    Text("✅ É também a mais próxima.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                advice != null -> Text(
-                    if (advice.worthIt) "✅ Compensa: poupa ${formatMoney(advice.net)} ao encher ${tankLiters.toInt()} L"
-                    else "✋ Não compensa ir: melhor a mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""})",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (advice.worthIt) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
+                nearest == null -> Unit
+                nearest?.station?.id == cheapest.station.id -> AdviceLine(
+                    good = true,
+                    title = "É também a bomba mais próxima",
+                    detail = "Não precisa de ir mais longe para pagar menos.",
+                )
+                advice != null -> AdviceLine(
+                    good = advice.worthIt,
+                    title = if (advice.worthIt) "Vale a pena ir à mais barata" else "Não compensa ir à mais barata",
+                    detail = "Face à mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""}): poupa ${formatMoney(advice.savings)} em ${tankLiters.toInt()} L − " +
+                        "${formatMoney(advice.tripCost)} de combustível do desvio = " +
+                        (if (advice.net >= 0) "" else "−") + formatMoney(kotlin.math.abs(advice.net)) + ".",
                 )
             }
         }

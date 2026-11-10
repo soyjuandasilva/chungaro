@@ -47,6 +47,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import com.chungaro.combustible.nearby.FUEL_TYPES
+import com.chungaro.combustible.nearby.FuelType
+import com.chungaro.combustible.nearby.uiColor
 import com.chungaro.combustible.nearby.BrandBadge
 
 private const val MAX_RESULTS = 100
@@ -207,8 +214,10 @@ private fun StationDialog(vm: PricesViewModel) {
                         }
                         if (d.address.isNotBlank()) Text(d.address, style = MaterialTheme.typography.bodySmall)
                         HorizontalDivider()
-                        if (d.fuels.isEmpty()) Text("Esta bomba não indica preços.")
-                        d.fuels.forEach { FuelLine(it) }
+                        FuelGrid(d.fuels)
+                        lastUpdate(d.fuels)?.let {
+                            Text("Atualizado: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                     vm.selectedError != null -> ErrorText(vm.selectedError!!)
                     else -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -233,21 +242,84 @@ private fun StationDialog(vm: PricesViewModel) {
 @Composable
 private fun FavoriteCard(d: StationDetail, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandBadge(d.brand, size = 40.dp, modifier = Modifier.padding(end = 12.dp))
-                Text(
-                    listOf(d.brand, d.name).filter { it.isNotBlank() }.distinct().joinToString(" · "),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                BrandBadge(d.brand, size = 40.dp)
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(d.name.ifBlank { d.brand }, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    shortAddress(d.address)?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    }
+                }
             }
-            if (d.address.isNotBlank()) {
-                Text(d.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FuelGrid(d.fuels)
+            lastUpdate(d.fuels)?.let {
+                Text("Atualizado: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            d.fuels.forEach { FuelLine(it) }
         }
     }
 }
+
+/** Precios en cuadritos de colores, 3 por fila. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FuelGrid(fuels: List<FuelPrice>) {
+    if (fuels.isEmpty()) {
+        Text("Esta bomba não indica preços.", style = MaterialTheme.typography.bodySmall)
+        return
+    }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        maxItemsInEachRow = 3,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        fuels.forEach { f ->
+            val type = fuelTypeFor(f.fuel)
+            val color = type?.uiColor ?: MaterialTheme.colorScheme.outline
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = color.copy(alpha = 0.10f),
+                modifier = Modifier.weight(1f),
+            ) {
+                Column(Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                    Text(
+                        type?.short ?: f.fuel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    Text(
+                        f.price?.let { String.format(Locale.getDefault(), "%.3f", it) } ?: "—",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Relaciona el nombre de la DGEG ("Gasóleo simples") con nuestros tipos. */
+private fun fuelTypeFor(name: String): FuelType? {
+    val n = normalize(name)
+    return FUEL_TYPES.firstOrNull { normalize(it.name) == n }
+        ?: FUEL_TYPES.firstOrNull { n.startsWith(normalize(it.name)) || normalize(it.name).startsWith(n) }
+}
+
+/** Fecha de actualización más reciente, en formato corto "09/11 20:30". */
+private fun lastUpdate(fuels: List<FuelPrice>): String? {
+    val raw = fuels.map { it.updated }.filter { it.isNotBlank() }.maxOrNull() ?: return null
+    val m = Regex("""(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2})""").find(raw) ?: return raw
+    val (_, mo, d, t) = m.destructured
+    return "$d/$mo $t"
+}
+
+/** Solo calle y localidad (sin el código postal). */
+private fun shortAddress(address: String): String? =
+    address.split(",").map { it.trim() }.filter { it.isNotBlank() && !Regex("""\d{4}-\d{3}""").matches(it) }
+        .take(2).joinToString(", ").ifBlank { null }
 
 @Composable
 private fun FuelLine(f: FuelPrice) {
