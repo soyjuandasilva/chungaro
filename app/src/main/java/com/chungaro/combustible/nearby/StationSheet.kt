@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,7 +29,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -94,7 +99,9 @@ fun StationSheet(
 
         // Cabecera oscura
         Surface(color = HeaderDark, contentColor = Color.White, modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(start = 16.dp, end = 12.dp, bottom = 16.dp)) {
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                // Al subir la hoja del todo, deja sitio a la barra de estado.
+                SheetStatusBarSpacer(state)
                 Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp), contentAlignment = Alignment.Center) {
                     Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.4f), modifier = Modifier.width(40.dp).height(5.dp)) {}
                 }
@@ -102,17 +109,28 @@ fun StationSheet(
                     Surface(shape = CircleShape, color = Color.White, modifier = Modifier.size(56.dp)) {
                         Box(contentAlignment = Alignment.Center) { BrandBadge(base.brand, size = 50.dp) }
                     }
-                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(stationTitle(base), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        // Dirección completa en su propia línea (hasta 2), sin cortarse.
                         Text(
-                            listOf(base.locality, base.address).filter { it.isNotBlank() }.joinToString(" · "),
+                            listOf(base.address, base.locality).filter { it.isNotBlank() }.distinct().joinToString(" · "),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.8f),
-                            maxLines = 1,
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        km?.let { Text("➤ " + formatKm(it), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f)) }
                     }
+                }
+                Spacer(Modifier.height(12.dp))
+                // Distancia, favorita y «Ir lá» en su propia fila para dar sitio al texto.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        km?.let { "➤ " + formatKm(it) + " de ti" } ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.weight(1f),
+                    )
                     isFavorite?.let { fav ->
                         IconButton(onClick = onToggleFavorite) {
                             Icon(
@@ -173,21 +191,28 @@ fun StationSheet(
             Spacer(Modifier.height(8.dp))
             BlockTitle("Horário")
             val hours = vm.openingHours[stationId]
-            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    when {
-                        hours == null -> Text("A procurar…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        hours.isEmpty() -> Text("Não indicado", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        else -> hours.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
+            InfoCard {
+                when {
+                    stationId in vm.openingHoursFailed -> {
+                        Text("Não foi possível carregar o horário.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = { vm.loadOpeningHours(base, retry = true) }) { Text("Tentar outra vez") }
                     }
-                    Text("Fonte: OpenStreetMap", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    hours == null -> Text("A procurar…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    hours.isEmpty() -> Text("Esta bomba ainda não tem horário no OpenStreetMap.", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else -> hours.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
                 }
+                Text("Fonte: OpenStreetMap", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            if (base.address.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
-                BlockTitle("Morada")
-                Text(base.address, style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(8.dp))
+            BlockTitle("Morada")
+            InfoCard {
+                Text(
+                    listOf(base.address, base.locality).filter { it.isNotBlank() }.distinct().joinToString(", ").ifBlank { "Sem morada indicada" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                TextButton(onClick = { openMaps(context, base) }) { Text("Abrir no mapa") }
             }
 
             Text(
@@ -198,6 +223,28 @@ fun StationSheet(
             )
         }
     }
+}
+
+/** Tarjeta blanca de información (horario, morada). */
+@Composable
+private fun InfoCard(content: @Composable () -> Unit) {
+    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) { content() }
+    }
+}
+
+/**
+ * Hueco que crece cuando la hoja llega arriba del todo, para que la cabecera
+ * no quede debajo de la barra de estado.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SheetStatusBarSpacer(state: SheetState) {
+    val density = LocalDensity.current
+    val statusTop = WindowInsets.statusBars.getTop(density).toFloat()
+    val offset = runCatching { state.requireOffset() }.getOrDefault(Float.MAX_VALUE)
+    val extra = (statusTop - offset).coerceIn(0f, statusTop)
+    if (extra > 0f) Spacer(Modifier.height(with(density) { extra.toDp() }))
 }
 
 @Composable

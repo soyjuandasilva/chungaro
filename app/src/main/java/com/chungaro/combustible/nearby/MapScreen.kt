@@ -166,6 +166,8 @@ fun MapScreen(
         sheetDragHandle = null,
         sheetShadowElevation = 12.dp,
         sheetContent = {
+            // Al subir la hoja del todo, la cabecera verde no queda bajo la barra de estado.
+            Box(Modifier.fillMaxWidth().background(HeaderDark)) { SheetStatusBarSpacer(scaffoldState.bottomSheetState) }
             SheetHeader(
                 fuelId = fuelId,
                 onFuel = { fuelId = it; shown = PAGE; selectedId = null },

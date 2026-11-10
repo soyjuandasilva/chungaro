@@ -69,21 +69,26 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
     /** Horario de cada bomba (líneas ya formateadas; vacía si OSM no lo tiene). Sin clave = cargando. */
     var openingHours by mutableStateOf<Map<Long, List<String>>>(emptyMap())
         private set
+    /** Bombas cuyo horario no se pudo cargar (sin conexión o servidor caído). */
+    var openingHoursFailed by mutableStateOf<Set<Long>>(emptySet())
+        private set
     private val hoursRequested = mutableSetOf<Long>()
 
-    fun loadOpeningHours(station: PricedStation) {
+    fun loadOpeningHours(station: PricedStation, retry: Boolean = false) {
+        if (retry) hoursRequested.remove(station.id)
         if (!hoursRequested.add(station.id)) return
+        openingHoursFailed = openingHoursFailed - station.id
         viewModelScope.launch {
-            val lines = try {
-                OpeningHours.lookup(station.lat, station.lon)?.let { OpeningHours.format(it) }.orEmpty()
+            try {
+                val lines = OpeningHours.lookup(station.lat, station.lon)?.let { OpeningHours.format(it) }.orEmpty()
+                openingHours = openingHours + (station.id to lines)
             } catch (e: CancellationException) {
                 hoursRequested.remove(station.id)
                 throw e
             } catch (e: Exception) {
-                hoursRequested.remove(station.id) // se reintenta la próxima vez
-                emptyList()
+                hoursRequested.remove(station.id)
+                openingHoursFailed = openingHoursFailed + station.id
             }
-            openingHours = openingHours + (station.id to lines)
         }
     }
 

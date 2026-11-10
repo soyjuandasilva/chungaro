@@ -14,18 +14,42 @@ import org.json.JSONObject
  * para esto; OSM sí, aunque no todas las bombas tienen el horario puesto.
  */
 object OpeningHours {
-    private const val ENDPOINT = "https://overpass-api.de/api/interpreter"
+    /** Servidor principal y espejos públicos de Overpass, por si uno falla o está saturado. */
+    private val ENDPOINTS = listOf(
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    )
 
-    /** opening_hours de la gasolinera de OSM más cercana a (lat, lon) en [radiusM] metros; null si no hay. */
-    suspend fun lookup(lat: Double, lon: Double, radiusM: Int = 120): String? = withContext(Dispatchers.IO) {
-        val q = "[out:json][timeout:15];nwr(around:$radiusM,$lat,$lon)[amenity=fuel];out tags center;"
-        val conn = URL(ENDPOINT + "?data=" + URLEncoder.encode(q, "UTF-8")).openConnection() as HttpURLConnection
+    /**
+     * opening_hours de la gasolinera de OSM más cercana a (lat, lon) en [radiusM] metros;
+     * null si no está en OSM o no tiene horario. Lanza excepción si ningún servidor responde.
+     */
+    suspend fun lookup(lat: Double, lon: Double, radiusM: Int = 250): String? = withContext(Dispatchers.IO) {
+        val q = "[out:json][timeout:20];nwr(around:$radiusM,$lat,$lon)[amenity=fuel];out tags center;"
+        var last: Exception? = null
+        for (endpoint in ENDPOINTS) {
+            try {
+                return@withContext parse(post(endpoint, q), lat, lon)
+            } catch (e: Exception) {
+                last = e
+            }
+        }
+        throw last ?: IOException("Overpass sem resposta")
+    }
+
+    private fun post(endpoint: String, query: String): String {
+        val conn = URL(endpoint).openConnection() as HttpURLConnection
         try {
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 20_000
-            conn.setRequestProperty("User-Agent", "Atesta-Android/1.0")
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 25_000
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.setRequestProperty("User-Agent", "Atesta-Android/1.0 (app de precos de combustiveis)")
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+            conn.outputStream.use { it.write(("data=" + URLEncoder.encode(query, "UTF-8")).toByteArray()) }
             if (conn.responseCode != HttpURLConnection.HTTP_OK) throw IOException("HTTP ${conn.responseCode}")
-            parse(conn.inputStream.bufferedReader().use { it.readText() }, lat, lon)
+            return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()
         }
