@@ -34,6 +34,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.CircleShape
@@ -143,14 +146,18 @@ fun HomeScreen(
 
             // 1) Lo de tu vehículo
             VehicleSection(vehicles, selectedVehicleId, onSelectVehicle) {
-                FUEL_TYPES.firstOrNull { it.id == myFuelId }?.let { f ->
-                    WeeklyCard(vm, f, onOpenStation = { stationSheet = it })
-                }
                 MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
                 NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
             }
 
-            // 2) El resto de combustibles
+            // 2) Evolución de precios por tipo de combustible (no depende del vehículo)
+            SectionHeader(
+                "Evolução dos preços",
+                "Como mudaram os preços de cada combustível e de cada bomba face à semana passada.",
+            )
+            PriceEvolution(vm, onOpenStation = { stationSheet = it })
+
+            // 3) El resto de combustibles
             SectionHeader(
                 "Outros combustíveis",
                 "Bomba mais próxima e mais barata para cada tipo. Preços em €/L.",
@@ -389,6 +396,52 @@ private fun AdviceLine(good: Boolean, title: String, detail: String) {
 }
 
 @Composable
+private fun PriceEvolution(vm: NearbyViewModel, onOpenStation: (Long) -> Unit) {
+    var fuelId by rememberSaveable { mutableIntStateOf(FUEL_TYPES.first().id) }
+    val fuel = FUEL_TYPES.first { it.id == fuelId }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FUEL_TYPES.forEach { f ->
+                val sel = f.id == fuelId
+                Surface(
+                    onClick = { fuelId = f.id },
+                    shape = RoundedCornerShape(50),
+                    color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.10f),
+                    contentColor = if (sel) Color.White else f.uiColor,
+                ) {
+                    Text(
+                        f.short,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+        WeeklyCard(vm, fuel, onOpenStation)
+    }
+}
+
+/** Variación semanal de la media de la zona para un combustible (↘ −1,2 %). */
+@Composable
+private fun WeeklyChangeBadge(vm: NearbyViewModel, fuelId: Int) {
+    val zone by remember(fuelId) { vm.history(fuelId, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
+    val pct = remember(zone) { computeWeekly(zone, emptyList()).changePct } ?: return
+    val up = pct > 0.05
+    val down = pct < -0.05
+    Text(
+        (if (up) "↗ +" else if (down) "↘ " else "→ ") + String.format(java.util.Locale.getDefault(), "%.1f%%", pct) + " /sem.",
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = when {
+            up -> Color(0xFFDC2626)
+            down -> Color(0xFF16A34A)
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        },
+    )
+}
+
+@Composable
 private fun SectionHeader(title: String, subtitle: String) {
     Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -478,7 +531,7 @@ private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> 
             val others = FUEL_TYPES.filter { it.id != myFuelId }
             others.forEachIndexed { i, fuel ->
                 if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                FuelRow(fuel, vm.rows[fuel.id], highlight = false, onClick = { onRowClick(fuel.id) })
+                FuelRow(vm, fuel, vm.rows[fuel.id], highlight = false, onClick = { onRowClick(fuel.id) })
             }
         }
     }
@@ -497,7 +550,7 @@ private fun HeaderCell(text: String, modifier: Modifier, align: TextAlign) {
 }
 
 @Composable
-private fun FuelRow(fuel: FuelType, state: FuelRowState?, highlight: Boolean, onClick: () -> Unit) {
+private fun FuelRow(vm: NearbyViewModel, fuel: FuelType, state: FuelRowState?, highlight: Boolean, onClick: () -> Unit) {
     val ready = state as? FuelRowState.Ready
     Row(
         Modifier
@@ -507,7 +560,10 @@ private fun FuelRow(fuel: FuelType, state: FuelRowState?, highlight: Boolean, on
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.weight(1.4f)) { FuelPill(fuel, compact = true) }
+        Column(Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            FuelPill(fuel, compact = true)
+            WeeklyChangeBadge(vm, fuel.id)
+        }
         when (state) {
             null, FuelRowState.Loading -> Box(Modifier.weight(2.1f), contentAlignment = Alignment.CenterEnd) {
                 CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)

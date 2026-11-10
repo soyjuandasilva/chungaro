@@ -78,13 +78,14 @@ object DgegApi {
      * Todas las gasolineras de Portugal que venden [fuelTypeId], con su precio
      * y coordenadas. La API pagina de 500 en 500; "Quantidade" indica el total.
      */
-    suspend fun pricedStations(fuelTypeId: Int): List<PricedStation> = withContext(Dispatchers.IO) {
+    suspend fun pricedStations(fuelTypeId: Int, districtId: Int? = null): List<PricedStation> = withContext(Dispatchers.IO) {
         val all = ArrayList<PricedStation>()
         var page = 1
         var total = Int.MAX_VALUE
+        val district = districtId?.let { "&idDistrito=$it" } ?: ""
         while ((page - 1) * PAGE_SIZE < total && page <= MAX_PAGES) {
             val (rows, quantity) = parsePricedStations(
-                get("$BASE/PesquisarPostos?idsTiposComb=$fuelTypeId&qtdPorPagina=$PAGE_SIZE&pagina=$page"),
+                get("$BASE/PesquisarPostos?idsTiposComb=$fuelTypeId$district&qtdPorPagina=$PAGE_SIZE&pagina=$page"),
             )
             all += rows.stations
             if (quantity != null) total = quantity
@@ -131,6 +132,22 @@ object DgegApi {
         is String -> v.trim().replace(',', '.').toDoubleOrNull()
         else -> null
     }?.takeIf { it != 0.0 && !it.isNaN() }
+
+    /** Capitales de distrito (lat, lon), para saber en qué distritos buscar. */
+    private val districtCenters: Map<Int, Pair<Double, Double>> = mapOf(
+        1 to (40.6405 to -8.6538), 2 to (38.0151 to -7.8632), 3 to (41.5454 to -8.4265), 4 to (41.8061 to -6.7567),
+        5 to (39.8222 to -7.4909), 6 to (40.2033 to -8.4103), 7 to (38.5714 to -7.9135), 8 to (37.0194 to -7.9322),
+        9 to (40.5373 to -7.2658), 10 to (39.7436 to -8.8071), 11 to (38.7223 to -9.1393), 12 to (39.2967 to -7.4285),
+        13 to (41.1579 to -8.6291), 14 to (39.2362 to -8.6859), 15 to (38.5244 to -8.8882), 16 to (41.6932 to -8.8329),
+        17 to (41.3006 to -7.7441), 18 to (40.6566 to -7.9125),
+    )
+
+    /** Los [count] distritos cuya capital está más cerca de un punto. */
+    fun nearestDistricts(lat: Double, lon: Double, count: Int = 2): List<Int> =
+        districtCenters.entries
+            .sortedBy { (_, c) -> com.chungaro.combustible.nearby.distanceKm(lat, lon, c.first, c.second) }
+            .take(count)
+            .map { it.key }
 
     suspend fun station(id: Long): StationDetail = withContext(Dispatchers.IO) {
         parseStation(id, get("$BASE/GetDadosPosto?id=$id"))

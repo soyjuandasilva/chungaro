@@ -38,9 +38,9 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
     val (emoji, title, body, tint) = when (w.advice) {
         WeeklyAdvice.COLLECTING -> Quad(
             "📊",
-            "Recomendação da semana",
-            "A app guarda os preços automaticamente várias vezes por dia, mesmo com a app fechada. " +
-                "A recomendação aparece quando houver uma semana de dados (dia ${w.days.coerceAtLeast(1)} de $WEEK_DAYS).",
+            "A recolher histórico",
+            "A app guarda automaticamente, várias vezes por dia e mesmo fechada, o preço de cada combustível em cada bomba da sua zona. " +
+                "A comparação semanal aparece quando houver uma semana de dados (dia ${w.days.coerceAtLeast(1)} de $WEEK_DAYS).",
             MaterialTheme.colorScheme.primary,
         )
         WeeklyAdvice.FILL_THIS_WEEK -> Quad(
@@ -71,7 +71,7 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(emoji, style = MaterialTheme.typography.headlineSmall)
                 Column(Modifier.padding(start = 10.dp)) {
-                    Text("RECOMENDAÇÃO DA SEMANA · ${fuel.short.uppercase()}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${fuel.short.uppercase()} · ESTA SEMANA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = tint)
                 }
             }
