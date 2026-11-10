@@ -208,6 +208,7 @@ fun ChungaroApp(
                     favorites = pricesVm.favorites,
                     onToggleFavorite = { pricesVm.toggleFavoriteId(it) },
                     onOpenMenu = { scope.launch { drawerState.open() } },
+                    onOpenNews = { tab = TAB_OVERVIEW },
                 )
             }
         }

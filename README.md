@@ -15,6 +15,11 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
   combustible (desplegable), radio (5, 10 o 20 km), orden (más barata, más
   próxima o favoritas), ahorro por depósito y la lista de bombas con precio y
   hace cuánto se actualizó. Botón de menú arriba a la izquierda.
+  Arriba de la lista, **«Abastece hoje ou espera por segunda?»**: en Portugal
+  los precios cambian los lunes y los medios publican la previsión a final de
+  semana. La app lee los titulares de esta semana (Google Notícias), detecta si
+  anuncian subida o bajada para tu tipo de combustible (gasolina, gasóleo o
+  GPL) y aconseja llenar antes del lunes o esperar, enlazando la noticia.
 - **Ficha de gasolinera**: logotipo, favorita (♥) e «Ir lá»; precios de todos
   sus combustibles, tendencia y morada.
 - **Menú lateral**: tu vehículo y las secciones:

@@ -29,7 +29,7 @@ import com.chungaro.combustible.news.NewsItem
 
 /** "Preço dos combustíveis na próxima semana": las 5 últimas noticias de Google News Portugal. */
 @Composable
-fun NewsCard(vm: NearbyViewModel) {
+fun NewsCard(vm: NearbyViewModel, myFuelId: Int) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { vm.loadNews() }
     SectionCard(
@@ -39,6 +39,7 @@ fun NewsCard(vm: NearbyViewModel) {
         subtitle = "Preço dos combustíveis na próxima semana",
         footnote = "Via Google Notícias. Os textos pertencem aos respetivos meios.",
     ) {
+        MondayCard(vm, FUEL_TYPES.firstOrNull { it.id == myFuelId } ?: FUEL_TYPES.first())
         when {
             vm.news.isEmpty() && vm.newsLoading -> Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
@@ -89,7 +90,7 @@ private fun ago(time: Long): String {
     }
 }
 
-private fun openLink(context: Context, url: String) {
+internal fun openLink(context: Context, url: String) {
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     } catch (e: ActivityNotFoundException) {

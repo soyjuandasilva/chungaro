@@ -150,7 +150,7 @@ fun HomeScreen(
             }
 
             // 3) Noticias sobre la próxima semana
-            NewsCard(vm)
+            NewsCard(vm, myFuelId)
         }
     }
 
