@@ -86,6 +86,7 @@ fun HomeScreen(
     vehicles: List<Vehicle>,
     selectedVehicleId: Long,
     onSelectVehicle: (Long) -> Unit,
+    extraTips: List<Tip> = emptyList(),
     onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -143,6 +144,17 @@ fun HomeScreen(
                     }
                 }
             }
+
+            // Consejos del momento, rotando
+            TipsTicker(
+                vm = vm,
+                myFuelId = myFuelId,
+                tankLiters = tankLiters,
+                consumptionL100 = consumptionL100,
+                extraTips = extraTips,
+                onOpenFuel = { detailFuel = it },
+                onOpenStation = { stationSheet = it },
+            )
 
             // 1) Lo de tu vehículo
             VehicleSection(vehicles, selectedVehicleId, onSelectVehicle) {

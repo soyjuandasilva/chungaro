@@ -186,6 +186,7 @@ fun ChungaroApp(
                 onOpen = { editingId = it.id },
                 onOpenSettings = { showSettings = true },
                 onSelectVehicle = { vm.selectVehicle(it) },
+            extraTips = maintenanceTips(reminders, stats.rows.lastOrNull()?.refuel?.odometer),
                 onEditVehicle = { editingVehicle = it?.id ?: NEW_VEHICLE },
                 onManageVehicles = { showVehicles = true },
                 onSaveReminder = { vm.saveReminder(it) },
@@ -201,6 +202,7 @@ fun ChungaroApp(
             vehicles = vehicles,
             selectedVehicleId = vehicle?.id ?: 0L,
             onSelectVehicle = { vm.selectVehicle(it) },
+            extraTips = maintenanceTips(reminders, stats.rows.lastOrNull()?.refuel?.odometer),
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
         )
@@ -208,5 +210,25 @@ fun ChungaroApp(
 
     crashReport?.let { report ->
         CrashDialog(report, onDismiss = { crashReport = null })
+    }
+}
+
+/** Recordatorios de mantenimiento próximos o vencidos, como consejos del ticker. */
+private fun maintenanceTips(
+    reminders: List<com.chungaro.combustible.data.Reminder>,
+    odometer: Double?,
+): List<com.chungaro.combustible.nearby.Tip> {
+    val today = java.time.LocalDate.now().toEpochDay()
+    return reminders.filter { !it.done }.mapNotNull { r ->
+        val days = r.dueEpochDay?.let { it - today }
+        val km = if (r.dueOdometer != null && odometer != null) r.dueOdometer - odometer else null
+        val soon = (days != null && days <= 7) || (km != null && km <= 500)
+        if (!soon) return@mapNotNull null
+        val overdue = (days != null && days < 0) || (km != null && km <= 0)
+        com.chungaro.combustible.nearby.Tip(
+            emoji = "🔧",
+            text = "${r.title}: " + com.chungaro.combustible.alerts.reminderStatus(r.dueEpochDay, r.dueOdometer, today, odometer).lowercase(),
+            color = if (overdue) 0xFFDC2626 else 0xFFD97706,
+        )
     }
 }

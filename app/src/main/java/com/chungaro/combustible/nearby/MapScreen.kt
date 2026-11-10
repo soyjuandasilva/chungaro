@@ -14,6 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +71,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
     val context = LocalContext.current
     var fuelId by rememberSaveable { mutableIntStateOf(defaultFuelId) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var recenter by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) { if (!vm.started && LocationHelper.hasPermission(context)) vm.refresh() }
 
     val location = vm.location
@@ -81,7 +86,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
 
     Scaffold(bottomBar = bottomBar) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            OsmMap(location, stations, onSelect = { selectedId = it })
+            OsmMap(location, stations, recenter, onSelect = { selectedId = it })
 
             Card(
                 Modifier.fillMaxWidth().padding(12.dp).align(Alignment.TopCenter),
@@ -154,6 +159,21 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                 }
             }
 
+            // Botón para volver a la ubicación actual
+            if (LocationHelper.hasPermission(context)) {
+                SmallFloatingActionButton(
+                    onClick = { vm.refresh(); recenter++ },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = if (inRadius.size >= 2) 190.dp else 24.dp)
+                        .size(48.dp),
+                ) {
+                    Icon(painterResource(com.chungaro.combustible.R.drawable.ic_my_location), contentDescription = "Centrar na minha localização")
+                }
+            }
+
             selectedId?.let { id ->
                 StationSheet(vm, id, fuelId, onDismiss = { selectedId = null })
             }
@@ -194,7 +214,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
 }
 
 @Composable
-private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDistance>, onSelect: (Long) -> Unit) {
+private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDistance>, recenter: Int, onSelect: (Long) -> Unit) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val mapView = remember {
@@ -228,6 +248,11 @@ private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDist
         }
     }
     var centered by remember { mutableStateOf(false) }
+    // Al pulsar «centrar»: ir a la ubicación (y otra vez cuando llegue la nueva).
+    LaunchedEffect(recenter, location) {
+        val loc = location ?: return@LaunchedEffect
+        if (recenter > 0) mapView.controller.animateTo(GeoPoint(loc.first, loc.second), 14.5, 600L)
+    }
 
     // Logotipos de las marcas presentes, descargados una vez y en caché.
     val logos = remember { mutableStateMapOf<String, Bitmap>() }
