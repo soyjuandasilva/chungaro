@@ -8,24 +8,23 @@
 App Android para ahorrar en combustible en Portugal: precios oficiales cerca de
 ti, registro de cargas, consumo, gráficos y mantenimiento.
 
-## Pestañas
+## Pantallas
 
-- **Início**: lo general, sin depender de tu vehículo.
-  - **Preço médio dos combustíveis hoje**, en grande: media de todas las
-    gasolineras de Portugal con precio en la DGEG (se avisa de que varía de
-    una a otra). No necesita la ubicación.
-  - **Evolução dos preços** de tu zona frente a la semana pasada.
-  - **Preço dos combustíveis na próxima semana**: las 5 últimas noticias de
-    Google Notícias Portugal para esa búsqueda (título, medio y enlace; el
-    extracto solo si el feed lo trae).
-- **Mapa**: eliges el combustible entre todos a la vista (sin deslizar);
-  gasolineras de la zona en OpenStreetMap con su precio, en verde las
-  baratas y en rojo las caras. «Cómo llegar» abre Maps.
-- **Meu veículo** (antes «Registos»), con cuatro secciones:
-  - **Preços**: consejos del momento, radio (5, 10 o 20 km), la más barata y
-    la más cercana para tu combustible con si **merece la pena** el desvío, y
-    la tabla de **outros combustíveis**.
-  - **Histórico**, **Gráficos** y **Manutenção** de tus cargas.
+- **Inicio (mapa)**: mapa a pantalla completa con el precio de cada gasolinera
+  (verde las baratas, rojo las caras) y una hoja que se arrastra desde abajo:
+  combustible (desplegable), radio (5, 10 o 20 km), orden (más barata, más
+  próxima o favoritas), ahorro por depósito y la lista de bombas con precio y
+  hace cuánto se actualizó. Botón de menú arriba a la izquierda.
+- **Ficha de gasolinera**: logotipo, favorita (♥) e «Ir lá»; precios de todos
+  sus combustibles, tendencia, **horario** (de OpenStreetMap, si la bomba lo
+  tiene) y morada.
+- **Menú lateral**: tu vehículo y las secciones:
+  - **Meu veículo**: Preços (consejos, mejores opciones y otros combustibles),
+    Histórico, Gráficos y Manutenção.
+  - **Preços e notícias**: precio medio de hoy en Portugal, evolución de tu
+    zona y las 5 últimas noticias de Google Notícias sobre el precio de los
+    combustibles la próxima semana.
+  - **Bombas favoritas**, **Alertas de preço** y **Definições**.
 - **Vehículos**: varios, cada uno con tipo (coche, moto, furgoneta, camión,
   autocaravana), marca y modelo (con sugerencias), año, combustible, litros al
   llenar y consumo.
