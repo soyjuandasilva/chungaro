@@ -7,9 +7,10 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Refuel::class, Vehicle::class, Reminder::class], version = 3, exportSchema = false)
+@Database(entities = [Refuel::class, Vehicle::class, Reminder::class, PricePoint::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun refuelDao(): RefuelDao
+    abstract fun historyDao(): HistoryDao
 
     companion object {
         @Volatile
@@ -46,6 +47,16 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v3 -> v4: histórico de precios. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `price_history` (`day` INTEGER NOT NULL, `fuelId` INTEGER NOT NULL, " +
+                        "`stationId` INTEGER NOT NULL, `price` REAL NOT NULL, PRIMARY KEY(`day`, `fuelId`, `stationId`))",
+                )
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -53,7 +64,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "chungaro.db",
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             db.execSQL(DEFAULT_VEHICLE_SQL)

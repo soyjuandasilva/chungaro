@@ -34,6 +34,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +67,6 @@ private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF0F766E), Color(0
 fun HomeScreen(
     vm: NearbyViewModel,
     myFuelId: Int,
-    vehicleName: String,
     tankLiters: Double,
     consumptionL100: Double,
     onOpenSettings: () -> Unit,
@@ -77,6 +82,23 @@ fun HomeScreen(
         if (hasPermission && !vm.started) vm.refresh()
     }
     var detailFuel by rememberSaveable { mutableStateOf<Int?>(null) }
+    var stationSheet by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    // Recarga sola: al volver a la app y cada 10 minutos mientras se ve Início.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, hasPermission) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && hasPermission && vm.started) vm.refresh()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(hasPermission) {
+        while (hasPermission) {
+            delay(10 * 60_000L)
+            vm.refresh()
+        }
+    }
 
     Scaffold(bottomBar = bottomBar) { padding ->
         Column(
@@ -105,8 +127,8 @@ fun HomeScreen(
                 }
             }
 
-            MyFuelCard(vm, myFuelId, vehicleName, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
-            NearestStationCard(vm, onClick = { detailFuel = myFuelId })
+            MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
+            NearestStationCard(vm, onOpen = { stationSheet = it })
             PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
@@ -122,12 +144,31 @@ fun HomeScreen(
     val fuel = FUEL_TYPES.firstOrNull { it.id == detailFuel }
     val state = detailFuel?.let { vm.rows[it] }
     if (fuel != null && state is FuelRowState.Ready) {
-        FuelDetailDialog(fuel, state.result, vm.radiusKm, tankLiters, consumptionL100, onDismiss = { detailFuel = null })
+        FuelDetailDialog(
+            vm = vm,
+            fuel = fuel,
+            result = state.result,
+            radiusKm = vm.radiusKm,
+            tankLiters = tankLiters,
+            consumptionL100 = consumptionL100,
+            onOpenStation = { detailFuel = null; stationSheet = it },
+            onDismiss = { detailFuel = null },
+        )
+    }
+    stationSheet?.let { id ->
+        StationSheet(vm, id, myFuelId, onDismiss = { stationSheet = null })
     }
 }
 
 @Composable
 private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: () -> Unit) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(20_000L)
+        }
+    }
     Box(
         Modifier
             .fillMaxWidth()
@@ -141,8 +182,7 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
                     Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     val sub = when {
                         vm.locating -> "A obter a sua localização…"
-                        vm.pricesTime != null -> "Preços perto de si · " +
-                            DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(vm.pricesTime!!))
+                        vm.pricesTime != null -> "Preços perto de si · " + updatedAgo(vm.pricesTime!!, now)
                         else -> "Preços de hoje perto de si"
                     }
                     Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
@@ -197,17 +237,17 @@ private fun PermissionCard(onRequest: () -> Unit) {
 }
 
 @Composable
-private fun NearestStationCard(vm: NearbyViewModel, onClick: () -> Unit) {
+private fun NearestStationCard(vm: NearbyViewModel, onOpen: (Long) -> Unit) {
     val context = LocalContext.current
     val nearest = vm.rows.values
         .mapNotNull { (it as? FuelRowState.Ready)?.result?.nearest }
         .minByOrNull { it.km } ?: return
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    Card(Modifier.fillMaxWidth().clickable { onOpen(nearest.station.id) }) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(nearest.station.brand, size = 44.dp)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text("Bomba mais próxima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stationTitle(nearest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stationTitle(nearest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
                     listOf(formatKm(nearest.km), nearest.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
@@ -223,7 +263,6 @@ private fun NearestStationCard(vm: NearbyViewModel, onClick: () -> Unit) {
 private fun MyFuelCard(
     vm: NearbyViewModel,
     myFuelId: Int,
-    vehicleName: String,
     tankLiters: Double,
     consumptionL100: Double,
     onClick: () -> Unit,
@@ -235,20 +274,12 @@ private fun MyFuelCard(
     val advice = nearest?.let { tripAdvice(it, cheapest, tankLiters, consumptionL100) }
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FuelPill(fuel)
-                Text(
-                    "  $vehicleName",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            FuelPill(fuel)
             Row(verticalAlignment = Alignment.Bottom) {
                 BrandBadge(cheapest.station.brand, size = 44.dp, modifier = Modifier.padding(end = 10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Melhor preço a ≤ ${vm.radiusKm} km", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(formatKm(cheapest.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
@@ -366,5 +397,15 @@ private fun PriceCell(s: StationAtDistance?, modifier: Modifier, highlight: Bool
         }
         Spacer(Modifier.height(2.dp))
         Text(formatKm(s.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** "agora mesmo", "há 5 min", "há 2 h". */
+private fun updatedAgo(time: Long, now: Long): String {
+    val min = ((now - time) / 60_000L).coerceAtLeast(0)
+    return when {
+        min < 1 -> "atualizado agora mesmo"
+        min < 60 -> "atualizado há $min min"
+        else -> "atualizado há ${min / 60} h"
     }
 }

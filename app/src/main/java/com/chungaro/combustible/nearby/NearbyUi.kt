@@ -117,7 +117,8 @@ fun TripAdviceBox(a: TripAdvice) {
 }
 
 fun stationTitle(s: PricedStation): String =
-    listOf(s.brand, s.name).filter { it.isNotBlank() }.distinct().joinToString(" · ").ifBlank { "Bomba ${s.id}" }
+    // La insignia ya muestra la marca: aquí solo el nombre de la bomba.
+    s.name.ifBlank { s.brand }.ifBlank { "Bomba ${s.id}" }
 
 fun formatEuro(v: Double): String = String.format(Locale.getDefault(), "%.3f €", v)
 fun formatMoney(v: Double): String = String.format(Locale.getDefault(), "%.2f €", v)

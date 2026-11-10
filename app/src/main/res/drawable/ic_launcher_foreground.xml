@@ -4,16 +4,29 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Gota blanca -->
+    <!-- Cuerpo del surtidor con ventana (hueco) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,28 C54,28 37,48 37,61 C37,70.4 44.6,78 54,78 C63.4,78 71,70.4 71,61 C71,48 54,28 54,28 Z" />
-    <!-- Letra A -->
+        android:fillType="evenOdd"
+        android:pathData="M40,32 H56 A4,4 0 0 1 60,36 V75 H36 V36 A4,4 0 0 1 40,32 Z M42,38 H54 A2,2 0 0 1 56,40 V48 A2,2 0 0 1 54,50 H42 A2,2 0 0 1 40,48 V40 A2,2 0 0 1 42,38 Z" />
+    <!-- Base -->
     <path
-        android:strokeColor="#0F766E"
-        android:strokeWidth="4"
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,74 H63 A2,2 0 0 1 65,76 V79 H31 V76 A2,2 0 0 1 33,74 Z" />
+    <!-- Manguera -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M46.5,69 L54,49 L61.5,69 M49.3,62 L58.7,62" />
+        android:pathData="M60,47 H63.5 A3,3 0 0 1 66.5,50 V65 A3.5,3.5 0 0 0 73.5,65 V44 L69,38.5" />
+    <!-- Boquilla -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65.5,35.5 L70.5,30.5 L75,35 L70,40 Z" />
+    <!-- Gota dentro de la ventana -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,40.5 C48,40.5 45,44 45,45.8 C45,47.5 46.3,48.5 48,48.5 C49.7,48.5 51,47.5 51,45.8 C51,44 48,40.5 48,40.5 Z" />
 </vector>

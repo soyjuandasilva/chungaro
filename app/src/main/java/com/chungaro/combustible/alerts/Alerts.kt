@@ -89,10 +89,10 @@ object Notifier {
 class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val ctx = applicationContext
-        if (!Notifier.canNotify(ctx)) return Result.success()
         val store = SettingsStore(ctx)
         val dao = AppDatabase.get(ctx).refuelDao()
-        checkReminders(ctx, store, dao)
+        // El histórico de precios se guarda siempre; los avisos, solo con permiso.
+        if (Notifier.canNotify(ctx)) checkReminders(ctx, store, dao)
         runCatching { checkPrice(ctx, store, dao) }
         return Result.success()
     }
@@ -121,13 +121,14 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
     private suspend fun checkPrice(ctx: Context, store: SettingsStore, dao: com.chungaro.combustible.data.RefuelDao) {
         val settings = store.load()
-        val threshold = settings.alertThreshold ?: return
-        if (!settings.alertsEnabled) return
         val (lat, lon) = store.loadLastLocation() ?: return
         val vehicle = dao.vehicles().firstOrNull { it.id == store.loadSelectedVehicle() } ?: dao.vehicles().firstOrNull() ?: return
         val fuel = FUEL_TYPES.firstOrNull { it.id == vehicle.fuelTypeId } ?: return
         val stations = DgegApi.pricedStations(fuel.id)
         PriceCache.save(ctx, fuel.id, stations)
+        com.chungaro.combustible.nearby.HistoryRecorder.record(ctx, fuel.id, stations, lat, lon)
+        val threshold = settings.alertThreshold ?: return
+        if (!settings.alertsEnabled || !Notifier.canNotify(ctx)) return
         val cheapest = computeNearby(stations, lat, lon, store.loadRadius().toDouble()).cheapest ?: return
         if (cheapest.station.price > threshold) return
         val key = "price_${fuel.id}"

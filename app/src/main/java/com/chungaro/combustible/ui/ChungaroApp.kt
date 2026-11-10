@@ -167,7 +167,7 @@ fun ChungaroApp(
         }
         tab == TAB_MAP -> {
             BackHandler { tab = TAB_HOME }
-            MapScreen(nearbyVm, myFuelId, bottomBar)
+            MapScreen(nearbyVm, myFuelId, vehicle?.tankLiters ?: 50.0, bottomBar)
         }
         tab == TAB_FAVORITES -> {
             BackHandler { tab = TAB_HOME }
@@ -196,7 +196,6 @@ fun ChungaroApp(
         else -> HomeScreen(
             vm = nearbyVm,
             myFuelId = myFuelId,
-            vehicleName = vehicle?.name ?: "",
             tankLiters = vehicle?.tankLiters ?: 50.0,
             consumptionL100 = consumptionL100,
             onOpenSettings = { showSettings = true },

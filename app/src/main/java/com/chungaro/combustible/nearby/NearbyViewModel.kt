@@ -7,7 +7,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chungaro.combustible.data.AppDatabase
+import com.chungaro.combustible.data.PricePoint
 import com.chungaro.combustible.data.SettingsStore
+import java.time.LocalDate
+import kotlinx.coroutines.flow.Flow
 import com.chungaro.combustible.prices.DgegApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +45,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var rows by mutableStateOf<Map<Int, FuelRowState>>(emptyMap())
         private set
-    /** Momento de los precios mostrados (el más antiguo de los combustibles). */
+    /** Momento de la última descarga de precios. */
     var pricesTime by mutableStateOf<Long?>(null)
         private set
 
@@ -92,6 +96,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                         val fresh = downloads.withPermit { DgegApi.pricedStations(f.id) }
                         cache[f.id] = System.currentTimeMillis() to fresh
                         withContext(Dispatchers.IO) { PriceCache.save(app, f.id, fresh) }
+                        location?.let { (lat, lon) -> HistoryRecorder.record(app, f.id, fresh, lat, lon) }
                         updateRow(f.id)
                     } catch (e: CancellationException) {
                         throw e
@@ -102,6 +107,12 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    private val historyDao = AppDatabase.get(app).historyDao()
+
+    /** Histórico de los últimos 30 días de una bomba (o de la zona: HistoryRecorder.ZONE_AVG). */
+    fun history(fuelId: Int, stationId: Long): Flow<List<PricePoint>> =
+        historyDao.observe(fuelId, stationId, LocalDate.now().toEpochDay() - 30)
 
     fun selectRadius(km: Int) {
         if (km == radiusKm) return
@@ -118,11 +129,11 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
         val (lat, lon) = location ?: return
         val list = cache[fuelId]?.second ?: return
         rows = rows + (fuelId to FuelRowState.Ready(computeNearby(list, lat, lon, radiusKm.toDouble(), listSize = 10)))
-        pricesTime = cache.values.minOfOrNull { it.first }
+        pricesTime = cache.values.maxOfOrNull { it.first }
     }
 
     companion object {
-        private const val CACHE_MS = 30 * 60_000L
+        private const val CACHE_MS = 10 * 60_000L
         val RADIUS_OPTIONS = listOf(5, 10, 20)
     }
 }

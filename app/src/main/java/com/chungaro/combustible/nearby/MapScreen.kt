@@ -51,7 +51,7 @@ import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable () -> Unit) {
+fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, bottomBar: @Composable () -> Unit) {
     val context = LocalContext.current
     var fuelId by rememberSaveable { mutableIntStateOf(defaultFuelId) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -65,7 +65,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable ()
         all.map { StationAtDistance(it, distanceKm(lat, lon, it.lat, it.lon)) }
             .filter { it.km <= vm.radiusKm * 1.5 }
     }
-    val selected = stations.firstOrNull { it.station.id == selectedId }
+    val inRadius = stations.filter { it.km <= vm.radiusKm }
 
     Scaffold(bottomBar = bottomBar) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -93,23 +93,38 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable ()
                 }
             }
 
+            selectedId?.let { id ->
+                StationSheet(vm, id, fuelId, onDismiss = { selectedId = null })
+            }
+
             if (location != null && stations.isEmpty() && rowState !is FuelRowState.Ready && rowState !is FuelRowState.Error) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
 
-            selected?.let { s ->
+            if (inRadius.size >= 2) {
+                val min = inRadius.minOf { it.station.price }
+                val max = inRadius.maxOf { it.station.price }
                 Card(Modifier.fillMaxWidth().padding(12.dp).align(Alignment.BottomCenter)) {
-                    Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        BrandBadge(s.station.brand, size = 44.dp, modifier = Modifier.padding(end = 12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(stationTitle(s.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("🐷", style = MaterialTheme.typography.headlineMedium)
+                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                            Text("Poupança por depósito", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                             Text(
-                                listOf(formatKm(s.km), s.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
+                                "↓ ${formatEuro(min)}   ↑ ${formatEuro(max)}",
                                 style = MaterialTheme.typography.bodySmall,
                             )
-                            Text("${formatEuro(s.station.price)}/L", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "${inRadius.size} bombas a ≤ ${vm.radiusKm} km · ${tankLiters.toInt()} L",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
-                        TextButton(onClick = { openMaps(context, s.station) }) { Text("Como chegar") }
+                        Text(
+                            formatMoney((max - min) * tankLiters),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = androidx.compose.ui.graphics.Color(0xFF16A34A),
+                        )
                     }
                 }
             }

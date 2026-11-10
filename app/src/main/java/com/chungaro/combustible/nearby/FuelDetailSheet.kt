@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -37,6 +37,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,19 +57,22 @@ private val Silver = Color(0xFF94A3B8)
 private val Bronze = Color(0xFFB45309)
 private val GoodGreen = Color(0xFF16A34A)
 
-/** Panel inferior con el detalle de un combustible: cercana vs barata, ahorro y ranking. */
+/** Panel inferior con el detalle de un combustible: cercana vs barata, ahorro, tendencia y ranking. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FuelDetailDialog(
+    vm: NearbyViewModel,
     fuel: FuelType,
     result: NearbyResult,
     radiusKm: Int,
     tankLiters: Double,
     consumptionL100: Double,
+    onOpenStation: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val zone by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             Modifier
@@ -75,7 +81,7 @@ fun FuelDetailDialog(
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp)
                 .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SheetHeader(fuel, result, radiusKm)
 
@@ -88,25 +94,22 @@ fun FuelDetailDialog(
                         "Não há bombas com preço a menos de $radiusKm km. A mais próxima:",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    StationCard("📍 Mais próxima", nearest!!, context, best = false, fuel = fuel, modifier = Modifier.fillMaxWidth())
+                    StationCard("📍 Mais próxima", nearest!!, context, best = false, fuel = fuel, onOpen = onOpenStation)
                 }
                 nearest == null || nearest.station.id == cheapest.station.id -> {
-                    StationCard("⭐ A mais próxima e a mais barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.fillMaxWidth())
+                    StationCard("⭐ A mais próxima e a mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
                 }
                 else -> {
-                    Row(
-                        Modifier.fillMaxWidth().height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        StationCard("📍 Mais próxima", nearest, context, best = false, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
-                        StationCard("💰 Mais barata", cheapest, context, best = true, fuel = fuel, modifier = Modifier.weight(1f).fillMaxHeight())
-                    }
+                    StationCard("💰 Mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
+                    StationCard("📍 Mais próxima", nearest, context, best = false, fuel = fuel, onOpen = onOpenStation)
                     SavingsBanner(nearest, cheapest, tankLiters, consumptionL100)
                 }
             }
 
+            TrendCard("Tendência na zona (média a ≤ ${HistoryRecorder.ZONE_KM.toInt()} km)", zone, fuel.uiColor)
+
             if (result.cheapestList.size > 1) {
-                Ranking(result, context)
+                Ranking(result, onOpenStation)
             }
 
             Text(
@@ -155,60 +158,49 @@ private fun StationCard(
     context: Context,
     best: Boolean,
     fuel: FuelType,
-    modifier: Modifier = Modifier,
+    onOpen: (Long) -> Unit,
 ) {
     Card(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth().clickable { onOpen(s.station.id) },
         colors = CardDefaults.cardColors(
             containerColor = if (best) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
         border = if (best) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(14.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandBadge(s.station.brand, size = 34.dp)
+        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            BrandBadge(s.station.brand, size = 46.dp)
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     label,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 8.dp),
                 )
+                Text(stationTitle(s.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocationOn, contentDescription = null, tint = fuel.uiColor, modifier = Modifier.size(14.dp))
+                    Text(
+                        " " + listOf(formatKm(s.km), s.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    String.format(Locale.getDefault(), "%.3f", s.station.price),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                )
-                Text(" €/L", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 4.dp))
-            }
-            Text(
-                stationTitle(s.station),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.LocationOn, contentDescription = null, tint = fuel.uiColor, modifier = Modifier.size(16.dp))
-                Text(
-                    " " + listOf(formatKm(s.km), s.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (s.station.updated.isNotBlank()) {
-                Text("Act. ${s.station.updated}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.weight(1f))
-            if (best) {
-                Button(onClick = { openMaps(context, s.station) }, modifier = Modifier.fillMaxWidth()) { Text("Ir") }
-            } else {
-                OutlinedButton(onClick = { openMaps(context, s.station) }, modifier = Modifier.fillMaxWidth()) { Text("Ir") }
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        String.format(Locale.getDefault(), "%.3f", s.station.price),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(" €", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 3.dp))
+                }
+                if (best) {
+                    Button(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp)) { Text("Ir") }
+                } else {
+                    OutlinedButton(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp)) { Text("Ir") }
+                }
             }
         }
     }
@@ -272,7 +264,7 @@ private fun MiniStat(label: String, value: String, modifier: Modifier, valueColo
 }
 
 @Composable
-private fun Ranking(result: NearbyResult, context: Context) {
+private fun Ranking(result: NearbyResult, onOpen: (Long) -> Unit) {
     val list = result.cheapestList
     val best = list.first().station.price
     val worst = list.last().station.price
@@ -280,10 +272,10 @@ private fun Ranking(result: NearbyResult, context: Context) {
         Text("Ranking da zona", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         list.forEachIndexed { i, s ->
             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            RankRow(i, s, best, worst, onClick = { openMaps(context, s.station) })
+            RankRow(i, s, best, worst, onClick = { onOpen(s.station.id) })
         }
         Text(
-            "Toque numa bomba para ir com o Maps.",
+            "Toque numa bomba para ver a ficha e a tendência.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -315,7 +307,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
         }
         BrandBadge(s.station.brand, size = 30.dp, modifier = Modifier.padding(start = 8.dp))
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-            Text(stationTitle(s.station), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stationTitle(s.station), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(formatKm(s.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(8.dp))
