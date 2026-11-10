@@ -93,7 +93,7 @@ fun VehiclesScreen(
         ) {
             item {
                 Text(
-                    "Toque num veículo para o usar no Início e nos Abastecimentos, ou em «Editar» para alterar os dados.",
+                    "Toca num veículo para o usares no Início e nos Abastecimentos, ou em «Editar» para mudares os dados.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -274,7 +274,7 @@ fun VehicleEditScreen(
             }
             Text(
                 "Os litros ao encher e o consumo servem para calcular se compensa ir à bomba mais barata. " +
-                    "Quando tiver histórico de abastecimentos, é usado o seu consumo real.",
+                    "Quando tiveres histórico de abastecimentos, usamos o teu consumo real.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

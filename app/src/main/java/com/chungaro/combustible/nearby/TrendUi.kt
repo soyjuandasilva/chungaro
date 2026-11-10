@@ -150,7 +150,7 @@ fun AdviceBanner(trend: Trend) {
         )
         Advice.LOWEST -> Triple("😍", "Preço mais baixo dos últimos 14 dias!", "Bom momento para abastecer.")
         Advice.BUY_NOW_RISING -> Triple("😨", "Mais vale abastecer hoje!", "O preço subiu $pct na última semana.")
-        Advice.WAIT_FALLING -> Triple("😎", "Pode esperar", "O preço desceu $pct na última semana.")
+        Advice.WAIT_FALLING -> Triple("😎", "Podes esperar", "O preço desceu $pct na última semana.")
         Advice.STABLE -> Triple("😐", "Preço estável", "Sem grandes mudanças na última semana.")
     }
     Surface(

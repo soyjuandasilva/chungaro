@@ -90,7 +90,7 @@ fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: 
     val diff = nearest.station.price - cheapest.station.price
     if (abs(diff) < 0.0005) return "A mais próxima tem o mesmo preço que a mais barata."
     return if (diff > 0) {
-        "A mais próxima custa mais ${formatEuro(diff)}/L: em ${liters.toInt()} L pagaria mais ${formatMoney(diff * liters)}. " +
+        "A mais próxima custa mais ${formatEuro(diff)}/L: em ${liters.toInt()} L pagavas mais ${formatMoney(diff * liters)}. " +
             "A mais barata fica ${formatKm(cheapest.km - nearest.km)} mais longe."
     } else {
         "A mais próxima é ${formatEuro(-diff)}/L mais barata que a melhor dentro do raio."
@@ -111,9 +111,9 @@ fun TripAdviceBox(a: TripAdvice) {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "Poupa ${formatMoney(a.savings)} no depósito; o desvio (~${formatKm(a.extraKm)} ida e volta) " +
+                "Poupas ${formatMoney(a.savings)} no depósito; o desvio (~${formatKm(a.extraKm)} ida e volta) " +
                     "gasta cerca de ${formatMoney(a.tripCost)} de combustível. " +
-                    if (good) "Ganha ${formatMoney(a.net)}." else "Perderia ${formatMoney(-a.net)}.",
+                    if (good) "Ganhas ${formatMoney(a.net)}." else "Perdias ${formatMoney(-a.net)}.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }

@@ -112,7 +112,7 @@ fun FuelDetailDialog(
             }
 
             Text(
-                "Preços oficiais da DGEG. Distâncias em linha reta desde a sua localização.",
+                "Preços oficiais da DGEG. Distâncias em linha reta desde onde estás.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -274,7 +274,7 @@ private fun Ranking(result: NearbyResult, onOpen: (Long) -> Unit) {
             RankRow(i, s, best, worst, onClick = { onOpen(s.station.id) })
         }
         Text(
-            "Toque numa bomba para ver a ficha e a tendência.",
+            "Toca numa bomba para veres a ficha e a tendência.",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

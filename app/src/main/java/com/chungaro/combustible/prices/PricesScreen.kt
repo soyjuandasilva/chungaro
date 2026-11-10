@@ -95,7 +95,7 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
             vm.favoritesError?.let { msg -> item { ErrorText(msg) } }
             if (vm.favorites.isEmpty()) {
                 item {
-                    Hint("Procure a sua bomba abaixo e marque-a com ♥ para ver aqui os preços sempre que abrir a app.")
+                    Hint("Procura a tua bomba aqui em baixo e marca-a com ♥ para veres os preços sempre que abrires a app.")
                 }
             } else {
                 items(vm.favorites, key = { "fav-$it" }) { id ->

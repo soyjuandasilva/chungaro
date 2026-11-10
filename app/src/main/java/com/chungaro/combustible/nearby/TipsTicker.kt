@@ -148,7 +148,7 @@ private fun rememberTips(vm: NearbyViewModel, myFuelId: Int, tankLiters: Double,
     val weeklyMine = computeWeekly(zones[myFuel.id].orEmpty(), myStations)
     when (weeklyMine.advice) {
         WeeklyAdvice.FILL_THIS_WEEK -> tips += Tip("📉", "${myFuel.short} ${pct(weeklyMine.changePct!!)} mais barato que na semana passada: boa altura para abastecer.", 0xFF16A34A, fuelId = myFuel.id)
-        WeeklyAdvice.WAIT -> tips += Tip("📈", "${myFuel.short} subiu ${pct(weeklyMine.changePct!!)} esta semana: se puder, abasteça só o necessário.", 0xFFDC2626, fuelId = myFuel.id)
+        WeeklyAdvice.WAIT -> tips += Tip("📈", "${myFuel.short} subiu ${pct(weeklyMine.changePct!!)} esta semana: se puderes, abastece só o necessário.", 0xFFDC2626, fuelId = myFuel.id)
         WeeklyAdvice.STABLE -> tips += Tip("➖", "${myFuel.short} estável esta semana (${pct(weeklyMine.changePct!!)}).", fuelId = myFuel.id)
         WeeklyAdvice.COLLECTING -> tips += Tip("📊", "A recolher histórico de preços: dia ${weeklyMine.days.coerceAtLeast(1)} de $WEEK_DAYS. As tendências chegam em breve.")
     }
@@ -158,15 +158,15 @@ private fun rememberTips(vm: NearbyViewModel, myFuelId: Int, tankLiters: Double,
         val near = ready.result.nearest
         if (near != null && near.station.id != c.station.id) {
             tripAdvice(near, c, tankLiters, consumptionL100)?.let { a ->
-                tips += if (a.worthIt) Tip("✅", "Compensa ir à mais barata: poupa ${formatMoney(a.net)} ao encher ${tankLiters.toInt()} L.", 0xFF16A34A, fuelId = myFuel.id)
-                else Tip("✋", "Não compensa ir à mais barata: o desvio come a poupança. Fique pela mais próxima.", 0xFFD97706, stationId = near.station.id)
+                tips += if (a.worthIt) Tip("✅", "Compensa ir à mais barata: poupas ${formatMoney(a.net)} ao encher ${tankLiters.toInt()} L.", 0xFF16A34A, fuelId = myFuel.id)
+                else Tip("✋", "Não compensa ir à mais barata: o desvio come a poupança. Fica-te pela mais próxima.", 0xFFD97706, stationId = near.station.id)
             }
         }
         ready.result.cheapestList.let { list ->
             if (list.size >= 2) {
                 val max = list.maxOf { it.station.price }
                 val saving = (max - c.station.price) * tankLiters
-                if (saving >= 0.5) tips += Tip("🐷", "Escolher bem a bomba poupa até ${formatMoney(saving)} por depósito na sua zona.", 0xFF16A34A, fuelId = myFuel.id)
+                if (saving >= 0.5) tips += Tip("🐷", "Escolher bem a bomba poupa até ${formatMoney(saving)} por depósito na tua zona.", 0xFF16A34A, fuelId = myFuel.id)
             }
         }
     }

@@ -161,7 +161,7 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             fuel.id,
             "${fuel.short} a ${String.format(Locale.getDefault(), "%.3f €", cheapest.station.price)}",
             "$name, a ${String.format(Locale.getDefault(), "%.1f km", cheapest.km)}. " +
-                "Está abaixo do seu alerta (${String.format(Locale.getDefault(), "%.3f €", threshold)}).",
+                "Está abaixo do teu alerta (${String.format(Locale.getDefault(), "%.3f €", threshold)}).",
         )
     }
 }

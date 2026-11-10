@@ -144,7 +144,7 @@ fun StationSheet(vm: NearbyViewModel, stationId: Long, defaultFuelId: Int, onDis
             TrendCard("Tendência do preço · ${selected.short}", points, selected.uiColor)
 
             Text(
-                "Preços oficiais da DGEG. O histórico é guardado pela app desde que a começou a usar.",
+                "Preços oficiais da DGEG. A app guarda o histórico desde que a começaste a usar.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

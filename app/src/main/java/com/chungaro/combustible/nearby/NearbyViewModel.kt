@@ -74,9 +74,9 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
             locating = false
             if (loc == null) {
                 locationError = if (location != null) {
-                    "Não foi possível atualizar a localização; é usada a última conhecida."
+                    "Não conseguimos atualizar a tua localização; usamos a última conhecida."
                 } else {
-                    "Não foi possível obter a sua localização. Ative a localização do telemóvel e tente novamente."
+                    "Não conseguimos saber onde estás. Ativa a localização do telemóvel e tenta outra vez."
                 }
                 if (location == null) return@launch
             } else {
@@ -97,6 +97,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                         cache[f.id] = System.currentTimeMillis() to fresh
                         withContext(Dispatchers.IO) { PriceCache.save(app, f.id, fresh) }
                         location?.let { (lat, lon) -> HistoryRecorder.record(app, f.id, fresh, lat, lon) }
+                        HistoryRecorder.recordNational(app, f.id, fresh)
                         updateRow(f.id)
                     } catch (e: CancellationException) {
                         throw e
@@ -113,6 +114,9 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
     /** Histórico de los últimos 30 días de una bomba (o de la zona: HistoryRecorder.ZONE_AVG). */
     fun history(fuelId: Int, stationId: Long): Flow<List<PricePoint>> =
         historyDao.observe(fuelId, stationId, LocalDate.now().toEpochDay() - 30)
+
+    /** Precio medio actual en todo el país (todas las bombas con precio). */
+    fun nationalPrice(fuelId: Int): NationalPrice? = cache[fuelId]?.second?.let { nationalAverage(it) }
 
     /** Histórico de todas las bombas de un combustible (para comparar semanas). */
     fun stationsHistory(fuelId: Int): Flow<List<PricePoint>> =

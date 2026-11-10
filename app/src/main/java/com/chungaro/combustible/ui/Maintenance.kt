@@ -74,7 +74,7 @@ fun MaintenanceSection(
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Ative as notificações para ser avisado quando se aproximar cada manutenção.")
+                        Text("Ativa as notificações e avisamos-te quando se aproximar cada manutenção.")
                         TextButton(onClick = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
                             Text("Ativar notificações")
                         }
@@ -85,8 +85,8 @@ fun MaintenanceSection(
         if (reminders.isEmpty()) {
             item {
                 Text(
-                    "Sem lembretes. Adicione a mudança de óleo, a inspeção, o seguro…\n" +
-                        "Será avisado alguns dias ou cerca de 500 km antes.",
+                    "Sem lembretes. Adiciona a mudança de óleo, a inspeção, o seguro…\n" +
+                        "Avisamos-te alguns dias ou cerca de 500 km antes.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 24.dp),
@@ -189,7 +189,7 @@ fun ReminderDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    "Indique uma data, uma quilometragem ou ambas.",
+                    "Indica uma data, uma quilometragem ou ambas.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

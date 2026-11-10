@@ -7,9 +7,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
@@ -93,31 +91,16 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
             ) {
                 Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Combustibles en una sola fila deslizable
-                    Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        FUEL_TYPES.forEach { f ->
-                            val sel = f.id == fuelId
-                            Surface(
-                                onClick = { fuelId = f.id; selectedId = null },
-                                shape = RoundedCornerShape(50),
-                                color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.10f),
-                                contentColor = if (sel) androidx.compose.ui.graphics.Color.White else f.uiColor,
-                            ) {
-                                Text(
-                                    f.short,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                )
-                            }
-                        }
-                    }
+                    // Todos los combustibles a la vista, sin deslizar
+                    FuelSelector(
+                        selectedId = fuelId,
+                        onSelect = { fuelId = it; selectedId = null },
+                        hint = "Escolhe o tipo de combustível para veres a melhor opção perto de ti",
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                    )
                     Box(Modifier.padding(horizontal = 14.dp)) {
                         when {
-                            location == null -> Text("Ative a localização no Início para ver o mapa de preços.", style = MaterialTheme.typography.bodySmall)
+                            location == null -> Text("Ativa a localização no Início para veres o mapa de preços.", style = MaterialTheme.typography.bodySmall)
                             stations.isEmpty() -> Text("A carregar preços…", style = MaterialTheme.typography.bodySmall)
                             else -> PriceLegend(stations.minOf { it.station.price }, stations.maxOf { it.station.price }, stations.size)
                         }
@@ -137,7 +120,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🐷", style = MaterialTheme.typography.headlineSmall)
                             Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                                Text("Quanto pode poupar ao encher", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text("Quanto podes poupar ao encher", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                 Text(
                                     "${liters.toInt()} L nas ${inRadius.size} bombas a ≤ ${vm.radiusKm} km",
                                     style = MaterialTheme.typography.labelSmall,

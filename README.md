@@ -2,7 +2,8 @@
 
 > Nombre en el móvil: **Atesta** (`app_name` en `app/src/main/res/values/strings.xml`).
 > Título en Google Play: **Atesta: Preço do Combustível**. La interfaz está en
-> **português de Portugal**.
+> **português de Portugal**, y le hablamos al usuario **de tú** («o teu veículo»,
+> «toca», «escolhe»), nunca de «você»/«si».
 
 App Android para ahorrar en combustible en Portugal: precios oficiales cerca de
 ti, registro de cargas, consumo, gráficos y mantenimiento.
@@ -15,7 +16,13 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
   tarjeta que dice si **merece la pena** ir a la más barata (ahorro en el
   depósito menos lo que cuesta el desvío). Los precios se guardan en el
   teléfono y se muestran al instante al abrir.
-- **Mapa**: gasolineras de la zona en OpenStreetMap con su precio, en verde las
+  Incluye **«Preço dos combustíveis hoje e na próxima semana»**: el precio
+  medio actual de cada combustible en todo Portugal (media de todas las
+  gasolineras con precio en la DGEG; se avisa de que varía de una a otra) y una
+  estimación para la semana que viene (tendencia de los últimos 14 días,
+  amortiguada y limitada a ±4 %; necesita ~1 semana de histórico).
+- **Mapa**: eliges el combustible entre todos a la vista (sin deslizar);
+  gasolineras de la zona en OpenStreetMap con su precio, en verde las
   baratas y en rojo las caras. «Cómo llegar» abre Maps.
 - **Vehículos**: varios, cada uno con tipo (coche, moto, furgoneta, camión,
   autocaravana), marca y modelo (con sugerencias), año, combustible, litros al

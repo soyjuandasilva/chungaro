@@ -166,7 +166,7 @@ fun RefuelFormScreen(
                 prefix = settings.currency,
             )
             if (priceSuggestions.isNotEmpty()) {
-                Text("Preços de hoje (toque para usar)", style = MaterialTheme.typography.labelMedium)
+                Text("Preços de hoje (toca para usar)", style = MaterialTheme.typography.labelMedium)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     priceSuggestions.forEach { sug ->
                         AssistChip(
@@ -188,7 +188,7 @@ fun RefuelFormScreen(
                 Column(Modifier.weight(1f)) {
                     Text("Depósito cheio", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "Encha o depósito para que a app calcule o consumo.",
+                        "Enche o depósito para a app calcular o teu consumo.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

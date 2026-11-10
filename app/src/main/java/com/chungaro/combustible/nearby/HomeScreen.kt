@@ -34,7 +34,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.Image
@@ -162,14 +161,17 @@ fun HomeScreen(
                 NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
             }
 
-            // 2) Evolución de precios por tipo de combustible (no depende del vehículo)
+            // 2) Precio medio del país hoy y estimación para la próxima semana
+            NationalPricesCard(vm, myFuelId)
+
+            // 3) Evolución de precios por tipo de combustible (no depende del vehículo)
             SectionHeader(
                 "Evolução dos preços",
                 "Como mudaram os preços de cada combustível e de cada bomba face à semana passada.",
             )
             PriceEvolution(vm, onOpenStation = { stationSheet = it })
 
-            // 3) El resto de combustibles
+            // 4) El resto de combustibles
             SectionHeader(
                 "Outros combustíveis",
                 "Bomba mais próxima e mais barata para cada tipo. Preços em €/L.",
@@ -177,7 +179,7 @@ fun HomeScreen(
             PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
 
             Text(
-                "Toque num combustível para ver as bombas e como lá chegar.\nFonte: DGEG — precoscombustiveis.dgeg.gov.pt",
+                "Toca num combustível para veres as bombas e como lá chegar.\nFonte: DGEG — precoscombustiveis.dgeg.gov.pt",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -261,9 +263,9 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
                         color = Color.White,
                     )
                     val sub = when {
-                        vm.locating -> "A obter a sua localização…"
-                        vm.pricesTime != null -> "Preços perto de si · " + updatedAgo(vm.pricesTime!!, now)
-                        else -> "Preços de hoje perto de si"
+                        vm.locating -> "A procurar onde estás…"
+                        vm.pricesTime != null -> "Preços perto de ti · " + updatedAgo(vm.pricesTime!!, now)
+                        else -> "Preços de hoje perto de ti"
                     }
                     Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
                 }
@@ -309,7 +311,7 @@ private fun PermissionCard(onRequest: () -> Unit) {
             Icon(Icons.Filled.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
             Text("Onde está o combustível mais barato?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Ative a localização para comparar, para cada combustível, a bomba mais próxima com a mais barata da sua zona. Preços oficiais da DGEG.",
+                "Ativa a localização e comparamos, para cada combustível, a bomba mais próxima com a mais barata da tua zona. Preços oficiais da DGEG.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Usar a minha localização") }
@@ -359,7 +361,7 @@ private fun VehicleSection(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.padding(horizontal = 4.dp)) {
                 Text(
-                    "Melhores opções para o seu veículo",
+                    "Melhores opções para o teu veículo",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -412,24 +414,11 @@ private fun PriceEvolution(vm: NearbyViewModel, onOpenStation: (Long) -> Unit) {
     var fuelId by rememberSaveable { mutableIntStateOf(FUEL_TYPES.first().id) }
     val fuel = FUEL_TYPES.first { it.id == fuelId }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FUEL_TYPES.forEach { f ->
-                val sel = f.id == fuelId
-                Surface(
-                    onClick = { fuelId = f.id },
-                    shape = RoundedCornerShape(50),
-                    color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.10f),
-                    contentColor = if (sel) Color.White else f.uiColor,
-                ) {
-                    Text(
-                        f.short,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
-                }
-            }
-        }
+        FuelSelector(
+            selectedId = fuelId,
+            onSelect = { fuelId = it },
+            hint = "Escolhe o tipo de combustível para veres como mudou o preço",
+        )
         WeeklyCard(vm, fuel, onOpenStation)
     }
 }
@@ -511,12 +500,12 @@ private fun MyFuelCard(
                 nearest?.station?.id == cheapest.station.id -> AdviceLine(
                     good = true,
                     title = "É também a bomba mais próxima",
-                    detail = "Não precisa de ir mais longe para pagar menos.",
+                    detail = "Não precisas de ir mais longe para pagar menos.",
                 )
                 advice != null -> AdviceLine(
                     good = advice.worthIt,
                     title = if (advice.worthIt) "Vale a pena ir à mais barata" else "Não compensa ir à mais barata",
-                    detail = "Face à mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""}): poupa ${formatMoney(advice.savings)} em ${tankLiters.toInt()} L − " +
+                    detail = "Face à mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""}): poupas ${formatMoney(advice.savings)} em ${tankLiters.toInt()} L − " +
                         "${formatMoney(advice.tripCost)} de combustível do desvio = " +
                         (if (advice.net >= 0) "" else "−") + formatMoney(kotlin.math.abs(advice.net)) + ".",
                 )

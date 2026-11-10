@@ -39,29 +39,29 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
         WeeklyAdvice.COLLECTING -> Quad(
             "📊",
             "A recolher histórico",
-            "A app guarda automaticamente, várias vezes por dia e mesmo fechada, o preço de cada combustível em cada bomba da sua zona. " +
+            "A app guarda automaticamente, várias vezes por dia e mesmo fechada, o preço de cada combustível em cada bomba da tua zona. " +
                 "A comparação semanal aparece quando houver uma semana de dados (dia ${w.days.coerceAtLeast(1)} de $WEEK_DAYS).",
             MaterialTheme.colorScheme.primary,
         )
         WeeklyAdvice.FILL_THIS_WEEK -> Quad(
             "📉",
             "Boa semana para abastecer",
-            "O ${fuel.short} está $pct mais barato do que na semana passada na sua zona " +
+            "O ${fuel.short} está $pct mais barato do que na semana passada na tua zona " +
                 "(média ${formatEuro(w.zoneBefore!!)} → ${formatEuro(w.zoneNow!!)}).",
             Green,
         )
         WeeklyAdvice.WAIT -> Quad(
             "📈",
-            "Se puder, adie o abastecimento",
+            "Se puderes, adia o abastecimento",
             "O ${fuel.short} subiu $pct face à semana passada " +
-                "(média ${formatEuro(w.zoneBefore!!)} → ${formatEuro(w.zoneNow!!)}). Abasteça só o necessário.",
+                "(média ${formatEuro(w.zoneBefore!!)} → ${formatEuro(w.zoneNow!!)}). Abastece só o necessário.",
             Red,
         )
         WeeklyAdvice.STABLE -> Quad(
             "➖",
             "Preços estáveis esta semana",
             "O ${fuel.short} variou só $pct face à semana passada (média ${formatEuro(w.zoneNow!!)}). " +
-                "Abasteça quando precisar, de preferência na mais barata.",
+                "Abastece quando precisares, de preferência na mais barata.",
             MaterialTheme.colorScheme.primary,
         )
     }

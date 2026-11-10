@@ -42,7 +42,7 @@ fun ChartsSection(stats: Stats, settings: AppSettings) {
     ) {
         if (refuels.isEmpty()) {
             Text(
-                "Registe alguns abastecimentos para ver os seus gráficos.",
+                "Regista alguns abastecimentos para veres os teus gráficos.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

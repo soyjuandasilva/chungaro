@@ -135,7 +135,7 @@ fun SettingsScreen(
                     Column(Modifier.weight(1f)) {
                         Text("Avisar-me quando o preço descer", style = MaterialTheme.typography.bodyLarge)
                         Text(
-                            "De ${fuel?.short ?: "o seu combustível"} (o de ${vehicle?.name ?: "o seu veículo"}), perto da sua última localização. Verificado a cada 6 horas.",
+                            "De ${fuel?.short ?: "o teu combustível"} (o de ${vehicle?.name ?: "o teu veículo"}), perto da tua última localização. Verificado a cada 6 horas.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -168,7 +168,7 @@ fun SettingsScreen(
 
             Section("Cópia de segurança") {
                 Text(
-                    "Guarde os seus veículos, abastecimentos e lembretes num ficheiro (por exemplo no Google Drive) para não os perder se mudar de telemóvel ou reinstalar a app.",
+                    "Guarda os teus veículos, abastecimentos e lembretes num ficheiro (por exemplo no Google Drive) para não os perderes se mudares de telemóvel ou reinstalares a app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
