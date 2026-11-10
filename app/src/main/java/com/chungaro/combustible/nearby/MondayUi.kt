@@ -1,6 +1,12 @@
 package com.chungaro.combustible.nearby
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,13 +52,7 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
     val today = LocalDate.now()
     val days = daysToMonday(today)
     val nextMonday = today.plusDays(days.toLong())
-    // Solo las noticias publicadas desde el lunes de esta semana hablan del próximo lunes.
-    val weekStart = remember(today) {
-        today.minusDays((7 - days).toLong() % 7).atStartOfDay(ZoneId.of("Europe/Lisbon")).toInstant().toEpochMilli()
-    }
-    val verdict = remember(vm.news, fuel.id, weekStart) {
-        mondayVerdict(vm.news.filter { (it.publishedAt ?: 0L) >= weekStart }, familyOf(fuel.id))
-    }
+    val verdict = rememberMondayVerdict(vm, fuel, today)
     val zone by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
     val zonePct = remember(zone) { computeWeekly(zone, emptyList()).changePct }
 
@@ -125,5 +125,77 @@ private fun trendText(pct: Double): String {
         pct > 0.05 -> "o preço subiu $v"
         pct < -0.05 -> "o preço desceu $v"
         else -> "o preço está estável"
+    }
+}
+
+/**
+ * Veredicto para el próximo lunes. Solo cuentan las noticias publicadas desde
+ * el martes anterior a ese lunes: las del propio lunes («ficam mais baratos
+ * hoje») hablan del cambio que ya ocurrió.
+ */
+@Composable
+fun rememberMondayVerdict(vm: NearbyViewModel, fuel: FuelType, today: LocalDate = LocalDate.now()): MondayVerdict {
+    val since = remember(today) { predictionWindowStart(today) }
+    return remember(vm.news, fuel.id, since) {
+        mondayVerdict(vm.news.filter { (it.publishedAt ?: 0L) >= since }, familyOf(fuel.id))
+    }
+}
+
+/** Inicio (martes 00:00, hora de Lisboa) de la ventana de noticias que hablan del próximo lunes. */
+fun predictionWindowStart(today: LocalDate): Long =
+    today.plusDays(daysToMonday(today).toLong() - 6).atStartOfDay(ZoneId.of("Europe/Lisbon")).toInstant().toEpochMilli()
+
+private val TickerBg = Color(0xFFFFF4DC)
+private val TickerInk = Color(0xFF7C2D12)
+
+/**
+ * Cintillo de noticias (ticker) para el mapa: una sola línea que se desplaza
+ * con el veredicto del lunes y el titular que lo respalda. Al tocarlo se abren
+ * las noticias.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun MondayTicker(vm: NearbyViewModel, fuel: FuelType, onOpenNews: () -> Unit) {
+    LaunchedEffect(Unit) { vm.loadNews() }
+    val today = LocalDate.now()
+    val days = daysToMonday(today)
+    val nextMonday = today.plusDays(days.toLong())
+    val verdict = rememberMondayVerdict(vm, fuel, today)
+    val (dot, message) = when (verdict.kind) {
+        MondayKind.FILL_NOW -> Amber to (if (days == 1) "⛽ ${fuel.short}: abastece hoje, amanhã sobe" else "⛽ ${fuel.short}: abastece antes de segunda, vai subir")
+        MondayKind.WAIT -> Green to "⏳ ${fuel.short}: se puderes, espera por segunda, vai descer"
+        MondayKind.UNCLEAR -> TickerInk.copy(alpha = 0.6f) to when {
+            vm.news.isEmpty() && vm.newsLoading -> "A ler as notícias da semana…"
+            days >= 5 -> "🤔 ${fuel.short}: as previsões para segunda costumam sair à quinta e à sexta"
+            else -> "🤔 ${fuel.short}: sem previsão clara para segunda"
+        }
+    }
+    val text = message + (verdict.evidence?.let { "   ·   📰 «${it.title}» (${it.source})" } ?: "") + "          "
+
+    Surface(onClick = onOpenNews, color = TickerBg, modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Etiqueta fija a la izquierda, como en los rótulos de las noticias
+            Surface(color = TickerInk, contentColor = Color.White) {
+                Row(Modifier.padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(8.dp).background(dot, CircleShape))
+                    Text(
+                        " SEG ${nextMonday.format(mondayFormat)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+            }
+            Text(
+                text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = TickerInk,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 10.dp)
+                    .basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 800),
+            )
+        }
     }
 }

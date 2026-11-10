@@ -58,4 +58,12 @@ class MondayAdviceTest {
         assertEquals(1, daysToMonday(LocalDate.of(2026, 11, 15))) // domingo
         assertEquals(7, daysToMonday(LocalDate.of(2026, 11, 16))) // lunes
     }
+
+    @Test
+    fun predictionWindowStartsOnTuesday() {
+        fun start(d: LocalDate) = java.time.Instant.ofEpochMilli(predictionWindowStart(d)).atZone(java.time.ZoneId.of("Europe/Lisbon")).toLocalDate()
+        assertEquals(LocalDate.of(2026, 11, 10), start(LocalDate.of(2026, 11, 10))) // martes: desde hoy
+        assertEquals(LocalDate.of(2026, 11, 10), start(LocalDate.of(2026, 11, 15))) // domingo: desde el martes
+        assertEquals(LocalDate.of(2026, 11, 17), start(LocalDate.of(2026, 11, 16))) // lunes: nada todavía
+    }
 }

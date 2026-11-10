@@ -177,15 +177,13 @@ fun MapScreen(
                 radiusKm = vm.radiusKm,
                 onRadius = { vm.selectRadius(it) },
             )
+            // Cintillo con «¿abastecer hoy o esperar al lunes?» para el combustible elegido
+            MondayTicker(vm, FUEL_TYPES.first { it.id == fuelId }, onOpenNews)
             LazyColumn(
                 Modifier.fillMaxWidth().height(screenH * 0.85f),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // «Abastece hoje ou espera por segunda?» para el combustible elegido
-                if (sort != SORT_FAVORITES) {
-                    item(key = "monday") { MondayCard(vm, FUEL_TYPES.first { it.id == fuelId }, onOpenNews) }
-                }
                 when {
                     !hasPermission -> item {
                         PermissionCard {
