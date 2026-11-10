@@ -17,6 +17,9 @@ jobs:
       - name: Ilustración de la cabecera
         run: bash tools/fetch-header-art.sh
 
+      - name: Logotipos candidatos
+        run: bash tools/fetch-logo-candidates.sh
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

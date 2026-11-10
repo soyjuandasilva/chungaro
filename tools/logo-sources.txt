@@ -1,0 +1,21 @@
+# clave|dominios (separados por espacios)|archivos posibles en Wikimedia Commons (separados por ;)
+galp|galp.com galp.pt|Galp Energia logo.svg;Galp logo.svg;Logo Galp.svg
+repsol|repsol.pt repsol.com|Repsol logo.svg;Repsol 2012 logo.svg;Logo Repsol.svg
+bp|bp.com|BP Helios logo.svg;BP logo.svg
+prio|prio.pt|Prio logo.svg;PRIO logo.svg
+moeve|moeveglobal.com|Moeve logo.svg;Moeve Global logo.svg
+cepsa|cepsa.pt cepsa.com|Cepsa logo.svg;Cepsa Logo.svg;Logo Cepsa.svg
+shell|shell.pt shell.com|Shell logo.svg;Royal Dutch Shell logo.svg
+totalenergies|totalenergies.com totalenergies.pt|TotalEnergies logo.svg;Logo TotalEnergies.svg
+intermarche|intermarche.pt intermarche.com|Intermarché logo 2009 classic.svg;Intermarché logo.svg;Logo Intermarché.svg;Intermarche logo.svg;Logo Intermarché 2009.svg
+leclerc|e-leclerc.pt e.leclerc|E.Leclerc logo.svg;Logo E.Leclerc Sans le texte.svg;Logo E.Leclerc.svg
+auchan|auchan.pt auchan.fr|Auchan logo.svg;Logo Auchan (2015).svg;Auchan-Logo.svg
+alvesbandeira|alvesbandeira.pt|Alves Bandeira logo.svg
+oz|ozenergia.pt|OZ Energia logo.svg
+q8|q8.it q8.com|Q8 logo.svg;Kuwait Petroleum Q8 logo.svg
+esso|esso.com esso.fr|Esso logo.svg;Esso textlogo.svg
+petroiberica|petroiberica.pt|Petroibérica logo.svg
+plenergy|plenergy.es|Plenergy logo.svg
+bxpress|bxpress.pt pingodoce.pt|Pingo Doce logo.svg
+petroprix|petroprix.com|Petroprix logo.svg
+avia|avia-international.com avia.pt|Avia logo.svg;AVIA logo.svg
