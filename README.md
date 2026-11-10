@@ -10,30 +10,32 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
 
 ## Pantallas
 
-- **Tour de bienvenida**: la primera vez que se abre la app, 4 pantallas
-  animadas (bienvenida, mapa, «¿abastecer hoy o esperar al lunes?» y Meu
-  veículo) que terminan pidiendo la ubicación. Se puede volver a ver desde el
-  menú: «Como funciona a Atesta».
+Tema oscuro (verde casi negro con acentos verde brillante) en toda la app.
 
-- **Inicio (mapa)**: mapa a pantalla completa con el precio de cada gasolinera
-  (verde las baratas, rojo las caras) y una hoja que se arrastra desde abajo:
-  combustible (desplegable), radio (5, 10 o 20 km), orden (más barata, más
-  próxima o favoritas), ahorro por depósito y la lista de bombas con precio y
-  hace cuánto se actualizó. Botón de menú arriba a la izquierda.
-  Arriba de la lista, **«Abastece hoje ou espera por segunda?»**: en Portugal
-  los precios cambian los lunes y los medios publican la previsión a final de
-  semana. La app lee los titulares de esta semana (Google Notícias), detecta si
-  anuncian subida o bajada para tu tipo de combustible (gasolina, gasóleo o
-  GPL) y aconseja llenar antes del lunes o esperar, enlazando la noticia.
-- **Ficha de gasolinera**: logotipo, favorita (♥) e «Ir lá»; precios de todos
-  sus combustibles, tendencia y morada.
-- **Menú lateral**: tu vehículo y las secciones:
-  - **Meu veículo**: Preços (consejos, mejores opciones y otros combustibles),
-    Histórico, Gráficos y Manutenção.
-  - **Preços e notícias**: precio medio de hoy en Portugal, evolución de tu
-    zona y las 5 últimas noticias de Google Notícias sobre el precio de los
-    combustibles la próxima semana.
-  - **Bombas favoritas**, **Alertas de preço** y **Definições**.
+- **Tour de bienvenida**: la primera vez, 4 pantallas animadas que terminan
+  pidiendo la ubicación (se repite desde Definições).
+- **Inicio**: logotipo, avisos (🔔 → Alertas) y Definições (⚙️); buscador de
+  postos por nombre, marca, localidad o morada; y 5 pestañas:
+  - **Mapa**: filtros (combustível, raio, ordem), cintillo «Abastece hoje ou
+    espera por segunda?», marcadores con el logotipo y color de cada marca,
+    capas (normal/relieve), centrar y «Mais baratos perto de ti».
+  - **Preços**: zona y radio, casillas por combustible con la media de la
+    zona y la de Portugal, postos más baratos (☆ favorito) y Calculadora.
+  - **Notícias**: veredicto del lunes y noticias de Google Notícias por
+    categoría (Preços, Mercado, Dicas, Mobilidade).
+  - **Favoritos**: tus postos con su precio e interruptor de Alertas.
+  - **Histórico**: evolución del precio medio de tu zona (7 días a 1 año) con
+    gráfico, variación, mínimo y máximo; y «Comparar» todos los combustibles.
+- **Detalhes do posto**: banner de la marca, morada, distancia y tiempo,
+  «Como chegar», precios de todos sus combustibles, tendencia e información;
+  compartir y favorito.
+- **Calculadora de poupança**: litros, combustible y lo que pagas en cada
+  posto; cuánto ahorras frente al más caro.
+- **Alertas de preço**: combustible, precio objetivo y todas las bombas de la
+  zona o solo las favoritas (se revisa cada 6 h).
+- **Definições**: accesos (O meu veículo, Alertas, Calculadora, Unidades…),
+  vehículos, unidades y copia de seguridad.
+- **O meu veículo**: Preços, Histórico de cargas, Gráficos y Manutenção.
 - **Vehículos**: varios, cada uno con tipo (coche, moto, furgoneta, camión,
   autocaravana), marca y modelo (con sugerencias), año, combustible, litros al
   llenar y consumo.
