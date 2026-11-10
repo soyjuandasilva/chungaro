@@ -72,7 +72,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
         newsLoading = true
         viewModelScope.launch {
             try {
-                news = NewsApi.latest(5)
+                news = NewsApi.latest(15) // 15 para el veredicto del lunes; se muestran 5
                 newsTime = System.currentTimeMillis()
                 newsError = false
             } catch (e: CancellationException) {

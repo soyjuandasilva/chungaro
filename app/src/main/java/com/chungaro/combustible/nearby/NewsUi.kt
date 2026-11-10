@@ -51,7 +51,7 @@ fun NewsCard(vm: NearbyViewModel, myFuelId: Int) {
                 )
                 TextButton(onClick = { vm.loadNews(force = true) }) { Text("Tentar outra vez") }
             }
-            else -> vm.news.forEach { item -> NewsRow(item) { openLink(context, item.link) } }
+            else -> vm.news.take(5).forEach { item -> NewsRow(item) { openLink(context, item.link) } }
         }
     }
 }
