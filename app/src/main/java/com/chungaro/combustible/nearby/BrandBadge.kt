@@ -50,7 +50,7 @@ private val RULES = listOf(
     BrandRule(listOf("cepsa"), BrandStyle("C", 0xFFE30613, 0xFFFFFFFF, domain = "cepsa.pt")),
     BrandRule(listOf("shell"), BrandStyle("S", 0xFFFFD500, 0xFFDD1D21, 0xFFDD1D21, domain = "shell.pt")),
     BrandRule(listOf("totalenergies", "total"), BrandStyle("T", 0xFFED0000, 0xFFFFFFFF, 0xFF0055A4, domain = "totalenergies.com")),
-    BrandRule(listOf("intermarche", "ecomarche"), BrandStyle("I", 0xFFE2001A, 0xFFFFFFFF, domain = "intermarche.pt")),
+    BrandRule(listOf("intermarche", "ecomarche"), BrandStyle("I", 0xFFE2001A, 0xFFFFFFFF)),
     BrandRule(listOf("leclerc"), BrandStyle("E", 0xFF0066B3, 0xFFFFFFFF, 0xFFF39200, domain = "e-leclerc.pt")),
     BrandRule(listOf("auchan", "jumbo"), BrandStyle("A", 0xFFE2001A, 0xFFFFFFFF, 0xFF00A650, domain = "auchan.pt")),
     BrandRule(listOf("alves bandeira"), BrandStyle("AB", 0xFF003DA5, 0xFFFFFFFF, 0xFFFFCD00, domain = "alvesbandeira.pt")),

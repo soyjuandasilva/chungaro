@@ -114,6 +114,10 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
     fun history(fuelId: Int, stationId: Long): Flow<List<PricePoint>> =
         historyDao.observe(fuelId, stationId, LocalDate.now().toEpochDay() - 30)
 
+    /** Histórico de todas las bombas de un combustible (para comparar semanas). */
+    fun stationsHistory(fuelId: Int): Flow<List<PricePoint>> =
+        historyDao.observeStations(fuelId, LocalDate.now().toEpochDay() - 15)
+
     fun selectRadius(km: Int) {
         if (km == radiusKm) return
         radiusKm = km

@@ -146,7 +146,7 @@ fun AdviceBanner(trend: Trend) {
         Advice.COLLECTING -> Triple(
             "📊",
             "A recolher histórico",
-            "Faltam ${(MIN_DAYS_FOR_TREND - trend.days).coerceAtLeast(1)} dia(s) para ver a tendência. A app guarda os preços sempre que os consulta.",
+            "Faltam ${(MIN_DAYS_FOR_TREND - trend.days).coerceAtLeast(1)} dia(s) para ver a tendência. A app guarda os preços automaticamente várias vezes por dia.",
         )
         Advice.LOWEST -> Triple("😍", "Preço mais baixo dos últimos 14 dias!", "Bom momento para abastecer.")
         Advice.BUY_NOW_RISING -> Triple("😨", "Mais vale abastecer hoje!", "O preço subiu $pct na última semana.")

@@ -28,6 +28,10 @@ abstract class HistoryDao {
     @Query("SELECT * FROM price_history WHERE fuelId = :fuelId AND stationId = :stationId AND day >= :fromDay ORDER BY day ASC")
     abstract fun observe(fuelId: Int, stationId: Long, fromDay: Long): Flow<List<PricePoint>>
 
+    /** Todas las bombas (no la media/mínimo de zona) de un combustible desde un día. */
+    @Query("SELECT * FROM price_history WHERE fuelId = :fuelId AND stationId > 0 AND day >= :fromDay ORDER BY day ASC")
+    abstract fun observeStations(fuelId: Int, fromDay: Long): Flow<List<PricePoint>>
+
     @Query("DELETE FROM price_history WHERE day < :beforeDay")
     abstract suspend fun prune(beforeDay: Long)
 }

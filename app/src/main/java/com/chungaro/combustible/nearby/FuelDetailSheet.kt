@@ -233,10 +233,10 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
             }
             if (advice != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MiniStat("Poupança em ${tankLiters.toInt()} L", formatMoney(advice.savings), Modifier.weight(1f))
-                    MiniStat("Custo do desvio", "−" + formatMoney(advice.tripCost), Modifier.weight(1f))
+                    MiniStat("Poupança", formatMoney(advice.savings), Modifier.weight(1f))
+                    MiniStat("Desvio", "−" + formatMoney(advice.tripCost), Modifier.weight(1f))
                     MiniStat(
-                        "Balance",
+                        "Saldo",
                         (if (advice.net >= 0) "+" else "−") + formatMoney(kotlin.math.abs(advice.net)),
                         Modifier.weight(1f),
                         valueColor = if (good) GoodGreen else MaterialTheme.colorScheme.error,

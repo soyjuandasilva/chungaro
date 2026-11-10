@@ -143,6 +143,9 @@ fun HomeScreen(
 
             // 1) Lo de tu vehículo
             VehicleSection(vehicles, selectedVehicleId, onSelectVehicle) {
+                FUEL_TYPES.firstOrNull { it.id == myFuelId }?.let { f ->
+                    WeeklyCard(vm, f, onOpenStation = { stationSheet = it })
+                }
                 MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
                 NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
             }

@@ -36,10 +36,10 @@ object AlertScheduler {
     /** Programa la revisión periódica (cada 6 h). Es idempotente. */
     fun schedule(context: Context) {
         val request = PeriodicWorkRequestBuilder<AlertWorker>(6, TimeUnit.HOURS)
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.NOT_REQUIRED).build())
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(WORK, ExistingPeriodicWorkPolicy.KEEP, request)
+            .enqueueUniquePeriodicWork(WORK, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 }
 
@@ -119,14 +119,35 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         }
     }
 
+    /**
+     * Guarda el histórico de precios automáticamente: cada vez, los combustibles
+     * de todos los vehículos; una vez al día, todos los combustibles. Después
+     * avisa si el combustible del vehículo en uso bajó del umbral.
+     */
     private suspend fun checkPrice(ctx: Context, store: SettingsStore, dao: com.chungaro.combustible.data.RefuelDao) {
         val settings = store.load()
         val (lat, lon) = store.loadLastLocation() ?: return
-        val vehicle = dao.vehicles().firstOrNull { it.id == store.loadSelectedVehicle() } ?: dao.vehicles().firstOrNull() ?: return
+        val vehicles = dao.vehicles()
+        val today = LocalDate.now().toString()
+        val fullDay = store.lastNotified("history_full") != today
+        val fuelIds = if (fullDay) FUEL_TYPES.map { it.id } else vehicles.map { it.fuelTypeId }.distinct()
+        val downloaded = mutableMapOf<Int, List<com.chungaro.combustible.nearby.PricedStation>>()
+        var allOk = true
+        fuelIds.forEach { id ->
+            runCatching { DgegApi.pricedStations(id) }
+                .onSuccess { list ->
+                    downloaded[id] = list
+                    PriceCache.save(ctx, id, list)
+                    com.chungaro.combustible.nearby.HistoryRecorder.record(ctx, id, list, lat, lon)
+                }
+                .onFailure { allOk = false }
+        }
+        if (fullDay && allOk) store.setLastNotified("history_full", today)
+
+        // Aviso de precio para el vehículo en uso.
+        val vehicle = vehicles.firstOrNull { it.id == store.loadSelectedVehicle() } ?: vehicles.firstOrNull() ?: return
         val fuel = FUEL_TYPES.firstOrNull { it.id == vehicle.fuelTypeId } ?: return
-        val stations = DgegApi.pricedStations(fuel.id)
-        PriceCache.save(ctx, fuel.id, stations)
-        com.chungaro.combustible.nearby.HistoryRecorder.record(ctx, fuel.id, stations, lat, lon)
+        val stations = downloaded[fuel.id] ?: return
         val threshold = settings.alertThreshold ?: return
         if (!settings.alertsEnabled || !Notifier.canNotify(ctx)) return
         val cheapest = computeNearby(stations, lat, lon, store.loadRadius().toDouble()).cheapest ?: return
@@ -135,7 +156,7 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val stamp = "${LocalDate.now()}_${cheapest.station.id}_${cheapest.station.price}"
         if (store.lastNotified(key) == stamp) return
         store.setLastNotified(key, stamp)
-        val name = listOf(cheapest.station.brand, cheapest.station.name).filter { it.isNotBlank() }.distinct().joinToString(" · ")
+        val name = cheapest.station.name.ifBlank { cheapest.station.brand }
         Notifier.show(
             ctx,
             Notifier.CHANNEL_PRICES,

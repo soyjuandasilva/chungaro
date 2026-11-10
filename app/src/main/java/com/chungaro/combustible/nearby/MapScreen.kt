@@ -6,6 +6,14 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,25 +83,74 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
         Box(Modifier.fillMaxSize().padding(padding)) {
             OsmMap(location, stations, onSelect = { selectedId = it })
 
-            Card(Modifier.fillMaxWidth().padding(12.dp).align(Alignment.TopCenter)) {
-                Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Card(
+                Modifier.fillMaxWidth().padding(12.dp).align(Alignment.TopCenter),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            ) {
+                Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Combustibles en una sola fila deslizable
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
                         FUEL_TYPES.forEach { f ->
-                            FilterChip(
-                                selected = f.id == fuelId,
+                            val sel = f.id == fuelId
+                            Surface(
                                 onClick = { fuelId = f.id; selectedId = null },
-                                label = { Text(f.short) },
-                            )
+                                shape = RoundedCornerShape(50),
+                                color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.10f),
+                                contentColor = if (sel) androidx.compose.ui.graphics.Color.White else f.uiColor,
+                            ) {
+                                Text(
+                                    f.short,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                )
+                            }
                         }
                     }
-                    Text(
+                    Box(Modifier.padding(horizontal = 14.dp)) {
                         when {
-                            location == null -> "Ative a localização no Início para ver o mapa de preços."
-                            stations.isEmpty() && rowState !is FuelRowState.Ready -> "A carregar preços…"
-                            else -> "${stations.size} bombas · verde = mais barata, vermelho = mais cara"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                            location == null -> Text("Ative a localização no Início para ver o mapa de preços.", style = MaterialTheme.typography.bodySmall)
+                            stations.isEmpty() -> Text("A carregar preços…", style = MaterialTheme.typography.bodySmall)
+                            else -> PriceLegend(stations.minOf { it.station.price }, stations.maxOf { it.station.price }, stations.size)
+                        }
+                    }
+                }
+            }
+
+            if (inRadius.size >= 2) {
+                val min = inRadius.minOf { it.station.price }
+                val max = inRadius.maxOf { it.station.price }
+                val liters = tankLiters
+                Card(
+                    Modifier.fillMaxWidth().padding(12.dp).align(Alignment.BottomCenter),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                ) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🐷", style = MaterialTheme.typography.headlineSmall)
+                            Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                                Text("Quanto pode poupar ao encher", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "${liters.toInt()} L nas ${inRadius.size} bombas a ≤ ${vm.radiusKm} km",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Text(
+                                formatMoney((max - min) * liters),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = androidx.compose.ui.graphics.Color(0xFF16A34A),
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            CostBox("Na mais barata", min, liters, androidx.compose.ui.graphics.Color(0xFF16A34A), Modifier.weight(1f))
+                            CostBox("Na mais cara", max, liters, androidx.compose.ui.graphics.Color(0xFFDC2626), Modifier.weight(1f))
+                        }
+                    }
                 }
             }
 
@@ -288,4 +345,46 @@ private fun meDot(context: Context): Bitmap {
     c.drawCircle(size / 2f, size / 2f, size / 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.WHITE })
     c.drawCircle(size / 2f, size / 2f, size / 2f - 3 * d, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF2563EB.toInt() })
     return bmp
+}
+
+@Composable
+private fun PriceLegend(min: Double, max: Double, count: Int) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(formatEuro(min), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF16A34A))
+            Box(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            listOf(
+                                androidx.compose.ui.graphics.Color(0xFF16A34A),
+                                androidx.compose.ui.graphics.Color(0xFFF59E0B),
+                                androidx.compose.ui.graphics.Color(0xFFDC2626),
+                            ),
+                        ),
+                    ),
+            )
+            Text(formatEuro(max), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFDC2626))
+        }
+        Row {
+            Text("mais barata", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+            Text("$count bombas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("mais cara", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+        }
+    }
+}
+
+@Composable
+private fun CostBox(label: String, price: Double, liters: Double, color: androidx.compose.ui.graphics.Color, modifier: Modifier) {
+    Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.10f), modifier = modifier) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
+            Text(formatMoney(price * liters), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+            Text("${formatEuro(price)}/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
