@@ -92,7 +92,9 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
+            StatusBarIcons(darkBackground = true)
             TopAppBar(
+                colors = atestaTopBarColors(),
                 title = {
                     Box {
                         Row(
@@ -308,7 +310,8 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
 /** Pestañas compactas: las cuatro caben a lo ancho, sin deslizar. */
 @Composable
 private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-    Column {
+    // Continúa la barra superior verde oscuro.
+    Column(Modifier.background(AtestaGreen)) {
         Row(Modifier.fillMaxWidth()) {
             labels.forEachIndexed { i, label ->
                 val sel = i == selected
@@ -323,7 +326,7 @@ private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> 
                         label,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (sel) FontWeight.Bold else FontWeight.Medium,
-                        color = if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (sel) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier.padding(horizontal = 2.dp),
@@ -333,11 +336,10 @@ private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> 
                         Modifier
                             .fillMaxWidth(0.7f)
                             .height(3.dp)
-                            .background(if (sel) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent),
+                            .background(if (sel) AtestaGreenLight else androidx.compose.ui.graphics.Color.Transparent),
                     )
                 }
             }
         }
-        HorizontalDivider()
     }
 }

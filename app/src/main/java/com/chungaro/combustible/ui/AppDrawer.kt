@@ -3,6 +3,8 @@ package com.chungaro.combustible.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,32 +43,37 @@ fun AppDrawer(
     onFavorites: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    ModalDrawerSheet(drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest) {
-        Column(Modifier.statusBarsPadding().padding(vertical = 16.dp)) {
-            // Cabecera: tu vehículo
+    // Sin márgenes de sistema: el verde de la cabecera llega bajo la barra de estado.
+    ModalDrawerSheet(
+        drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        windowInsets = WindowInsets(0, 0, 0, 0),
+    ) {
+        Column(Modifier.padding(bottom = 16.dp)) {
+            // Cabecera verde oscuro: tu vehículo
             Surface(
                 onClick = onVehicle,
-                color = Color.Transparent,
+                color = AtestaGreen,
+                contentColor = Color.White,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(64.dp)) {
+                Row(Modifier.statusBarsPadding().padding(horizontal = 20.dp, vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = Color.White.copy(alpha = 0.15f), modifier = Modifier.size(64.dp)) {
                         Box(contentAlignment = Alignment.Center) {
                             if (vehicle != null) {
                                 Text(vehicle.emoji, style = MaterialTheme.typography.headlineMedium)
                             } else {
-                                Icon(painterResource(R.drawable.ic_fuel), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Icon(painterResource(R.drawable.ic_fuel), contentDescription = null, tint = Color.White)
                             }
                         }
                     }
                     Column(Modifier.padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         FUEL_TYPES.firstOrNull { it.id == vehicle?.fuelTypeId }?.let { FuelPill(it, compact = true) }
                         Text(vehicle?.name ?: "O meu veículo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                        Text("Ver o meu veículo", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text("Ver o meu veículo", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = AtestaGreenLight)
                     }
                 }
             }
-            HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
+            Spacer(Modifier.height(12.dp))
 
             DrawerItem("🚗", "Meu veículo", "Preços, abastecimentos e manutenção", onVehicle)
             DrawerItem("📊", "Preços e notícias", "Preço médio, evolução e próxima semana", onOverview)

@@ -106,6 +106,7 @@ fun MapScreen(
     onToggleFavorite: (Long) -> Unit,
     onOpenMenu: () -> Unit,
 ) {
+    com.chungaro.combustible.ui.StatusBarIcons(darkBackground = false)
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(LocationHelper.hasPermission(context)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
@@ -555,7 +556,7 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
     val d = context.resources.displayMetrics.density
     val text = String.format(Locale.getDefault(), "%.3f", price)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 13 * d
+        textSize = 12 * d
         typeface = Typeface.DEFAULT_BOLD
         this.color = android.graphics.Color.WHITE
     }

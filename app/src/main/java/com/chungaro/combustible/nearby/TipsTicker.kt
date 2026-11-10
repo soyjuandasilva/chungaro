@@ -46,7 +46,7 @@ import kotlin.math.abs
 data class Tip(
     val emoji: String,
     val text: String,
-    val color: Long = 0xFF0F766E,
+    val color: Long = 0xFF15803D,
     val fuelId: Int? = null,
     val stationId: Long? = null,
 )

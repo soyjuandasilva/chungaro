@@ -78,7 +78,9 @@ fun SettingsScreen(
 
     Scaffold(
         topBar = {
+            StatusBarIcons(darkBackground = true)
             TopAppBar(
+                colors = atestaTopBarColors(),
                 title = { Text("Definições", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }

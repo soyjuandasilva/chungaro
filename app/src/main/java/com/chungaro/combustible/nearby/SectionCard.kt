@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 
 /** Colores de cada sección, para reconocerlas de un vistazo. */
 object SectionColors {
-    val Teal = Color(0xFF0F766E)
+    val Teal = Color(0xFF15803D)
     val Blue = Color(0xFF1D4ED8)
     val Amber = Color(0xFFD97706)
     val Purple = Color(0xFF7C3AED)

@@ -75,7 +75,7 @@ import com.chungaro.combustible.R
 import java.text.DateFormat
 import java.util.Date
 
-private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF0F766E), Color(0xFF0E7490), Color(0xFF1D4ED8)))
+private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF14532D), Color(0xFF166534), Color(0xFF15803D)))
 
 @Composable
 fun HomeScreen(
@@ -112,6 +112,7 @@ fun HomeScreen(
         }
     }
 
+    com.chungaro.combustible.ui.StatusBarIcons(darkBackground = false)
     Scaffold { padding ->
         Column(
             Modifier
@@ -185,7 +186,7 @@ private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit, onBack: () -
             )
             Box(
                 Modifier.matchParentSize().background(
-                    Brush.horizontalGradient(listOf(Color(0xD9042F2E), Color(0x80042F2E), Color(0x00042F2E))),
+                    Brush.horizontalGradient(listOf(Color(0xE614532D), Color(0x9914532D), Color(0x1A14532D))),
                 ),
             )
         } else {
@@ -201,7 +202,7 @@ private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit, onBack: () -
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar ao mapa",
-                            tint = Color(0xFF0F766E),
+                            tint = Color(0xFF14532D),
                         )
                     }
                 }

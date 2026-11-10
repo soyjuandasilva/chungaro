@@ -71,7 +71,9 @@ fun VehiclesScreen(
 ) {
     Scaffold(
         topBar = {
+            StatusBarIcons(darkBackground = true)
             TopAppBar(
+                colors = atestaTopBarColors(),
                 title = { Text("Os meus veículos", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
@@ -163,7 +165,9 @@ fun VehicleEditScreen(
 
     Scaffold(
         topBar = {
+            StatusBarIcons(darkBackground = true)
             TopAppBar(
+                colors = atestaTopBarColors(),
                 title = { Text(if (existing == null) "Novo veículo" else "Editar veículo", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }

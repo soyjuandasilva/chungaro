@@ -1,6 +1,8 @@
 package com.chungaro.combustible.prices
 
 import androidx.compose.foundation.clickable
+import com.chungaro.combustible.ui.StatusBarIcons
+import com.chungaro.combustible.ui.atestaTopBarColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,7 +77,9 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
+            StatusBarIcons(darkBackground = true)
             TopAppBar(
+                colors = atestaTopBarColors(),
                 title = { Text("Bombas favoritas", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {

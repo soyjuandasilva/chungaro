@@ -49,8 +49,8 @@ import com.chungaro.combustible.ui.formatDate
 import java.time.LocalDate
 import java.util.Locale
 
-/** Fondo oscuro de las cabeceras (verde petróleo de Atesta). */
-val HeaderDark = Color(0xFF0B2E2B)
+/** Fondo oscuro de las cabeceras (el verde oscuro de Atesta). */
+val HeaderDark = com.chungaro.combustible.ui.AtestaGreen
 
 /**
  * Ficha de una bomba: cabecera oscura con logotipo, favorita y «Ir lá»;
@@ -124,7 +124,7 @@ fun StationSheet(
                     }
                     Button(
                         onClick = { openMaps(context, base) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF14B8A6), contentColor = HeaderDark),
+                        colors = ButtonDefaults.buttonColors(containerColor = com.chungaro.combustible.ui.AtestaGreenLight, contentColor = HeaderDark),
                     ) { Text("Ir lá", fontWeight = FontWeight.Bold) }
                 }
             }
