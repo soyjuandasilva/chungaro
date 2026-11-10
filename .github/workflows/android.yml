@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Tipografía (Barlow Semi Condensed, OFL)
+        run: bash tools/fetch-fonts.sh
+
       - name: Logotipos candidatos
         run: bash tools/fetch-logo-candidates.sh
 

@@ -1,6 +1,13 @@
 package com.chungaro.combustible.nearby
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,24 +52,49 @@ import java.util.Locale
 /** Precio con coma decimal y €: "1,659€". */
 fun euro3(v: Double): String = String.format(Locale.getDefault(), "%.3f€", v)
 
-/** Tarjeta oscura con borde fino, base de todo el diseño. */
+/** Relleno de las tarjetas: un poco más claro arriba, como el diseño. */
+val CardBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF15402C), Color(0xFF0C2619)))
+/** Borde con brillo arriba que se apaga hacia abajo. */
+val CardBorderBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF3F7A5C), Color(0xFF173828)))
+/** Verde de los botones y etiquetas de precio, con volumen. */
+val GreenBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF34D46F), Color(0xFF15803D)))
+
+/** Aplica el aspecto de tarjeta: sombra, degradado y borde brillante. */
+fun Modifier.glassCard(shape: Shape = RoundedCornerShape(18.dp), elevation: Dp = 10.dp): Modifier = this
+    .shadow(elevation, shape, ambientColor = Color.Black, spotColor = Color.Black)
+    .background(CardBrush, shape)
+    .border(BorderStroke(1.dp, CardBorderBrush), shape)
+    .clip(shape)
+
+/** Tarjeta oscura con profundidad, base de todo el diseño. */
 @Composable
 fun DarkCard(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
-    color: Color = AtestaCard,
+    @Suppress("UNUSED_PARAMETER") color: Color = AtestaCard,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(shape = shape, color = color, border = BorderStroke(1.dp, AtestaBorder), modifier = modifier.fillMaxWidth()) {
-        Column(content = content)
-    }
+    Column(modifier.fillMaxWidth().glassCard(shape), content = content)
 }
 
 /** Etiqueta de precio con fondo de color; texto oscuro si el fondo es claro. */
 @Composable
 fun PriceChip(price: Double, color: Color = AtestaGreenLight, caption: String? = null, big: Boolean = false) {
     val ink = if (color.luminance() > 0.45f) Color(0xFF052E16) else Color.White
-    Surface(shape = RoundedCornerShape(10.dp), color = color) {
+    val shape = RoundedCornerShape(10.dp)
+    // Degradado del propio color (más claro arriba) y un brillo en el borde
+    val light = Color(
+        (color.red + (1 - color.red) * 0.25f),
+        (color.green + (1 - color.green) * 0.25f),
+        (color.blue + (1 - color.blue) * 0.25f),
+    )
+    val dark = Color(color.red * 0.78f, color.green * 0.78f, color.blue * 0.78f)
+    Box(
+        Modifier
+            .shadow(4.dp, shape, spotColor = color, ambientColor = Color.Black)
+            .background(Brush.verticalGradient(listOf(light, color, dark)), shape)
+            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.55f), Color.Transparent))), shape),
+    ) {
         Column(
             Modifier.padding(horizontal = if (big) 12.dp else 10.dp, vertical = if (caption != null) 4.dp else 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -148,11 +180,14 @@ fun StationRow(
 /** Pastilla de filtro con flecha, como «Gasolina 95 ▾». */
 @Composable
 fun FilterPill(text: String, selected: Boolean = false, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = if (selected) AtestaGreenLight.copy(alpha = 0.18f) else AtestaCard,
-        border = BorderStroke(1.dp, if (selected) AtestaGreenLight else AtestaBorder),
+    val shape = RoundedCornerShape(50)
+    Box(
+        Modifier
+            .shadow(6.dp, shape, spotColor = if (selected) AtestaGreenLight else Color.Black)
+            .background(if (selected) Brush.verticalGradient(listOf(Color(0xFF1E5A3B), Color(0xFF0F3322))) else CardBrush, shape)
+            .border(BorderStroke(1.dp, if (selected) SolidColor(AtestaGreenLight) else CardBorderBrush), shape)
+            .clip(shape)
+            .clickable(onClick = onClick),
     ) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = if (selected) AtestaGreenLight else Color.White)

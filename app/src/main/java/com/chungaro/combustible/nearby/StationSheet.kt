@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.chungaro.combustible.ui.appBackground
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -98,7 +99,8 @@ private fun StationDetail(
     val base = entries.firstOrNull()?.second
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.appBackground(),
+        containerColor = Color.Transparent,
         topBar = {
             DarkTopBar("Detalhes do posto", icon = null, onBack = onBack) {
                 if (base != null) {

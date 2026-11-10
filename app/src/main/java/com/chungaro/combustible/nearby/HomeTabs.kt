@@ -3,6 +3,12 @@ package com.chungaro.combustible.nearby
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -82,7 +88,7 @@ import kotlin.math.abs
 private val Star = Color(0xFFFBBF24)
 
 /** Fondo de una casilla de combustible: su color oscurecido, para que el texto blanco se lea. */
-private fun tileColor(c: Color): Color = Color(c.red * 0.55f, c.green * 0.55f, c.blue * 0.55f)
+private fun tileColor(c: Color, k: Float = 0.55f): Color = Color(c.red * k, c.green * k, c.blue * k)
 
 // ---------------------------------------------------------------- Preços
 
@@ -139,12 +145,15 @@ fun PricesTab(
                     val r = (vm.rows[f.id] as? FuelRowState.Ready)?.result
                     val national = remember(version, f.id) { vm.nationalPrice(f.id) }
                     val sel = f.id == fuelId
-                    Surface(
-                        onClick = { onFuel(f.id) },
-                        shape = RoundedCornerShape(14.dp),
-                        color = tileColor(f.uiColor),
-                        border = BorderStroke(if (sel) 2.dp else 1.dp, if (sel) Color.White else f.uiColor.copy(alpha = 0.5f)),
-                        modifier = Modifier.weight(1f),
+                    val shape = RoundedCornerShape(14.dp)
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .shadow(if (sel) 12.dp else 6.dp, shape, spotColor = f.uiColor, ambientColor = Color.Black)
+                            .background(Brush.verticalGradient(listOf(tileColor(f.uiColor, 0.85f), tileColor(f.uiColor, 0.42f))), shape)
+                            .border(BorderStroke(if (sel) 2.dp else 1.dp, if (sel) SolidColor(Color.White) else Brush.verticalGradient(listOf(f.uiColor, Color.Transparent))), shape)
+                            .clip(shape)
+                            .clickable { onFuel(f.id) },
                     ) {
                         Column(Modifier.padding(vertical = 10.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(f.short, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2, minLines = 2)
@@ -258,22 +267,21 @@ fun NewsTab(vm: NearbyViewModel, fuelId: Int) {
             )
             else -> items.forEach { (c, n) ->
                 val (icon, color) = CATEGORY_STYLE[c] ?: (Icons.Outlined.LocalGasStation to AtestaGreenLight)
-                Surface(
-                    onClick = { openLink(context, n.link) },
-                    shape = RoundedCornerShape(18.dp),
-                    color = AtestaCard,
-                    border = BorderStroke(1.dp, AtestaBorder),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                Box(Modifier.fillMaxWidth().glassCard().clickable { openLink(context, n.link) }) {
                     Row(Modifier.padding(10.dp)) {
                         // Miniatura: el feed no trae imágenes, se usa el icono de la categoría.
                         Box(
                             Modifier.size(width = 96.dp, height = 96.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.22f), modifier = Modifier.fillMaxSize()) {
-                                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(44.dp)) }
-                            }
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .shadow(6.dp, RoundedCornerShape(12.dp))
+                                    .background(Brush.linearGradient(listOf(color, tileColor(color, 0.35f))), RoundedCornerShape(12.dp))
+                                    .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.4f), Color.Transparent))), RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) { Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(46.dp)) }
                         }
                         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(n.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, maxLines = 3, overflow = TextOverflow.Ellipsis)

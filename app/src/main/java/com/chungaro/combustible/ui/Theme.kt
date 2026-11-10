@@ -8,6 +8,14 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.core.view.WindowCompat
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -66,9 +74,36 @@ val AtestaCard = Color(0xFF0E2A1D)
 /** Borde fino de las tarjetas. */
 val AtestaBorder = Color(0xFF1E4A34)
 
+/**
+ * Barlow Semi Condensed (descargada por GitHub Actions a res/font). Si no está,
+ * null y se usa la letra del sistema.
+ */
+@Composable
+private fun appFontFamily(): FontFamily? {
+    val context = LocalContext.current
+    return remember {
+        fun id(name: String) = context.resources.getIdentifier(name, "font", context.packageName)
+        val fonts = listOf(
+            "barlow_medium" to FontWeight.Medium,
+            "barlow_semibold" to FontWeight.SemiBold,
+            "barlow_bold" to FontWeight.Bold,
+            "barlow_extrabold" to FontWeight.ExtraBold,
+        ).mapNotNull { (n, w) -> id(n).takeIf { it != 0 }?.let { Font(it, w) } }
+        // La medium también sirve de normal
+        val normal = id("barlow_medium").takeIf { it != 0 }?.let { Font(it, FontWeight.Normal) }
+        if (fonts.isEmpty()) null else FontFamily(listOfNotNull(normal) + fonts)
+    }
+}
+
 /** Letra algo más pequeña que la de Material por defecto, para que quepa más información. */
-private val AppTypography: Typography = Typography().let { t ->
-    fun TextStyle.small() = copy(fontSize = fontSize * 0.88f, lineHeight = lineHeight * 0.88f)
+private fun appTypography(family: FontFamily?): Typography = Typography().let { t ->
+    // La condensada es más estrecha: se mantiene el tamaño de Material.
+    val scale = if (family != null) 1.0f else 0.88f
+    fun TextStyle.small() = copy(
+        fontSize = fontSize * scale,
+        lineHeight = lineHeight * scale,
+        fontFamily = family ?: fontFamily,
+    )
     t.copy(
         displayLarge = t.displayLarge.small(), displayMedium = t.displayMedium.small(), displaySmall = t.displaySmall.small(),
         headlineLarge = t.headlineLarge.small(), headlineMedium = t.headlineMedium.small(), headlineSmall = t.headlineSmall.small(),
@@ -83,7 +118,7 @@ fun ChungaroTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = Dark,
         shapes = AppShapes,
-        typography = AppTypography,
+        typography = appTypography(appFontFamily()),
         content = content,
     )
 }
@@ -112,3 +147,10 @@ fun StatusBarIcons(darkBackground: Boolean) {
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkBackground
     }
 }
+
+/** Fondo de la app con profundidad: verde que se oscurece hacia abajo. */
+val AppBackgroundBrush: Brush = Brush.verticalGradient(
+    listOf(Color(0xFF0D3322), Color(0xFF07190F), Color(0xFF030B07)),
+)
+
+fun Modifier.appBackground(): Modifier = this.background(AppBackgroundBrush)

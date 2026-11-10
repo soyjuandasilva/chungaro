@@ -90,7 +90,8 @@ fun SettingsScreen(
     val fuel = FUEL_TYPES.firstOrNull { it.id == vehicle?.fuelTypeId }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.appBackground(),
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         topBar = { com.chungaro.combustible.nearby.DarkTopBar("Definições", androidx.compose.material.icons.Icons.Outlined.Settings, onBack) },
     ) { padding ->
         Column(

@@ -94,6 +94,7 @@ internal fun OsmMap(
     recenter: Int,
     centerOffsetY: Int = 0,
     topo: Boolean = false,
+    pastel: Boolean = false,
     onSelect: (Long) -> Unit,
 ) {
     val context = LocalContext.current
@@ -151,6 +152,8 @@ internal fun OsmMap(
         // Capa: callejero normal o relieve
         val source = if (topo) TileSourceFactory.OpenTopo else TileSourceFactory.MAPNIK
         if (map.tileProvider.tileSource != source) map.setTileSource(source)
+        // Tonos suaves: menos saturación y algo más claro, para que destaquen los marcadores.
+        map.overlayManager.tilesOverlay.setColorFilter(if (pastel) PASTEL_FILTER else null)
         map.overlays.clear()
         // Las más baratas se dibujan al final para quedar encima.
         stations.sortedByDescending { it.station.price }.forEach { s ->
@@ -204,69 +207,122 @@ internal fun pinColor(brand: String): Int {
     return if (light) 0xFF374151.toInt() else c
 }
 
+/** Filtro de color de los mosaicos del mapa: menos saturado y más luminoso. */
+private val PASTEL_FILTER = android.graphics.ColorMatrixColorFilter(
+    android.graphics.ColorMatrix().apply {
+        setSaturation(0.55f)
+        postConcat(
+            android.graphics.ColorMatrix(
+                floatArrayOf(
+                    0.88f, 0f, 0f, 0f, 28f,
+                    0f, 0.9f, 0f, 0f, 30f,
+                    0f, 0f, 0.88f, 0f, 26f,
+                    0f, 0f, 0f, 1f, 0f,
+                ),
+            ),
+        )
+    },
+)
+
+/** Mezcla un color con blanco (t > 0) o con negro (t < 0). */
+private fun shade(c: Int, t: Float): Int {
+    fun ch(shift: Int): Int {
+        val v = (c shr shift) and 0xFF
+        return if (t >= 0) (v + (255 - v) * t).toInt() else (v * (1 + t)).toInt()
+    }
+    return (0xFF shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+}
+
 /**
- * Marcador: logotipo en un círculo blanco arriba, el precio en una etiqueta
- * del color de la marca y un pico abajo.
+ * Marcador con volumen: cuerpo del color de la marca con degradado, borde
+ * blanco y sombra; arriba el logotipo en una pastilla blanca y abajo el precio
+ * grande; termina en pico.
  */
 private fun priceBubble(context: Context, price: Double, color: Int, brand: String, logos: Map<String, Bitmap>): Bitmap {
     val d = context.resources.displayMetrics.density
     val text = String.format(Locale.getDefault(), "%.3f€", price)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 13 * d
-        typeface = Typeface.DEFAULT_BOLD
+        textSize = 16 * d
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         this.color = android.graphics.Color.WHITE
+        setShadowLayer(2 * d, 0f, 1 * d, 0x55000000)
     }
     val style = brandStyle(brand)
-    val padH = 8 * d
-    val badge = 30 * d
-    val overlap = badge * 0.45f
-    val labelH = overlap + paint.textSize + 9 * d
-    val tail = 7 * d
-    val w = maxOf(paint.measureText(text) + padH * 2, badge + 8 * d)
-    val top = badge - overlap
-    val h = top + labelH + tail
-    val bmp = Bitmap.createBitmap(w.toInt() + 2, h.toInt() + 2, Bitmap.Config.ARGB_8888)
+    val shadowPad = 6 * d
+    val padH = 10 * d
+    val logoH = 24 * d
+    val gap = 4 * d
+    val textH = paint.textSize * 1.15f
+    val bodyW = maxOf(paint.measureText(text) + padH * 2, 72 * d)
+    val bodyH = 6 * d + logoH + gap + textH + 6 * d
+    val tail = 9 * d
+    val w = bodyW + shadowPad * 2
+    val h = bodyH + tail + shadowPad * 2
+    val bmp = Bitmap.createBitmap(w.toInt(), h.toInt(), Bitmap.Config.ARGB_8888)
     val c = android.graphics.Canvas(bmp)
-    val bg = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
-    val border = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.color = android.graphics.Color.WHITE
-        this.style = Paint.Style.STROKE
-        strokeWidth = 1.5f * d
-    }
-    // Etiqueta del precio
-    val rect = RectF(1f, top, w, top + labelH)
-    c.drawRoundRect(rect, 8 * d, 8 * d, bg)
-    c.drawRoundRect(rect, 8 * d, 8 * d, border)
-    val path = android.graphics.Path().apply {
-        moveTo(w / 2 - tail, top + labelH - 1)
-        lineTo(w / 2, top + labelH + tail)
-        lineTo(w / 2 + tail, top + labelH - 1)
+    val left = shadowPad
+    val top = shadowPad
+    val rect = RectF(left, top, left + bodyW, top + bodyH)
+    val radius = 12 * d
+
+    // Silueta (cuerpo + pico) con sombra
+    val shape = android.graphics.Path().apply {
+        addRoundRect(rect, radius, radius, android.graphics.Path.Direction.CW)
+        moveTo(left + bodyW / 2 - tail, top + bodyH - 1)
+        lineTo(left + bodyW / 2, top + bodyH + tail)
+        lineTo(left + bodyW / 2 + tail, top + bodyH - 1)
         close()
     }
-    c.drawPath(path, bg)
-    c.drawText(text, (w - paint.measureText(text)) / 2 + 1, top + overlap + 3 * d + paint.textSize * 0.9f, paint)
-    // Logotipo arriba, centrado, en un círculo blanco
-    val cx = w / 2
-    val cy = badge / 2 + 1
-    c.drawCircle(cx, cy, badge / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
-    c.drawCircle(cx, cy, badge / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
+        setShadowLayer(5 * d, 0f, 3 * d, 0x88000000.toInt())
+    }
+    c.drawPath(shape, shadowPaint)
+    // Degradado del color de la marca (más claro arriba)
+    val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        shader = android.graphics.LinearGradient(0f, top, 0f, top + bodyH + tail, shade(color, 0.22f), shade(color, -0.25f), android.graphics.Shader.TileMode.CLAMP)
+    }
+    c.drawPath(shape, fill)
+    // Brillo en la mitad superior
+    val gloss = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        shader = android.graphics.LinearGradient(0f, top, 0f, top + bodyH / 2, 0x40FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+    }
+    c.drawRoundRect(RectF(left, top, left + bodyW, top + bodyH / 2), radius, radius, gloss)
+    // Borde blanco
+    c.drawPath(shape, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        this.color = android.graphics.Color.WHITE
         this.style = Paint.Style.STROKE
-        strokeWidth = 1.5f * d
+        strokeWidth = 2 * d
     })
+
+    // Pastilla blanca con el logotipo
+    val logoRect = RectF(left + 6 * d, top + 6 * d, left + bodyW - 6 * d, top + 6 * d + logoH)
+    c.drawRoundRect(logoRect, 7 * d, 7 * d, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
     val logo = localLogo(context, style.logo) ?: style.domain?.let { logos[it] }
     if (logo != null) {
-        val r = badge / 2 - 4 * d
-        c.drawBitmap(logo, null, RectF(cx - r, cy - r, cx + r, cy + r), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+        // Encaja el logotipo manteniendo su proporción
+        val availH = logoH - 4 * d
+        val availW = logoRect.width() - 8 * d
+        val ratio = logo.width.toFloat() / logo.height.coerceAtLeast(1)
+        var lw = availH * ratio
+        var lh = availH
+        if (lw > availW) { lw = availW; lh = availW / ratio }
+        val cx = logoRect.centerX()
+        val cy = logoRect.centerY()
+        c.drawBitmap(logo, null, RectF(cx - lw / 2, cy - lh / 2, cx + lw / 2, cy + lh / 2), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
     } else {
         val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color
             typeface = Typeface.DEFAULT_BOLD
             textAlign = Paint.Align.CENTER
-            textSize = badge * if (style.label.length > 1) 0.38f else 0.5f
+            textSize = logoH * 0.62f
         }
-        c.drawText(style.label, cx, cy - (lp.descent() + lp.ascent()) / 2, lp)
+        val label = if (brand.isNotBlank() && brand.length <= 12) brand.uppercase() else style.label
+        while (lp.measureText(label) > logoRect.width() - 8 * d && lp.textSize > 6 * d) lp.textSize *= 0.9f
+        c.drawText(label, logoRect.centerX(), logoRect.centerY() - (lp.descent() + lp.ascent()) / 2, lp)
     }
+    // Precio
+    c.drawText(text, left + (bodyW - paint.measureText(text)) / 2, logoRect.bottom + gap + paint.textSize * 0.95f, paint)
     return bmp
 }
 

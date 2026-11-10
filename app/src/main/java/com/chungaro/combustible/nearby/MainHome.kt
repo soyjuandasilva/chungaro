@@ -5,6 +5,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import com.chungaro.combustible.ui.appBackground
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -139,16 +146,22 @@ fun MainHome(
     var stationId by rememberSaveable { mutableStateOf<Long?>(null) }
     val openStation: (Long) -> Unit = { stationId = it }
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+    Scaffold(containerColor = Color.Transparent, modifier = Modifier.appBackground()) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Cabecera
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = AtestaGreenLight, modifier = Modifier.size(42.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                    }
+                // Logotipo: círculo verde con brillo
+                Box(
+                    Modifier
+                        .size(46.dp)
+                        .shadow(12.dp, CircleShape, spotColor = AtestaGreenLight, ambientColor = AtestaGreenLight)
+                        .background(GreenBrush, CircleShape)
+                        .border(BorderStroke(1.5.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.Transparent))), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
                 }
-                Text("Atesta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 12.dp))
+                Text("Atesta", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 12.dp))
                 IconButton(onClick = onAlerts) { Icon(Icons.Outlined.NotificationsNone, contentDescription = "Alertas de preço") }
                 IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, contentDescription = "Definições") }
             }
@@ -184,12 +197,7 @@ fun MainHome(
 
 @Composable
 private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = AtestaCard,
-        border = BorderStroke(1.dp, AtestaBorder),
-        modifier = modifier.fillMaxWidth(),
-    ) {
+    Box(modifier.fillMaxWidth().glassCard(RoundedCornerShape(50), elevation = 6.dp)) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             Box(Modifier.weight(1f).padding(start = 10.dp)) {
@@ -226,16 +234,31 @@ private fun HomeTabs(selected: Int, onSelect: (Int) -> Unit) {
         Icons.Outlined.StarBorder to "Favoritos",
         Icons.Outlined.History to "Histórico",
     )
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp).glassCard(RoundedCornerShape(18.dp), elevation = 8.dp).padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         items.forEachIndexed { i, (icon, label) ->
             val sel = i == selected
-            Surface(
-                onClick = { onSelect(i) },
-                shape = RoundedCornerShape(14.dp),
-                color = if (sel) Color(0xFF16A34A) else Color.Transparent,
-                modifier = Modifier.weight(1f),
+            // Separador fino entre pestañas no seleccionadas
+            if (i > 0 && !sel && i - 1 != selected) {
+                Box(Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.12f)))
+            }
+            val shape = RoundedCornerShape(14.dp)
+            Box(
+                Modifier
+                    .weight(1f)
+                    .then(
+                        if (sel) Modifier
+                            .shadow(10.dp, shape, spotColor = AtestaGreenLight, ambientColor = AtestaGreenLight)
+                            .background(GreenBrush, shape)
+                            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.Transparent))), shape)
+                        else Modifier,
+                    )
+                    .clip(shape)
+                    .clickable { onSelect(i) },
             ) {
-                Column(Modifier.padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(icon, contentDescription = null, tint = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
                     Text(
                         label,
@@ -323,11 +346,17 @@ private fun MapTab(
             }
             DropPill(SORT_LABELS[sort], SORT_LABELS, sort) { sort = it }
         }
-        Spacer(Modifier.height(8.dp))
-        MondayTicker(vm, fuel, onOpenNews)
-
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            OsmMap(location, onMap, recenter, topo = topo, onSelect = onOpenStation)
+        Spacer(Modifier.height(10.dp))
+        // Mapa como tarjeta redondeada con borde, igual que el diseño
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, bottom = 10.dp)
+                .glassCard(RoundedCornerShape(24.dp), elevation = 12.dp),
+        ) {
+            OsmMap(location, onMap, recenter, topo = topo, pastel = true, onSelect = onOpenStation)
+            Box(Modifier.align(Alignment.TopCenter).fillMaxWidth()) { MondayTicker(vm, fuel, onOpenNews) }
 
             // Botones del mapa: capas y centrar
             Column(
@@ -338,12 +367,12 @@ private fun MapTab(
                 if (hasPermission) MapButton(Icons.Outlined.MyLocation, "Centrar na minha localização") { vm.refresh(); recenter++ }
             }
 
-            // Panel inferior
-            Surface(
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                color = AtestaCard.copy(alpha = 0.97f),
-                border = BorderStroke(1.dp, AtestaBorder),
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            // Panel inferior, sobre el mapa
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .glassCard(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), elevation = 16.dp),
             ) {
                 Column {
                     if (!hasPermission) {
@@ -355,15 +384,15 @@ private fun MapTab(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            if (sort == SORT_FAVORITES) "As tuas favoritas (${listed.size})" else "Mais baratos perto de ti (${listed.size})",
-                            style = MaterialTheme.typography.titleMedium,
+                            if (sort == SORT_FAVORITES) "As tuas favoritas (${listed.size})" else "Mais baratos perto de ti",
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             modifier = Modifier.weight(1f),
                         )
                         Icon(if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp, contentDescription = if (expanded) "Recolher" else "Expandir")
                     }
                     if (expanded) {
-                        Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
+                        Column(Modifier.heightIn(max = 230.dp).verticalScroll(rememberScrollState())) {
                             when {
                                 location == null -> Text("A procurar onde estás…", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
                                 listed.isEmpty() -> Text(
@@ -374,7 +403,7 @@ private fun MapTab(
                                 else -> listed.forEachIndexed { i, s ->
                                     if (i > 0) HorizontalDivider(color = AtestaBorder)
                                     StationRow(s.station, s.km, onClick = { onOpenStation(s.station.id) }) {
-                                        PriceChip(s.station.price, if (i == 0 && sort == SORT_CHEAPEST) AtestaGreenLight else Color(0xFF16A34A))
+                                        PriceChip(s.station.price, Color(0xFF22B455), big = true)
                                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
@@ -390,9 +419,16 @@ private fun MapTab(
 
 @Composable
 private fun MapButton(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = CircleShape, color = Color(0xFF0B1F16), border = BorderStroke(1.dp, AtestaBorder), shadowElevation = 6.dp, modifier = Modifier.size(48.dp)) {
-        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = description, tint = Color.White) }
-    }
+    Box(
+        Modifier
+            .size(50.dp)
+            .shadow(10.dp, CircleShape)
+            .background(Brush.verticalGradient(listOf(Color(0xFF1C3B2C), Color(0xFF07140D))), CircleShape)
+            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.Transparent))), CircleShape)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, contentDescription = description, tint = Color.White) }
 }
 
 /** Pastilla con menú desplegable. */
