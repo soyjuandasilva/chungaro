@@ -1,6 +1,30 @@
 package com.chungaro.combustible.nearby
 
 import android.content.Context
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.delay
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.RectF
@@ -63,79 +87,371 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
-@OptIn(ExperimentalLayoutApi::class)
+private const val SORT_CHEAPEST = 0
+private const val SORT_NEAREST = 1
+private const val SORT_FAVORITES = 2
+private const val PAGE = 10
+
+/**
+ * Inicio: mapa a pantalla completa con los precios y, abajo, una hoja que se
+ * arrastra con el combustible, el orden y la lista de bombas.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable () -> Unit) {
+fun MapScreen(
+    vm: NearbyViewModel,
+    defaultFuelId: Int,
+    tankLiters: Double,
+    favorites: List<Long>,
+    onToggleFavorite: (Long) -> Unit,
+    onOpenMenu: () -> Unit,
+) {
     val context = LocalContext.current
-    var fuelId by rememberSaveable { mutableIntStateOf(defaultFuelId) }
+    var hasPermission by remember { mutableStateOf(LocationHelper.hasPermission(context)) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
+        hasPermission = res.values.any { it }
+        if (hasPermission) vm.refresh()
+    }
+    LaunchedEffect(Unit) { if (!vm.started) vm.refresh() }
+    // Recarga sola: al volver a la app y cada 10 minutos.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && vm.started) vm.refresh()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(10 * 60_000L)
+            vm.refresh()
+        }
+    }
+
+    var fuelId by rememberSaveable(defaultFuelId) { mutableIntStateOf(defaultFuelId) }
+    var sort by rememberSaveable { mutableIntStateOf(SORT_CHEAPEST) }
+    var shown by rememberSaveable { mutableIntStateOf(PAGE) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var recenter by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) { if (!vm.started && LocationHelper.hasPermission(context)) vm.refresh() }
 
     val location = vm.location
     val rowState = vm.rows[fuelId]
-    val stations = remember(rowState, location, vm.radiusKm) {
-        val all = vm.stationsOf(fuelId).orEmpty()
+    val all = remember(rowState, location, vm.pricesVersion, fuelId) {
+        val list = vm.stationsOf(fuelId).orEmpty()
         val (lat, lon) = location ?: return@remember emptyList<StationAtDistance>()
-        all.map { StationAtDistance(it, distanceKm(lat, lon, it.lat, it.lon)) }
-            .filter { it.km <= vm.radiusKm * 1.5 }
+        list.map { StationAtDistance(it, distanceKm(lat, lon, it.lat, it.lon)) }
     }
+    val onMap = all.filter { it.km <= vm.radiusKm * 1.5 }
+    val inRadius = all.filter { it.km <= vm.radiusKm }
+    val listed = when (sort) {
+        SORT_NEAREST -> inRadius.sortedBy { it.km }
+        SORT_FAVORITES -> all.filter { it.station.id in favorites }.sortedBy { it.station.price }
+        else -> inRadius.sortedWith(compareBy({ it.station.price }, { it.km }))
+    }
+    val minP = inRadius.minOfOrNull { it.station.price }
+    val maxP = inRadius.maxOfOrNull { it.station.price }
 
-    Scaffold(bottomBar = bottomBar) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            OsmMap(location, stations, recenter, onSelect = { selectedId = it })
+    val screenH = LocalConfiguration.current.screenHeightDp.dp
+    val peek = screenH * 0.45f
+    val peekPx = with(LocalDensity.current) { peek.roundToPx() }
+    val scaffoldState = rememberBottomSheetScaffoldState()
 
-            Card(
-                Modifier.fillMaxWidth().padding(12.dp).align(Alignment.TopCenter),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = peek,
+        sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        sheetContainerColor = MaterialTheme.colorScheme.background,
+        sheetDragHandle = null,
+        sheetShadowElevation = 12.dp,
+        sheetContent = {
+            SheetHeader(
+                fuelId = fuelId,
+                onFuel = { fuelId = it; shown = PAGE; selectedId = null },
+                sort = sort,
+                onSort = { sort = it; shown = PAGE },
+                radiusKm = vm.radiusKm,
+                onRadius = { vm.selectRadius(it) },
+            )
+            LazyColumn(
+                Modifier.fillMaxWidth().height(screenH * 0.85f),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(Modifier.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Todos los combustibles a la vista, sin deslizar
-                    FuelSelector(
-                        selectedId = fuelId,
-                        onSelect = { fuelId = it; selectedId = null },
-                        hint = "Escolhe o tipo de combustível para veres a melhor opção perto de ti",
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                    )
-                    Box(Modifier.padding(horizontal = 14.dp)) {
-                        when {
-                            location == null -> Text("Ativa a localização no Início para veres o mapa de preços.", style = MaterialTheme.typography.bodySmall)
-                            stations.isEmpty() -> Text("A carregar preços…", style = MaterialTheme.typography.bodySmall)
-                            else -> PriceLegend(stations.minOf { it.station.price }, stations.maxOf { it.station.price }, stations.size)
+                when {
+                    !hasPermission -> item {
+                        PermissionCard {
+                            launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                        }
+                    }
+                    location == null || (all.isEmpty() && rowState !is FuelRowState.Error) -> item {
+                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    }
+                    else -> {
+                        if (sort != SORT_FAVORITES && inRadius.size >= 2 && minP != null && maxP != null) {
+                            item { SavingsCard(minP, maxP, inRadius.size, tankLiters) }
+                        }
+                        if (listed.isEmpty()) {
+                            item {
+                                Text(
+                                    if (sort == SORT_FAVORITES) "Ainda não tens bombas favoritas. Abre uma bomba e toca no ♥ para a guardares."
+                                    else "Não há bombas com este combustível a menos de ${vm.radiusKm} km. Experimenta um raio maior.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+                        } else {
+                            item {
+                                StationList(listed.take(shown), minP, maxP) { selectedId = it }
+                            }
+                            if (listed.size > shown) {
+                                item {
+                                    TextButton(onClick = { shown += PAGE }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Mostrar mais bombas", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                        item {
+                            Text(
+                                "Preços oficiais da DGEG — precoscombustiveis.dgeg.gov.pt",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         }
                     }
                 }
             }
+        },
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            OsmMap(location, onMap, recenter, centerOffsetY = -peekPx / 2, onSelect = { selectedId = it })
 
-            // Botón para volver a la ubicación actual
-            if (LocationHelper.hasPermission(context)) {
-                SmallFloatingActionButton(
+            // Menú
+            Surface(
+                onClick = onOpenMenu,
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                shadowElevation = 6.dp,
+                modifier = Modifier.statusBarsPadding().padding(16.dp).size(52.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Menu, contentDescription = "Menu") }
+            }
+
+            // Centrar en mi ubicación, justo encima de la hoja
+            if (hasPermission) {
+                Surface(
                     onClick = { vm.refresh(); recenter++ },
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
                     contentColor = MaterialTheme.colorScheme.primary,
+                    shadowElevation = 6.dp,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 24.dp)
-                        .size(48.dp),
+                        .padding(end = 16.dp, bottom = peek + 16.dp)
+                        .size(52.dp),
                 ) {
-                    Icon(painterResource(com.chungaro.combustible.R.drawable.ic_my_location), contentDescription = "Centrar na minha localização")
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(painterResource(com.chungaro.combustible.R.drawable.ic_my_location), contentDescription = "Centrar na minha localização")
+                    }
                 }
             }
+        }
+    }
 
-            selectedId?.let { id ->
-                StationSheet(vm, id, fuelId, onDismiss = { selectedId = null })
+    selectedId?.let { id ->
+        StationSheet(
+            vm, id, fuelId,
+            onDismiss = { selectedId = null },
+            isFavorite = id in favorites,
+            onToggleFavorite = { onToggleFavorite(id) },
+        )
+    }
+}
+
+/** Cabecera oscura de la hoja: combustible, radio y orden. */
+@Composable
+private fun SheetHeader(
+    fuelId: Int,
+    onFuel: (Int) -> Unit,
+    sort: Int,
+    onSort: (Int) -> Unit,
+    radiusKm: Int,
+    onRadius: (Int) -> Unit,
+) {
+    val fuel = FUEL_TYPES.first { it.id == fuelId }
+    Surface(color = HeaderDark, contentColor = Color.White, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+            Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 10.dp), contentAlignment = Alignment.Center) {
+                Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.4f), modifier = Modifier.width(40.dp).height(5.dp)) {}
             }
-
-            if (location != null && stations.isEmpty() && rowState !is FuelRowState.Ready && rowState !is FuelRowState.Error) {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f)) {
+                    Text("Combustível", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    var open by remember { mutableStateOf(false) }
+                    Box {
+                        Surface(onClick = { open = true }, shape = RoundedCornerShape(14.dp), color = fuel.uiColor) {
+                            Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.width(4.dp).height(18.dp).background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(2.dp)))
+                                Text("  " + fuel.short, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Escolher combustível", tint = Color.White)
+                            }
+                        }
+                        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                            FUEL_TYPES.forEach { f ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            f.short,
+                                            fontWeight = if (f.id == fuelId) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                            color = if (f.id == fuelId) f.uiColor else MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    },
+                                    leadingIcon = { Box(Modifier.width(4.dp).height(20.dp).background(f.uiColor, RoundedCornerShape(2.dp))) },
+                                    onClick = { open = false; onFuel(f.id) },
+                                )
+                            }
+                        }
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Raio", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    var open by remember { mutableStateOf(false) }
+                    Box {
+                        Surface(onClick = { open = true }, shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = 0.12f)) {
+                            Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text("≤ $radiusKm km", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Filled.ArrowDropDown, contentDescription = "Escolher raio")
+                            }
+                        }
+                        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                            NearbyViewModel.RADIUS_OPTIONS.forEach { km ->
+                                DropdownMenuItem(
+                                    text = { Text("$km km", fontWeight = if (km == radiusKm) FontWeight.ExtraBold else FontWeight.Normal) },
+                                    onClick = { open = false; onRadius(km) },
+                                )
+                            }
+                        }
+                    }
+                }
             }
+            Spacer(Modifier.height(14.dp))
+            Text("Ordenar bombas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Surface(shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = 0.12f), modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(4.dp)) {
+                    listOf("Mais barata", "Mais próxima", "Favoritas").forEachIndexed { i, label ->
+                        val sel = i == sort
+                        Surface(
+                            onClick = { onSort(i) },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (sel) Color.White else Color.Transparent,
+                            contentColor = if (sel) HeaderDark else Color.White,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (sel) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                modifier = Modifier.padding(vertical = 10.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
+/** Cuánto se ahorra al llenar en la más barata frente a la más cara de la zona. */
+@Composable
+private fun SavingsCard(min: Double, max: Double, count: Int, liters: Double) {
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 2.dp) {
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("💶", style = MaterialTheme.typography.headlineMedium)
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text("Poupança por depósito", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    "↓ ${formatEuro(min)}   ↑ ${formatEuro(max)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text("$count bombas · ${liters.toInt()} L", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text(
+                formatMoney((max - min) * liters),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF16A34A),
+            )
+        }
+    }
+}
+
+/** Lista de bombas: logotipo, nombre, localidad · morada, distancia, precio y cuándo se actualizó. */
+@Composable
+private fun StationList(items: List<StationAtDistance>, min: Double?, max: Double?, onOpen: (Long) -> Unit) {
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 2.dp) {
+        Column {
+            items.forEachIndexed { i, s ->
+                if (i > 0) HorizontalDivider(Modifier.padding(start = 76.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                val st = s.station
+                val priceColor = when {
+                    min != null && max != null && max - min > 1e-6 && st.price <= min + 1e-6 -> Color(0xFF16A34A)
+                    min != null && max != null && max - min > 1e-6 && st.price >= max - 1e-6 -> Color(0xFFDC2626)
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
+                Row(
+                    Modifier.fillMaxWidth().clickable { onOpen(st.id) }.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BrandBadge(st.brand, size = 48.dp)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(stationTitle(st), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            listOf(st.locality, st.address).filter { it.isNotBlank() }.joinToString(" · "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(formatKm(s.km), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                String.format(Locale.getDefault(), "%.3f", st.price),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = priceColor,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                            Text("€", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = priceColor, modifier = Modifier.padding(bottom = 4.dp))
+                        }
+                        if (st.updated.isNotBlank()) {
+                            Text(updatedText(st.updated), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDistance>, recenter: Int, onSelect: (Long) -> Unit) {
+private fun OsmMap(
+    location: Pair<Double, Double>?,
+    stations: List<StationAtDistance>,
+    recenter: Int,
+    centerOffsetY: Int = 0,
+    onSelect: (Long) -> Unit,
+) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val mapView = remember {
@@ -150,7 +466,7 @@ private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDist
             setMultiTouchControls(true)
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             controller.setZoom(13.0)
-        }
+        }.also { it.setMapCenterOffset(0, centerOffsetY) }
     }
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->

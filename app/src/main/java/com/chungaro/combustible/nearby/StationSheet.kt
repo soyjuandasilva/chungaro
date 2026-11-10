@@ -1,30 +1,36 @@
 package com.chungaro.combustible.nearby
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -32,122 +38,205 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chungaro.combustible.ui.formatDate
+import java.time.LocalDate
+import java.util.Locale
 
-/** Ficha de una bomba: todos sus combustibles, cómo llegar y tendencia del precio. */
+/** Fondo oscuro de las cabeceras (verde petróleo de Atesta). */
+val HeaderDark = Color(0xFF0B2E2B)
+
+/**
+ * Ficha de una bomba: cabecera oscura con logotipo, favorita y «Ir lá»;
+ * precios de todos sus combustibles, tendencia y horario.
+ * [isFavorite] null oculta el botón de favorita.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StationSheet(vm: NearbyViewModel, stationId: Long, defaultFuelId: Int, onDismiss: () -> Unit) {
+fun StationSheet(
+    vm: NearbyViewModel,
+    stationId: Long,
+    defaultFuelId: Int,
+    onDismiss: () -> Unit,
+    isFavorite: Boolean? = null,
+    onToggleFavorite: () -> Unit = {},
+) {
     val context = LocalContext.current
     val entries = FUEL_TYPES.mapNotNull { f -> vm.stationsOf(f.id)?.firstOrNull { it.id == stationId }?.let { f to it } }
-    val first = entries.firstOrNull()?.second
-    DetailSheet(
-        title = first?.let { stationTitle(it) } ?: "Bomba",
-        subtitle = "Ficha da bomba",
-        onDismiss = onDismiss,
+    val base = entries.firstOrNull()?.second
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = state,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.background,
+        scrimColor = Color.Black.copy(alpha = 0.5f),
+        dragHandle = null,
     ) {
-        if (entries.isEmpty()) {
+        if (base == null) {
             Text("Sem dados para esta bomba.", Modifier.padding(24.dp))
-            return@DetailSheet
+            return@ModalBottomSheet
         }
-        val base = entries.first().second
+        LaunchedEffect(stationId) { vm.loadOpeningHours(base) }
         var selFuel by rememberSaveable(stationId) {
             mutableIntStateOf(entries.firstOrNull { it.first.id == defaultFuelId }?.first?.id ?: entries.first().first.id)
         }
-        val km = vm.location?.let { (lat, lon) -> distanceKm(lat, lon, base.lat, base.lon) }
-        val points by remember(selFuel, stationId) { vm.history(selFuel, stationId) }
-            .collectAsStateWithLifecycle(emptyList())
         val selected = FUEL_TYPES.first { it.id == selFuel }
+        val km = vm.location?.let { (lat, lon) -> distanceKm(lat, lon, base.lat, base.lon) }
+        val points by remember(selFuel, stationId) { vm.history(selFuel, stationId) }.collectAsStateWithLifecycle(emptyList())
+
+        // Cabecera oscura
+        Surface(color = HeaderDark, contentColor = Color.White, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(start = 16.dp, end = 12.dp, bottom = 16.dp)) {
+                Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 12.dp), contentAlignment = Alignment.Center) {
+                    Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.4f), modifier = Modifier.width(40.dp).height(5.dp)) {}
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = Color.White, modifier = Modifier.size(56.dp)) {
+                        Box(contentAlignment = Alignment.Center) { BrandBadge(base.brand, size = 50.dp) }
+                    }
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(stationTitle(base), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            listOf(base.locality, base.address).filter { it.isNotBlank() }.joinToString(" · "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        km?.let { Text("➤ " + formatKm(it), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.8f)) }
+                    }
+                    isFavorite?.let { fav ->
+                        IconButton(onClick = onToggleFavorite) {
+                            Icon(
+                                if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (fav) "Tirar das favoritas" else "Guardar nas favoritas",
+                                tint = if (fav) Color(0xFFF87171) else Color.White,
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = { openMaps(context, base) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF14B8A6), contentColor = HeaderDark),
+                    ) { Text("Ir lá", fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
 
         Column(
             Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = 12.dp, bottom = 24.dp)
+                .padding(top = 20.dp, bottom = 24.dp)
                 .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // Cabecera
-            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.inverseSurface) {
-                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    BrandBadge(base.brand, size = 52.dp)
-                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                        Text(
-                            stationTitle(base),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.inverseOnSurface,
-                        )
-                        Text(
-                            listOfNotNull(km?.let { "➤ " + formatKm(it) }, base.locality.ifBlank { null }).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.8f),
-                        )
-                        if (base.brand.isNotBlank() && !base.name.contains(base.brand, ignoreCase = true)) {
-                            Text(base.brand, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.7f))
-                        }
-                    }
-                    Button(
-                        onClick = { openMaps(context, base) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                    ) { Text("Ir") }
-                }
-            }
-            if (base.address.isNotBlank()) {
-                Text(base.address, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // Combustibles de esta bomba
-            Card(Modifier.fillMaxWidth()) {
+            BlockTitle("Combustíveis a ${formatDate(LocalDate.now().toEpochDay())}")
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, shadowElevation = 2.dp) {
                 Column {
-                    entries.forEachIndexed { i, (fuel, st) ->
-                        if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        val isSel = fuel.id == selFuel
-                        val avg = (vm.rows[fuel.id] as? FuelRowState.Ready)?.result?.averageInRadius
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .background(if (isSel) fuel.uiColor.copy(alpha = 0.10f) else Color.Transparent)
-                                .clickable { selFuel = fuel.id }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(Modifier.width(4.dp).height(36.dp).clip(RoundedCornerShape(2.dp)).background(fuel.uiColor))
-                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                Text(fuel.short, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                if (st.updated.isNotBlank()) {
-                                    Text("Atualizado: ${st.updated}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+                    entries.chunked(3).forEach { row ->
+                        Row(Modifier.fillMaxWidth()) {
+                            row.forEach { (fuel, st) ->
+                                FuelTile(fuel, st, selected = fuel.id == selFuel, modifier = Modifier.weight(1f)) { selFuel = fuel.id }
                             }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(formatEuro(st.price), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                avg?.let {
-                                    val d = st.price - it
-                                    Text(
-                                        if (d <= 0) "${formatEuro(-d)} abaixo da média" else "${formatEuro(d)} acima da média",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (d <= 0) Color(0xFF16A34A) else MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
+                            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
+                    }
+                    // Comparación con la media de la zona del combustible elegido
+                    val st = entries.first { it.first.id == selFuel }.second
+                    (vm.rows[selFuel] as? FuelRowState.Ready)?.result?.averageInRadius?.let { avg ->
+                        val d = st.price - avg
+                        Text(
+                            if (d <= 0) "${selected.short}: ${formatEuro(-d)} abaixo da média da zona"
+                            else "${selected.short}: ${formatEuro(d)} acima da média da zona",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (d <= 0) Color(0xFF16A34A) else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        )
                     }
                 }
             }
 
-            TrendCard("Tendência do preço · ${selected.short}", points, selected.uiColor)
+            Spacer(Modifier.height(8.dp))
+            BlockTitle("Tendência de preços")
+            TrendCard(selected.short, points, selected.uiColor)
+
+            Spacer(Modifier.height(8.dp))
+            BlockTitle("Horário")
+            val hours = vm.openingHours[stationId]
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    when {
+                        hours == null -> Text("A procurar…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        hours.isEmpty() -> Text("Não indicado", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        else -> hours.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
+                    }
+                    Text("Fonte: OpenStreetMap", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            if (base.address.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                BlockTitle("Morada")
+                Text(base.address, style = MaterialTheme.typography.bodyMedium)
+            }
 
             Text(
                 "Preços oficiais da DGEG. A app guarda o histórico desde que a começaste a usar.",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
             )
+        }
+    }
+}
+
+@Composable
+private fun BlockTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+}
+
+@Composable
+private fun FuelTile(fuel: FuelType, st: PricedStation, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) fuel.uiColor.copy(alpha = 0.10f) else Color.Transparent,
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.width(4.dp).height(14.dp).background(fuel.uiColor, RoundedCornerShape(2.dp)))
+                Text(
+                    " " + fuel.short.uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    String.format(Locale.getDefault(), "%.3f", st.price),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text("€", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+            }
+            if (st.updated.isNotBlank()) {
+                Text(updatedText(st.updated), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
         }
     }
 }

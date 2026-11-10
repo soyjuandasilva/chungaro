@@ -109,6 +109,18 @@ class PricesViewModel(app: Application) : AndroidViewModel(app) {
         selectedError = null
     }
 
+    /** Marca o desmarca una bomba como favorita solo con su id (desde el mapa o su ficha). */
+    fun toggleFavoriteId(id: Long) {
+        if (id in favorites) {
+            favorites = favorites - id
+            favoriteDetails = favoriteDetails - id
+        } else {
+            favorites = favorites + id
+            refreshFavorites()
+        }
+        store.saveFavorites(favorites)
+    }
+
     fun toggleFavorite(detail: StationDetail) {
         val id = detail.id
         if (id in favorites) {

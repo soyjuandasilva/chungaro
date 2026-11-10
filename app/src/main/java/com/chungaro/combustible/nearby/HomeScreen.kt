@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -81,7 +82,7 @@ fun HomeScreen(
     vm: NearbyViewModel,
     myFuelId: Int,
     onOpenSettings: () -> Unit,
-    bottomBar: @Composable () -> Unit,
+    onBack: () -> Unit,
 ) {
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(LocationHelper.hasPermission(context)) }
@@ -111,7 +112,7 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(bottomBar = bottomBar) { padding ->
+    Scaffold { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -120,7 +121,7 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(SectionSpacing),
         ) {
-            Header(vm, onOpenSettings)
+            Header(vm, onOpenSettings, onBack)
 
             // 1) Precio medio de hoy en todo el país, en grande
             NationalPricesCard(vm, myFuelId)
@@ -158,7 +159,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit) {
+private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit, onBack: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -195,20 +196,19 @@ private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(44.dp)) {
+                Surface(onClick = onBack, shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(44.dp)) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            painterResource(R.drawable.ic_fuel),
-                            contentDescription = null,
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar ao mapa",
                             tint = Color(0xFF0F766E),
-                            modifier = Modifier.size(26.dp),
                         )
                     }
                 }
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
                     Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium,
+                        "Preços e notícias",
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
                     )

@@ -1,23 +1,18 @@
 package com.chungaro.combustible.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chungaro.combustible.ChungaroApplication
@@ -33,9 +28,12 @@ import com.chungaro.combustible.prices.PricesViewModel
 
 /** Valor de editingId para un abastecimiento nuevo. */
 private const val NEW = 0L
+/** Inicio: el mapa con la hoja de bombas. */
 private const val TAB_HOME = 0
-private const val TAB_MAP = 1
-private const val TAB_REFUELS = 2
+/** «Meu veículo». */
+private const val TAB_REFUELS = 1
+/** «Preços e notícias»: precio medio, evolución y noticias. */
+private const val TAB_OVERVIEW = 2
 private const val TAB_FAVORITES = 3
 
 /** Valor de editingVehicle para crear uno nuevo. */
@@ -68,33 +66,11 @@ fun ChungaroApp(
         ?: vehicle?.consumption ?: 6.5
     val myFuelId = vehicle?.fuelTypeId ?: DEFAULT_FUEL_ID
 
-    val bottomBar: @Composable () -> Unit = {
-        NavigationBar {
-            NavigationBarItem(
-                selected = tab == TAB_HOME,
-                onClick = { tab = TAB_HOME },
-                icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-                label = { Text("Início", maxLines = 1) },
-            )
-            NavigationBarItem(
-                selected = tab == TAB_MAP,
-                onClick = { tab = TAB_MAP },
-                icon = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
-                label = { Text("Mapa", maxLines = 1) },
-            )
-            NavigationBarItem(
-                selected = tab == TAB_REFUELS,
-                onClick = { tab = TAB_REFUELS },
-                icon = { Icon(painterResource(com.chungaro.combustible.R.drawable.ic_fuel), contentDescription = null) },
-                label = { Text("Meu veículo", maxLines = 1) },
-            )
-            NavigationBarItem(
-                selected = tab == TAB_FAVORITES,
-                onClick = { tab = TAB_FAVORITES },
-                icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                label = { Text("Favoritos", maxLines = 1) },
-            )
-        }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    fun go(screen: Int) {
+        tab = screen
+        scope.launch { drawerState.close() }
     }
 
     val id = editingId
@@ -167,13 +143,18 @@ fun ChungaroApp(
                 onBack = { editingId = null },
             )
         }
-        tab == TAB_MAP -> {
+        tab == TAB_OVERVIEW -> {
             BackHandler { tab = TAB_HOME }
-            MapScreen(nearbyVm, myFuelId, bottomBar)
+            HomeScreen(
+                vm = nearbyVm,
+                myFuelId = myFuelId,
+                onOpenSettings = { showSettings = true },
+                onBack = { tab = TAB_HOME },
+            )
         }
         tab == TAB_FAVORITES -> {
             BackHandler { tab = TAB_HOME }
-            PricesScreen(pricesVm, bottomBar)
+            PricesScreen(pricesVm, onBack = { tab = TAB_HOME })
         }
         tab == TAB_REFUELS -> {
             BackHandler { tab = TAB_HOME }
@@ -192,7 +173,7 @@ fun ChungaroApp(
                 onManageVehicles = { showVehicles = true },
                 onSaveReminder = { vm.saveReminder(it) },
                 onDeleteReminder = { vm.deleteReminder(it) },
-                bottomBar = bottomBar,
+                onBack = { tab = TAB_HOME },
                 pricesContent = {
                     VehiclePricesSection(
                         vm = nearbyVm,
@@ -204,12 +185,32 @@ fun ChungaroApp(
                 },
             )
         }
-        else -> HomeScreen(
-            vm = nearbyVm,
-            myFuelId = myFuelId,
-            onOpenSettings = { showSettings = true },
-            bottomBar = bottomBar,
-        )
+        else -> {
+            BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                // Sin gesto para abrirlo: arrastrar el dedo mueve el mapa.
+                gesturesEnabled = drawerState.isOpen,
+                drawerContent = {
+                    AppDrawer(
+                        vehicle = vehicle,
+                        onVehicle = { go(TAB_REFUELS) },
+                        onOverview = { go(TAB_OVERVIEW) },
+                        onFavorites = { go(TAB_FAVORITES) },
+                        onSettings = { scope.launch { drawerState.close() }; showSettings = true },
+                    )
+                },
+            ) {
+                MapScreen(
+                    vm = nearbyVm,
+                    defaultFuelId = myFuelId,
+                    tankLiters = vehicle?.tankLiters ?: 50.0,
+                    favorites = pricesVm.favorites,
+                    onToggleFavorite = { pricesVm.toggleFavoriteId(it) },
+                    onOpenMenu = { scope.launch { drawerState.open() } },
+                )
+            }
+        }
     }
 
     crashReport?.let { report ->

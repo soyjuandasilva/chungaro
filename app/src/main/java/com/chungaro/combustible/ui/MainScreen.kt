@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -81,7 +82,7 @@ fun MainScreen(
     onManageVehicles: () -> Unit,
     onSaveReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
-    bottomBar: @Composable () -> Unit = {},
+    onBack: () -> Unit = {},
     /** Precios para el vehículo (consejos, mejor opción y otros combustibles). */
     pricesContent: @Composable () -> Unit = {},
 ) {
@@ -132,6 +133,11 @@ fun MainScreen(
                         }
                     }
                 },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Definições")
@@ -139,7 +145,6 @@ fun MainScreen(
                 },
             )
         },
-        bottomBar = bottomBar,
         floatingActionButton = {
             when (section) {
                 SECTION_HISTORY -> ExtendedFloatingActionButton(

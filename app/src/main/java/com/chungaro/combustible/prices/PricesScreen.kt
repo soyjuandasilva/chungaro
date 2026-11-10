@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
@@ -60,7 +61,7 @@ private const val MAX_RESULTS = 100
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
+fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
     var pickDistrict by rememberSaveable { mutableStateOf(false) }
     val districtName = DgegApi.districts.firstOrNull { it.first == vm.districtId }?.second
 
@@ -76,6 +77,11 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Bombas favoritas", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
                 actions = {
                     IconButton(onClick = { vm.refreshFavorites() }, enabled = vm.favorites.isNotEmpty()) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Atualizar preços")
@@ -83,7 +89,6 @@ fun PricesScreen(vm: PricesViewModel, bottomBar: @Composable () -> Unit) {
                 },
             )
         },
-        bottomBar = bottomBar,
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
