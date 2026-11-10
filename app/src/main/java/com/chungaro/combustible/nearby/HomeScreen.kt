@@ -34,6 +34,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.res.painterResource
@@ -193,12 +195,31 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
-            .background(HeaderBrush)
-            .drawBehind { drawHeaderScene() }
-            .padding(start = 18.dp, end = 8.dp, top = 18.dp, bottom = 18.dp),
+            .clip(RoundedCornerShape(28.dp)),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Ilustración (si se ha descargado) con un velo para que el texto se lea; si no, el dibujo.
+        val context = LocalContext.current
+        val artId = remember { context.resources.getIdentifier("header_art", "drawable", context.packageName) }
+        if (artId != 0) {
+            Image(
+                painterResource(artId),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.CenterEnd,
+                modifier = Modifier.matchParentSize(),
+            )
+            Box(
+                Modifier.matchParentSize().background(
+                    Brush.horizontalGradient(listOf(Color(0xE6042F2E), Color(0x99042F2E), Color(0x11042F2E))),
+                ),
+            )
+        } else {
+            Box(Modifier.matchParentSize().background(HeaderBrush).drawBehind { drawHeaderScene() })
+        }
+        Column(
+            Modifier.padding(start = 18.dp, end = 8.dp, top = 18.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(44.dp)) {
                     Box(contentAlignment = Alignment.Center) {
