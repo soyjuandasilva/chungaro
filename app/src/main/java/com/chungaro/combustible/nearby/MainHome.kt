@@ -356,7 +356,6 @@ private fun MapTab(
                 .glassCard(RoundedCornerShape(24.dp), elevation = 12.dp),
         ) {
             OsmMap(location, onMap, recenter, topo = topo, pastel = true, onSelect = onOpenStation)
-            Box(Modifier.align(Alignment.TopCenter).fillMaxWidth()) { MondayTicker(vm, fuel, onOpenNews) }
 
             // Botones del mapa: capas y centrar
             Column(

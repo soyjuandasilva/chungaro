@@ -16,8 +16,7 @@ Tema oscuro (verde casi negro con acentos verde brillante) en toda la app.
   pidiendo la ubicación (se repite desde Definições).
 - **Inicio**: logotipo, avisos (🔔 → Alertas) y Definições (⚙️); buscador de
   postos por nombre, marca, localidad o morada; y 5 pestañas:
-  - **Mapa**: filtros (combustível, raio, ordem), cintillo «Abastece hoje ou
-    espera por segunda?», marcadores con el logotipo y color de cada marca,
+  - **Mapa**: filtros (combustível, raio, ordem), marcadores con el logotipo y color de cada marca,
     capas (normal/relieve), centrar y «Mais baratos perto de ti».
   - **Preços**: zona y radio, casillas por combustible con la media de la
     zona y la de Portugal, postos más baratos (☆ favorito) y Calculadora.
