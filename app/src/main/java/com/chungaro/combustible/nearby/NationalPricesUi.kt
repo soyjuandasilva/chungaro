@@ -27,14 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chungaro.combustible.ui.APP_LOCALE
-import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-private val Up = Color(0xFFDC2626)
-private val Down = Color(0xFF16A34A)
-private val mondayFormat = DateTimeFormatter.ofPattern("d/MM", APP_LOCALE)
 
 /**
  * Todos los combustibles a la vista (2 filas de 3), sin deslizar.
@@ -81,135 +74,91 @@ fun FuelSelector(
 }
 
 /**
- * "Preço dos combustíveis hoje e na próxima semana": precio medio actual de
- * todas las bombas del país y estimación para la semana que viene.
+ * Precio medio de hoy de cada combustible en todo Portugal, en grande.
+ * Media de todas las bombas con precio publicado en la DGEG.
  */
 @Composable
 fun NationalPricesCard(vm: NearbyViewModel, myFuelId: Int) {
-    val monday = remember { nextMonday().format(mondayFormat) }
+    // Leer pricesVersion recalcula las medias cuando llegan precios nuevos.
+    val version = vm.pricesVersion
+    val prices = remember(version) { FUEL_TYPES.associate { it.id to vm.nationalPrice(it.id) } }
+    val loading = prices.values.all { it == null }
     Card(Modifier.fillMaxWidth()) {
-        Column {
-            Column(Modifier.padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 10.dp)) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column {
                 Text(
-                    "Preço dos combustíveis hoje e na próxima semana",
+                    "Preço médio dos combustíveis hoje",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    "Preço médio em Portugal, calculado com todas as bombas que publicam preço na DGEG. " +
-                        "É uma média: em cada bomba o preço é diferente.",
+                    "Média de todas as bombas de Portugal. É um valor médio: em cada bomba o preço é diferente.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HeadCell("Combustível", Modifier.weight(1.3f), TextAlign.Start)
-                HeadCell("Preço atual\n(média)", Modifier.weight(1f), TextAlign.End)
-                HeadCell("Próxima semana\n(a partir de $monday)", Modifier.weight(1.3f), TextAlign.End)
+            if (loading) {
+                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+                }
+                return@Column
             }
             // Tu combustible primero.
             val ordered = FUEL_TYPES.sortedBy { if (it.id == myFuelId) 0 else 1 }
-            ordered.forEachIndexed { i, fuel ->
-                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                NationalRow(vm, fuel, highlight = fuel.id == myFuelId)
+            ordered.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { fuel ->
+                        PriceTile(fuel, prices[fuel.id], mine = fuel.id == myFuelId, modifier = Modifier.weight(1f))
+                    }
+                    repeat(2 - pair.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
             Text(
-                "A previsão é uma estimativa feita pela app com a evolução dos preços dos últimos dias. " +
-                    "Em Portugal os preços costumam mudar à segunda-feira.",
-                style = MaterialTheme.typography.bodySmall,
+                "Fonte: DGEG — precoscombustiveis.dgeg.gov.pt",
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(14.dp),
             )
         }
     }
 }
 
 @Composable
-private fun HeadCell(text: String, modifier: Modifier, align: TextAlign) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        textAlign = align,
+private fun PriceTile(fuel: FuelType, price: NationalPrice?, mine: Boolean, modifier: Modifier) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = fuel.uiColor.copy(alpha = if (mine) 0.16f else 0.08f),
         modifier = modifier,
-    )
-}
-
-@Composable
-private fun NationalRow(vm: NearbyViewModel, fuel: FuelType, highlight: Boolean) {
-    // Leer vm.rows hace que la fila se actualice al llegar precios nuevos.
-    val state = vm.rows[fuel.id]
-    val national = remember(state) { vm.nationalPrice(fuel.id) }
-    val nationalHistory by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.NATIONAL_AVG) }.collectAsStateWithLifecycle(emptyList())
-    val zoneHistory by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
-    // Con poco histórico nacional, se usa la tendencia de tu zona aplicada a la media del país.
-    val forecast = remember(national, nationalHistory, zoneHistory) {
-        national?.let { forecastNextWeek(nationalHistory, it.average) ?: forecastNextWeek(zoneHistory, it.average) }
-    }
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(if (highlight) fuel.uiColor.copy(alpha = 0.08f) else Color.Transparent)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1.3f)) {
-            FuelPill(fuel, compact = true)
-            if (highlight) {
-                Text("O teu combustível", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        if (national == null) {
-            Box(Modifier.weight(2.3f), contentAlignment = Alignment.CenterEnd) {
-                if (state is FuelRowState.Error) {
-                    Text(state.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                } else {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                }
-            }
-            return@Row
-        }
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Text(price3(national.average), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-            Text("€/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Column(Modifier.weight(1.3f), horizontalAlignment = Alignment.End) {
-            if (forecast == null) {
-                Text("A calcular…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
-                Spacer(Modifier.height(2.dp))
-                Text("precisa de 1 semana de dados", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
-            } else {
-                val pct = forecast.changePct
-                val up = pct > 0.2
-                val down = pct < -0.2
-                Text("≈ " + price3(forecast.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Text(
+                fuel.short + if (mine) " · o teu" else "",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = fuel.uiColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    when {
-                        up -> "↗ sobe ~" + pct1(pct)
-                        down -> "↘ desce ~" + pct1(-pct)
-                        else -> "→ estável"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = when {
-                        up -> Up
-                        down -> Down
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    price?.let { String.format(Locale.getDefault(), "%.3f", it.average) } ?: "—",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text(
+                    " €/L",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp),
                 )
             }
+            Text(
+                price?.let { "média de ${it.stations} bombas" } ?: "sem dados",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
-
-private fun price3(v: Double) = String.format(Locale.getDefault(), "%.3f", v)
-private fun pct1(v: Double) = String.format(Locale.getDefault(), "%.1f%%", v)

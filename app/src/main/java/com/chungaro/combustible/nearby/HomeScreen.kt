@@ -80,12 +80,6 @@ private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF0F766E), Color(0
 fun HomeScreen(
     vm: NearbyViewModel,
     myFuelId: Int,
-    tankLiters: Double,
-    consumptionL100: Double,
-    vehicles: List<Vehicle>,
-    selectedVehicleId: Long,
-    onSelectVehicle: (Long) -> Unit,
-    extraTips: List<Tip> = emptyList(),
     onOpenSettings: () -> Unit,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -95,23 +89,23 @@ fun HomeScreen(
         hasPermission = res.values.any { it }
         if (hasPermission) vm.refresh()
     }
+    // Los precios medios del país no necesitan ubicación: se descargan siempre.
     LaunchedEffect(hasPermission) {
-        if (hasPermission && !vm.started) vm.refresh()
+        if (!vm.started) vm.refresh()
     }
-    var detailFuel by rememberSaveable { mutableStateOf<Int?>(null) }
     var stationSheet by rememberSaveable { mutableStateOf<Long?>(null) }
 
     // Recarga sola: al volver a la app y cada 10 minutos mientras se ve Início.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, hasPermission) {
+    DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME && hasPermission && vm.started) vm.refresh()
+            if (event == Lifecycle.Event.ON_RESUME && vm.started) vm.refresh()
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(hasPermission) {
-        while (hasPermission) {
+    LaunchedEffect(Unit) {
+        while (true) {
             delay(10 * 60_000L)
             vm.refresh()
         }
@@ -126,89 +120,44 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Header(vm, hasPermission, onOpenSettings)
+            Header(vm, onOpenSettings)
 
-            if (!hasPermission) {
+            // 1) Precio medio de hoy en todo el país, en grande
+            NationalPricesCard(vm, myFuelId)
+
+            // 2) Evolución de precios en tu zona (necesita la ubicación)
+            SectionHeader(
+                "Evolução dos preços",
+                "Como mudaram os preços de cada combustível e de cada bomba da tua zona face à semana passada.",
+            )
+            if (hasPermission) {
+                vm.locationError?.let { msg ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(msg, color = MaterialTheme.colorScheme.error)
+                            TextButton(onClick = { vm.refresh(force = true) }) { Text("Tentar outra vez") }
+                        }
+                    }
+                }
+                PriceEvolution(vm, onOpenStation = { stationSheet = it })
+            } else {
                 PermissionCard {
                     launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                 }
-                return@Column
             }
 
-            vm.locationError?.let { msg ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(msg, color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = { vm.refresh(force = true) }) { Text("Tentar novamente") }
-                    }
-                }
-            }
-
-            // Consejos del momento, rotando
-            TipsTicker(
-                vm = vm,
-                myFuelId = myFuelId,
-                tankLiters = tankLiters,
-                consumptionL100 = consumptionL100,
-                extraTips = extraTips,
-                onOpenFuel = { detailFuel = it },
-                onOpenStation = { stationSheet = it },
-            )
-
-            // 1) Lo de tu vehículo
-            VehicleSection(vehicles, selectedVehicleId, onSelectVehicle) {
-                MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
-                NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
-            }
-
-            // 2) Precio medio del país hoy y estimación para la próxima semana
-            NationalPricesCard(vm, myFuelId)
-
-            // 3) Evolución de precios por tipo de combustible (no depende del vehículo)
-            SectionHeader(
-                "Evolução dos preços",
-                "Como mudaram os preços de cada combustível e de cada bomba face à semana passada.",
-            )
-            PriceEvolution(vm, onOpenStation = { stationSheet = it })
-
-            // 4) El resto de combustibles
-            SectionHeader(
-                "Outros combustíveis",
-                "Bomba mais próxima e mais barata para cada tipo. Preços em €/L.",
-            )
-            PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
-
-            Text(
-                "Toca num combustível para veres as bombas e como lá chegar.\nFonte: DGEG — precoscombustiveis.dgeg.gov.pt",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // 3) Noticias sobre la próxima semana
+            NewsCard(vm)
         }
     }
 
-    val fuel = FUEL_TYPES.firstOrNull { it.id == detailFuel }
-    val state = detailFuel?.let { vm.rows[it] }
-    if (fuel != null && state is FuelRowState.Ready) {
-        FuelDetailDialog(
-            vm = vm,
-            fuel = fuel,
-            result = state.result,
-            radiusKm = vm.radiusKm,
-            tankLiters = tankLiters,
-            consumptionL100 = consumptionL100,
-            onOpenStation = { detailFuel = null; stationSheet = it },
-            onDismiss = { detailFuel = null },
-        )
-    }
     stationSheet?.let { id ->
         StationSheet(vm, id, myFuelId, onDismiss = { stationSheet = null })
     }
 }
 
 @Composable
-private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: () -> Unit) {
+private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -264,147 +213,33 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
                     )
                     val sub = when {
                         vm.locating -> "A procurar onde estás…"
-                        vm.pricesTime != null -> "Preços perto de ti · " + updatedAgo(vm.pricesTime!!, now)
-                        else -> "Preços de hoje perto de ti"
+                        vm.pricesTime != null -> "Preços dos combustíveis · " + updatedAgo(vm.pricesTime!!, now)
+                        else -> "Preços dos combustíveis hoje"
                     }
                     Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
                 }
-                if (hasPermission) {
-                    IconButton(onClick = { vm.refresh(force = true) }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = Color.White)
-                    }
+                IconButton(onClick = { vm.refresh(force = true) }) {
+                    Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = Color.White)
                 }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "Definições", tint = Color.White)
                 }
             }
-            if (hasPermission) {
-                Spacer(Modifier.height(18.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Raio", style = MaterialTheme.typography.labelLarge, color = Color.White)
-                    NearbyViewModel.RADIUS_OPTIONS.forEach { km ->
-                        val selected = km == vm.radiusKm
-                        Surface(
-                            onClick = { vm.selectRadius(km) },
-                            shape = RoundedCornerShape(50),
-                            color = if (selected) Color.White else Color.White.copy(alpha = 0.18f),
-                            contentColor = if (selected) Color(0xFF0F766E) else Color.White,
-                        ) {
-                            Text(
-                                "$km km",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun PermissionCard(onRequest: () -> Unit) {
+internal fun PermissionCard(onRequest: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Filled.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
-            Text("Onde está o combustível mais barato?", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Ativa a localização", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Ativa a localização e comparamos, para cada combustível, a bomba mais próxima com a mais barata da tua zona. Preços oficiais da DGEG.",
+                "Com a tua localização mostramos como mudam os preços das bombas da tua zona e onde fica a mais barata. Preços oficiais da DGEG.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Usar a minha localização") }
-        }
-    }
-}
-
-@Composable
-private fun NearestStationCard(vm: NearbyViewModel, myFuelId: Int, onOpen: (Long) -> Unit) {
-    val context = LocalContext.current
-    val nearest = (vm.rows[myFuelId] as? FuelRowState.Ready)?.result?.nearest ?: return
-    Card(Modifier.fillMaxWidth().clickable { onOpen(nearest.station.id) }) {
-        Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            BrandBadge(nearest.station.brand, size = 44.dp)
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text("Bomba mais próxima", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stationTitle(nearest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(
-                    listOf(formatKm(nearest.km), nearest.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(formatEuro(nearest.station.price), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                TextButton(onClick = { openMaps(context, nearest.station) }) { Text("Ir") }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun VehicleSection(
-    vehicles: List<Vehicle>,
-    selectedId: Long,
-    onSelect: (Long) -> Unit,
-    content: @Composable () -> Unit,
-) {
-    val current = vehicles.firstOrNull { it.id == selectedId } ?: vehicles.firstOrNull()
-    Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column(Modifier.padding(horizontal = 4.dp)) {
-                Text(
-                    "Melhores opções para o teu veículo",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                if (vehicles.size <= 1) {
-                    current?.let {
-                        Text("${it.emoji} ${it.name}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-            if (vehicles.size > 1) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    vehicles.forEach { v ->
-                        FilterChip(
-                            selected = v.id == current?.id,
-                            onClick = { onSelect(v.id) },
-                            label = { Text("${v.emoji} ${v.name}", maxLines = 1) },
-                        )
-                    }
-                }
-            }
-            content()
-        }
-    }
-}
-
-@Composable
-private fun AdviceLine(good: Boolean, title: String, detail: String) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = if (good) Color(0xFF16A34A).copy(alpha = 0.10f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-    ) {
-        Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (good) "✅" else "✋", style = MaterialTheme.typography.titleMedium)
-            Column(Modifier.padding(start = 10.dp)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (good) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
-                )
-                Text(detail, style = MaterialTheme.typography.bodySmall)
-            }
         }
     }
 }
@@ -423,195 +258,11 @@ private fun PriceEvolution(vm: NearbyViewModel, onOpenStation: (Long) -> Unit) {
     }
 }
 
-/** Variación semanal de la media de la zona para un combustible (↘ −1,2 %). */
 @Composable
-private fun WeeklyChangeBadge(vm: NearbyViewModel, fuelId: Int) {
-    val zone by remember(fuelId) { vm.history(fuelId, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
-    val pct = remember(zone) { computeWeekly(zone, emptyList()).changePct } ?: return
-    val up = pct > 0.05
-    val down = pct < -0.05
-    Text(
-        (if (up) "↗ +" else if (down) "↘ " else "→ ") + String.format(java.util.Locale.getDefault(), "%.1f%%", pct) + " /sem.",
-        style = MaterialTheme.typography.labelSmall,
-        fontWeight = FontWeight.Bold,
-        color = when {
-            up -> Color(0xFFDC2626)
-            down -> Color(0xFF16A34A)
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
-        },
-    )
-}
-
-@Composable
-private fun SectionHeader(title: String, subtitle: String) {
+internal fun SectionHeader(title: String, subtitle: String) {
     Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun MyFuelCard(
-    vm: NearbyViewModel,
-    myFuelId: Int,
-    tankLiters: Double,
-    consumptionL100: Double,
-    onClick: () -> Unit,
-) {
-    val fuel = FUEL_TYPES.firstOrNull { it.id == myFuelId } ?: return
-    val r = (vm.rows[myFuelId] as? FuelRowState.Ready)?.result ?: return
-    val cheapest = r.cheapest ?: return
-    val nearest = r.nearest
-    val advice = nearest?.let { tripAdvice(it, cheapest, tankLiters, consumptionL100) }
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FuelPill(fuel)
-                Text(
-                    "  Melhor preço a ≤ ${vm.radiusKm} km",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandBadge(cheapest.station.brand, size = 44.dp)
-                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text(stationTitle(cheapest.station), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        listOf(formatKm(cheapest.km), cheapest.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        tablePrice(cheapest.station.price),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                    Text("€/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            when {
-                nearest == null -> Unit
-                nearest?.station?.id == cheapest.station.id -> AdviceLine(
-                    good = true,
-                    title = "É também a bomba mais próxima",
-                    detail = "Não precisas de ir mais longe para pagar menos.",
-                )
-                advice != null -> AdviceLine(
-                    good = advice.worthIt,
-                    title = if (advice.worthIt) "Vale a pena ir à mais barata" else "Não compensa ir à mais barata",
-                    detail = "Face à mais próxima (${nearest?.km?.let { formatKm(it) } ?: ""}): poupas ${formatMoney(advice.savings)} em ${tankLiters.toInt()} L − " +
-                        "${formatMoney(advice.tripCost)} de combustível do desvio = " +
-                        (if (advice.net >= 0) "" else "−") + formatMoney(kotlin.math.abs(advice.net)) + ".",
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HeaderCell("Tipo", Modifier.weight(1.4f), TextAlign.Start)
-                HeaderCell("Mais\npróxima", Modifier.weight(1f), TextAlign.End)
-                HeaderCell("Mais barata\n≤ ${vm.radiusKm} km", Modifier.weight(1.1f), TextAlign.End)
-            }
-            val others = FUEL_TYPES.filter { it.id != myFuelId }
-            others.forEachIndexed { i, fuel ->
-                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                FuelRow(vm, fuel, vm.rows[fuel.id], highlight = false, onClick = { onRowClick(fuel.id) })
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeaderCell(text: String, modifier: Modifier, align: TextAlign) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        textAlign = align,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun FuelRow(vm: NearbyViewModel, fuel: FuelType, state: FuelRowState?, highlight: Boolean, onClick: () -> Unit) {
-    val ready = state as? FuelRowState.Ready
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(if (highlight) fuel.uiColor.copy(alpha = 0.08f) else Color.Transparent)
-            .clickable(enabled = ready != null, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            FuelPill(fuel, compact = true)
-            WeeklyChangeBadge(vm, fuel.id)
-        }
-        when (state) {
-            null, FuelRowState.Loading -> Box(Modifier.weight(2.1f), contentAlignment = Alignment.CenterEnd) {
-                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-            }
-            is FuelRowState.Error -> Text(
-                state.message,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(2.1f),
-            )
-            is FuelRowState.Ready -> {
-                val r = state.result
-                PriceCell(r.nearest, Modifier.weight(1f), highlight = false)
-                PriceCell(r.cheapest, Modifier.weight(1.1f), highlight = true)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PriceCell(s: StationAtDistance?, modifier: Modifier, highlight: Boolean) {
-    Column(modifier, horizontalAlignment = Alignment.End) {
-        if (s == null) {
-            Text("—", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            return@Column
-        }
-        if (highlight) {
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(
-                    tablePrice(s.station.price),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
-        } else {
-            Text(tablePrice(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
-        }
-        Spacer(Modifier.height(2.dp))
-        Text(formatKm(s.km), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -624,5 +275,3 @@ private fun updatedAgo(time: Long, now: Long): String {
         else -> "atualizado há ${min / 60} h"
     }
 }
-
-private fun tablePrice(v: Double): String = String.format(java.util.Locale.getDefault(), "%.3f", v)

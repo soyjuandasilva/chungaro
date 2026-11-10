@@ -1,5 +1,6 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,9 +59,10 @@ import com.chungaro.combustible.data.description
 import com.chungaro.combustible.data.emoji
 import com.chungaro.combustible.data.pricePerUnit
 
-private const val SECTION_HISTORY = 0
-private const val SECTION_CHARTS = 1
-private const val SECTION_MAINTENANCE = 2
+private const val SECTION_PRICES = 0
+private const val SECTION_HISTORY = 1
+private const val SECTION_CHARTS = 2
+private const val SECTION_MAINTENANCE = 3
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,8 +82,10 @@ fun MainScreen(
     onSaveReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
     bottomBar: @Composable () -> Unit = {},
+    /** Precios para el vehículo (consejos, mejor opción y otros combustibles). */
+    pricesContent: @Composable () -> Unit = {},
 ) {
-    var section by rememberSaveable { mutableIntStateOf(SECTION_HISTORY) }
+    var section by rememberSaveable { mutableIntStateOf(SECTION_PRICES) }
     var menu by rememberSaveable { mutableStateOf(false) }
     var editingReminder by rememberSaveable { mutableStateOf<Long?>(null) }
 
@@ -94,7 +98,7 @@ fun MainScreen(
                             Modifier.clickable { menu = true }.padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Abastecimentos", fontWeight = FontWeight.Bold)
+                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Meu veículo", fontWeight = FontWeight.Bold)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Mudar de veículo")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -152,10 +156,10 @@ fun MainScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = section) {
-                listOf("Histórico", "Gráficos", "Manutenção").forEachIndexed { i, label ->
-                    Tab(selected = section == i, onClick = { section = i }, text = { Text(label) })
-                }
+            SectionTabs(listOf("Preços", "Histórico", "Gráficos", "Manutenção"), section) { section = it }
+            if (section == SECTION_PRICES) {
+                pricesContent()
+                return@Column
             }
             if (loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -196,7 +200,7 @@ private fun HistoryList(stats: Stats, settings: AppSettings, onOpen: (Refuel) ->
         if (stats.rows.isEmpty()) {
             item {
                 Text(
-                    "Ainda não há abastecimentos.\nToque em «Abastecer» para registar o primeiro.",
+                    "Ainda não há abastecimentos.\nToca em «Abastecer» para registares o primeiro.",
                     modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
@@ -293,5 +297,42 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
                 }
             }
         }
+    }
+}
+
+/** Pestañas compactas: las cuatro caben a lo ancho, sin deslizar. */
+@Composable
+private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Column {
+        Row(Modifier.fillMaxWidth()) {
+            labels.forEachIndexed { i, label ->
+                val sel = i == selected
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .clickable { onSelect(i) }
+                        .padding(top = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Medium,
+                        color = if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(horizontal = 2.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(3.dp)
+                            .background(if (sel) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent),
+                    )
+                }
+            }
+        }
+        HorizontalDivider()
     }
 }

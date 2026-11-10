@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chungaro.combustible.ChungaroApplication
@@ -26,6 +27,7 @@ import com.chungaro.combustible.nearby.FuelRowState
 import com.chungaro.combustible.nearby.HomeScreen
 import com.chungaro.combustible.nearby.MapScreen
 import com.chungaro.combustible.nearby.NearbyViewModel
+import com.chungaro.combustible.nearby.VehiclePricesSection
 import com.chungaro.combustible.prices.PricesScreen
 import com.chungaro.combustible.prices.PricesViewModel
 
@@ -83,8 +85,8 @@ fun ChungaroApp(
             NavigationBarItem(
                 selected = tab == TAB_REFUELS,
                 onClick = { tab = TAB_REFUELS },
-                icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
-                label = { Text("Registos", maxLines = 1) },
+                icon = { Icon(painterResource(com.chungaro.combustible.R.drawable.ic_fuel), contentDescription = null) },
+                label = { Text("Meu veículo", maxLines = 1) },
             )
             NavigationBarItem(
                 selected = tab == TAB_FAVORITES,
@@ -167,7 +169,7 @@ fun ChungaroApp(
         }
         tab == TAB_MAP -> {
             BackHandler { tab = TAB_HOME }
-            MapScreen(nearbyVm, myFuelId, vehicle?.tankLiters ?: 50.0, bottomBar)
+            MapScreen(nearbyVm, myFuelId, bottomBar)
         }
         tab == TAB_FAVORITES -> {
             BackHandler { tab = TAB_HOME }
@@ -191,17 +193,20 @@ fun ChungaroApp(
                 onSaveReminder = { vm.saveReminder(it) },
                 onDeleteReminder = { vm.deleteReminder(it) },
                 bottomBar = bottomBar,
+                pricesContent = {
+                    VehiclePricesSection(
+                        vm = nearbyVm,
+                        myFuelId = myFuelId,
+                        tankLiters = vehicle?.tankLiters ?: 50.0,
+                        consumptionL100 = consumptionL100,
+                        extraTips = maintenanceTips(reminders, stats.rows.lastOrNull()?.refuel?.odometer),
+                    )
+                },
             )
         }
         else -> HomeScreen(
             vm = nearbyVm,
             myFuelId = myFuelId,
-            tankLiters = vehicle?.tankLiters ?: 50.0,
-            consumptionL100 = consumptionL100,
-            vehicles = vehicles,
-            selectedVehicleId = vehicle?.id ?: 0L,
-            onSelectVehicle = { vm.selectVehicle(it) },
-            extraTips = maintenanceTips(reminders, stats.rows.lastOrNull()?.refuel?.odometer),
             onOpenSettings = { showSettings = true },
             bottomBar = bottomBar,
         )

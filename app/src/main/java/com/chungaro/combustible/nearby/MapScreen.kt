@@ -65,7 +65,7 @@ import org.osmdroid.views.overlay.Marker
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, bottomBar: @Composable () -> Unit) {
+fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, bottomBar: @Composable () -> Unit) {
     val context = LocalContext.current
     var fuelId by rememberSaveable { mutableIntStateOf(defaultFuelId) }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -80,7 +80,6 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
         all.map { StationAtDistance(it, distanceKm(lat, lon, it.lat, it.lon)) }
             .filter { it.km <= vm.radiusKm * 1.5 }
     }
-    val inRadius = stations.filter { it.km <= vm.radiusKm }
 
     Scaffold(bottomBar = bottomBar) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -108,40 +107,6 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                 }
             }
 
-            if (inRadius.size >= 2) {
-                val min = inRadius.minOf { it.station.price }
-                val max = inRadius.maxOf { it.station.price }
-                val liters = tankLiters
-                Card(
-                    Modifier.fillMaxWidth().padding(12.dp).align(Alignment.BottomCenter),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                ) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🐷", style = MaterialTheme.typography.headlineSmall)
-                            Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                                Text("Quanto podes poupar ao encher", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text(
-                                    "${liters.toInt()} L nas ${inRadius.size} bombas a ≤ ${vm.radiusKm} km",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Text(
-                                formatMoney((max - min) * liters),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = androidx.compose.ui.graphics.Color(0xFF16A34A),
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            CostBox("Na mais barata", min, liters, androidx.compose.ui.graphics.Color(0xFF16A34A), Modifier.weight(1f))
-                            CostBox("Na mais cara", max, liters, androidx.compose.ui.graphics.Color(0xFFDC2626), Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-
             // Botón para volver a la ubicación actual
             if (LocationHelper.hasPermission(context)) {
                 SmallFloatingActionButton(
@@ -150,7 +115,7 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                     contentColor = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = if (inRadius.size >= 2) 190.dp else 24.dp)
+                        .padding(end = 16.dp, bottom = 24.dp)
                         .size(48.dp),
                 ) {
                     Icon(painterResource(com.chungaro.combustible.R.drawable.ic_my_location), contentDescription = "Centrar na minha localização")
@@ -165,33 +130,6 @@ fun MapScreen(vm: NearbyViewModel, defaultFuelId: Int, tankLiters: Double, botto
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
 
-            if (inRadius.size >= 2) {
-                val min = inRadius.minOf { it.station.price }
-                val max = inRadius.maxOf { it.station.price }
-                Card(Modifier.fillMaxWidth().padding(12.dp).align(Alignment.BottomCenter)) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("🐷", style = MaterialTheme.typography.headlineMedium)
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("Poupança por depósito", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text(
-                                "↓ ${formatEuro(min)}   ↑ ${formatEuro(max)}",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            Text(
-                                "${inRadius.size} bombas a ≤ ${vm.radiusKm} km · ${tankLiters.toInt()} L",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Text(
-                            formatMoney((max - min) * tankLiters),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = androidx.compose.ui.graphics.Color(0xFF16A34A),
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -382,17 +320,6 @@ private fun PriceLegend(min: Double, max: Double, count: Int) {
             Text("mais barata", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
             Text("$count bombas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("mais cara", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-        }
-    }
-}
-
-@Composable
-private fun CostBox(label: String, price: Double, liters: Double, color: androidx.compose.ui.graphics.Color, modifier: Modifier) {
-    Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.10f), modifier = modifier) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold)
-            Text(formatMoney(price * liters), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
-            Text("${formatEuro(price)}/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

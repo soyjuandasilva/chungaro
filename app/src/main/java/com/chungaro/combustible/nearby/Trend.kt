@@ -39,8 +39,6 @@ fun computeTrend(points: List<PricePoint>): Trend {
 object HistoryRecorder {
     const val ZONE_AVG = 0L
     const val ZONE_MIN = -1L
-    /** Media de todas las bombas del país (solo con la descarga completa, en primer plano). */
-    const val NATIONAL_AVG = -2L
     /** Radio fijo de la "zona" para que el histórico sea comparable día a día. */
     const val ZONE_KM = 15.0
 
@@ -63,12 +61,4 @@ object HistoryRecorder {
         }
     }
 
-    /** Guarda la media nacional del día. [stations] debe ser la lista completa del país. */
-    suspend fun recordNational(context: Context, fuelId: Int, stations: List<PricedStation>) {
-        runCatching {
-            val avg = nationalAverage(stations) ?: return
-            val today = LocalDate.now().toEpochDay()
-            AppDatabase.get(context).historyDao().insert(listOf(PricePoint(today, fuelId, NATIONAL_AVG, avg.average)))
-        }
-    }
 }

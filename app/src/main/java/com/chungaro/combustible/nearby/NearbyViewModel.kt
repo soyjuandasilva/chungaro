@@ -12,6 +12,8 @@ import com.chungaro.combustible.data.PricePoint
 import com.chungaro.combustible.data.SettingsStore
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
+import com.chungaro.combustible.news.NewsApi
+import com.chungaro.combustible.news.NewsItem
 import com.chungaro.combustible.prices.DgegApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +53,38 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
 
     val started: Boolean get() = job != null
 
+    /** Cambia cada vez que llegan precios nuevos (para recalcular las medias del país). */
+    var pricesVersion by mutableIntStateOf(0)
+        private set
+
+    /** Noticias sobre el precio de la próxima semana (Google News). */
+    var news by mutableStateOf<List<NewsItem>>(emptyList())
+        private set
+    var newsLoading by mutableStateOf(false)
+        private set
+    var newsError by mutableStateOf(false)
+        private set
+    private var newsTime = 0L
+
+    fun loadNews(force: Boolean = false) {
+        if (newsLoading) return
+        if (!force && news.isNotEmpty() && System.currentTimeMillis() - newsTime < NEWS_CACHE_MS) return
+        newsLoading = true
+        viewModelScope.launch {
+            try {
+                news = NewsApi.latest(5)
+                newsTime = System.currentTimeMillis()
+                newsError = false
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                newsError = true
+            } finally {
+                newsLoading = false
+            }
+        }
+    }
+
     /** Gasolineras con precio del combustible [fuelId], si ya se descargaron. */
     fun stationsOf(fuelId: Int): List<PricedStation>? = cache[fuelId]?.second
 
@@ -65,6 +99,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             if (location == null) location = store.loadLastLocation()
+            pricesVersion++
             showCached()
 
             // 2) Ubicación actual.
@@ -78,7 +113,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                 } else {
                     "Não conseguimos saber onde estás. Ativa a localização do telemóvel e tenta outra vez."
                 }
-                if (location == null) return@launch
+                // Sin ubicación se siguen descargando precios: el precio medio del país no la necesita.
             } else {
                 location = loc.latitude to loc.longitude
                 store.saveLastLocation(loc.latitude, loc.longitude)
@@ -95,9 +130,9 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
                     try {
                         val fresh = downloads.withPermit { DgegApi.pricedStations(f.id) }
                         cache[f.id] = System.currentTimeMillis() to fresh
+                        pricesVersion++
                         withContext(Dispatchers.IO) { PriceCache.save(app, f.id, fresh) }
                         location?.let { (lat, lon) -> HistoryRecorder.record(app, f.id, fresh, lat, lon) }
-                        HistoryRecorder.recordNational(app, f.id, fresh)
                         updateRow(f.id)
                     } catch (e: CancellationException) {
                         throw e
@@ -142,6 +177,7 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val CACHE_MS = 10 * 60_000L
+        private const val NEWS_CACHE_MS = 60 * 60_000L
         val RADIUS_OPTIONS = listOf(5, 10, 20)
     }
 }
