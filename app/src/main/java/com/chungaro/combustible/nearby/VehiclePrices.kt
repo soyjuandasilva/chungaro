@@ -104,7 +104,7 @@ fun VehiclePricesSection(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(SectionSpacing),
     ) {
         if (!hasPermission) {
             PermissionCard {
@@ -112,44 +112,48 @@ fun VehiclePricesSection(
             }
             return@Column
         }
-        vm.locationError?.let { msg ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(msg, color = MaterialTheme.colorScheme.error)
+
+        // Cabecera ligera: consejos del momento y radio de búsqueda
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            vm.locationError?.let { msg ->
+                Column {
+                    Text(msg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     TextButton(onClick = { vm.refresh(force = true) }) { Text("Tentar outra vez") }
                 }
             }
+            TipsTicker(
+                vm = vm,
+                myFuelId = myFuelId,
+                tankLiters = tankLiters,
+                consumptionL100 = consumptionL100,
+                extraTips = extraTips,
+                onOpenFuel = { detailFuel = it },
+                onOpenStation = { stationSheet = it },
+            )
+            RadiusSelector(vm)
         }
 
-        // Consejos del momento, rotando
-        TipsTicker(
-            vm = vm,
-            myFuelId = myFuelId,
-            tankLiters = tankLiters,
-            consumptionL100 = consumptionL100,
-            extraTips = extraTips,
-            onOpenFuel = { detailFuel = it },
-            onOpenStation = { stationSheet = it },
-        )
-
-        RadiusSelector(vm)
-
         // Lo mejor para tu vehículo
-        SectionHeader("Melhores opções para o teu veículo", "A mais barata e a mais próxima para o teu combustível.")
-        MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
-        NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
+        SectionCard(
+            icon = "⭐",
+            accent = SectionColors.Teal,
+            title = "Melhores opções",
+            subtitle = "Para o teu combustível, a ≤ ${vm.radiusKm} km",
+        ) {
+            MyFuelCard(vm, myFuelId, tankLiters, consumptionL100, onClick = { detailFuel = myFuelId })
+            NearestStationCard(vm, myFuelId, onOpen = { stationSheet = it })
+        }
 
         // El resto de combustibles
-        SectionHeader("Outros combustíveis", "Bomba mais próxima e mais barata para cada tipo. Preços em €/L.")
-        PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
-
-        Text(
-            "Toca num combustível para veres as bombas e como lá chegar.\nFonte: DGEG — precoscombustiveis.dgeg.gov.pt",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        SectionCard(
+            icon = "⛽",
+            accent = SectionColors.Purple,
+            title = "Outros combustíveis",
+            subtitle = "A mais próxima e a mais barata de cada tipo",
+            footnote = "Toca num combustível para veres as bombas e como lá chegar. Fonte: DGEG.",
+        ) {
+            PriceTable(vm, myFuelId, onRowClick = { detailFuel = it })
+        }
     }
 
     val fuel = FUEL_TYPES.firstOrNull { it.id == detailFuel }
@@ -191,7 +195,7 @@ private fun RadiusSelector(vm: NearbyViewModel) {
 private fun NearestStationCard(vm: NearbyViewModel, myFuelId: Int, onOpen: (Long) -> Unit) {
     val context = LocalContext.current
     val nearest = (vm.rows[myFuelId] as? FuelRowState.Ready)?.result?.nearest ?: return
-    Card(Modifier.fillMaxWidth().clickable { onOpen(nearest.station.id) }) {
+    InnerBlock(onClick = { onOpen(nearest.station.id) }) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(nearest.station.brand, size = 44.dp)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
@@ -264,7 +268,7 @@ private fun MyFuelCard(
     val cheapest = r.cheapest ?: return
     val nearest = r.nearest
     val advice = nearest?.let { tripAdvice(it, cheapest, tankLiters, consumptionL100) }
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    InnerBlock(onClick = onClick) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FuelPill(fuel)
@@ -317,7 +321,12 @@ private fun MyFuelCard(
 
 @Composable
 private fun PriceTable(vm: NearbyViewModel, myFuelId: Int, onRowClick: (Int) -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Column {
             Row(
                 Modifier

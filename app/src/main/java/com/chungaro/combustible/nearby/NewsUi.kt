@@ -32,39 +32,25 @@ import com.chungaro.combustible.news.NewsItem
 fun NewsCard(vm: NearbyViewModel) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { vm.loadNews() }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column {
-                Text(
-                    "Preço dos combustíveis na próxima semana",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    "O que dizem as notícias sobre os preços da semana que vem. Toca numa para a leres.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    SectionCard(
+        icon = "📰",
+        accent = SectionColors.Amber,
+        title = "Próxima semana nas notícias",
+        subtitle = "Preço dos combustíveis na próxima semana",
+        footnote = "Via Google Notícias. Os textos pertencem aos respetivos meios.",
+    ) {
+        when {
+            vm.news.isEmpty() && vm.newsLoading -> Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
             }
-            when {
-                vm.news.isEmpty() && vm.newsLoading -> Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
-                }
-                vm.news.isEmpty() -> Column {
-                    Text(
-                        if (vm.newsError) "Não conseguimos carregar as notícias. Verifica a ligação." else "Sem notícias de momento.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    TextButton(onClick = { vm.loadNews(force = true) }) { Text("Tentar outra vez") }
-                }
-                else -> vm.news.forEach { item -> NewsRow(item) { openLink(context, item.link) } }
+            vm.news.isEmpty() -> Column {
+                Text(
+                    if (vm.newsError) "Não conseguimos carregar as notícias. Verifica a ligação." else "Sem notícias de momento.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                TextButton(onClick = { vm.loadNews(force = true) }) { Text("Tentar outra vez") }
             }
-            Text(
-                "Notícias via Google Notícias. Os textos pertencem aos respetivos meios.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            else -> vm.news.forEach { item -> NewsRow(item) { openLink(context, item.link) } }
         }
     }
 }
@@ -74,7 +60,7 @@ private fun NewsRow(item: NewsItem, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -85,7 +71,8 @@ private fun NewsRow(item: NewsItem, onClick: () -> Unit) {
             Text(
                 listOfNotNull(item.source.ifBlank { null }, item.publishedAt?.let { ago(it) }).joinToString(" · "),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                color = SectionColors.Amber,
             )
         }
     }

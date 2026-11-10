@@ -118,7 +118,7 @@ fun HomeScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(SectionSpacing),
         ) {
             Header(vm, onOpenSettings)
 
@@ -126,23 +126,24 @@ fun HomeScreen(
             NationalPricesCard(vm, myFuelId)
 
             // 2) Evolución de precios en tu zona (necesita la ubicación)
-            SectionHeader(
-                "Evolução dos preços",
-                "Como mudaram os preços de cada combustível e de cada bomba da tua zona face à semana passada.",
-            )
-            if (hasPermission) {
-                vm.locationError?.let { msg ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(msg, color = MaterialTheme.colorScheme.error)
+            SectionCard(
+                icon = "📈",
+                accent = SectionColors.Blue,
+                title = "Evolução dos preços",
+                subtitle = "Na tua zona, face à semana passada",
+            ) {
+                if (hasPermission) {
+                    vm.locationError?.let { msg ->
+                        Column {
+                            Text(msg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             TextButton(onClick = { vm.refresh(force = true) }) { Text("Tentar outra vez") }
                         }
                     }
-                }
-                PriceEvolution(vm, onOpenStation = { stationSheet = it })
-            } else {
-                PermissionCard {
-                    launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    PriceEvolution(vm, onOpenStation = { stationSheet = it })
+                } else {
+                    LocationPrompt {
+                        launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    }
                 }
             }
 
@@ -229,17 +230,30 @@ private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit) {
     }
 }
 
+/** Bloque completo para pedir la ubicación. */
 @Composable
 internal fun PermissionCard(onRequest: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Filled.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
-            Text("Ativa a localização", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(
-                "Com a tua localização mostramos como mudam os preços das bombas da tua zona e onde fica a mais barata. Preços oficiais da DGEG.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) { Text("Usar a minha localização") }
+    SectionCard(
+        icon = "📍",
+        accent = SectionColors.Teal,
+        title = "Ativa a localização",
+        subtitle = "Para veres as bombas perto de ti",
+    ) {
+        LocationPrompt(onRequest)
+    }
+}
+
+/** Texto y botón para pedir la ubicación, dentro de una sección. */
+@Composable
+internal fun LocationPrompt(onRequest: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            "Com a tua localização mostramos como mudam os preços das bombas da tua zona e onde fica a mais barata.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Filled.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("  Usar a minha localização")
         }
     }
 }
@@ -252,17 +266,9 @@ private fun PriceEvolution(vm: NearbyViewModel, onOpenStation: (Long) -> Unit) {
         FuelSelector(
             selectedId = fuelId,
             onSelect = { fuelId = it },
-            hint = "Escolhe o tipo de combustível para veres como mudou o preço",
+            hint = "Escolhe o combustível",
         )
         WeeklyCard(vm, fuel, onOpenStation)
-    }
-}
-
-@Composable
-internal fun SectionHeader(title: String, subtitle: String) {
-    Column(Modifier.fillMaxWidth().padding(start = 4.dp, top = 8.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

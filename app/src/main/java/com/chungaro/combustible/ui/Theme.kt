@@ -25,7 +25,8 @@ private val Light = lightColorScheme(
     onTertiary = Color.White,
     tertiaryContainer = Color(0xFFDBEAFE),
     onTertiaryContainer = Color(0xFF172554),
-    background = Color(0xFFF1F6F5),
+    // Un poco más oscuro que las tarjetas blancas, para que las secciones se distingan.
+    background = Color(0xFFE4ECEA),
     onBackground = Color(0xFF0F1F1D),
     surface = Color(0xFFF1F6F5),
     onSurface = Color(0xFF0F1F1D),

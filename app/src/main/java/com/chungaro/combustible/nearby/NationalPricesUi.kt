@@ -83,42 +83,28 @@ fun NationalPricesCard(vm: NearbyViewModel, myFuelId: Int) {
     val version = vm.pricesVersion
     val prices = remember(version) { FUEL_TYPES.associate { it.id to vm.nationalPrice(it.id) } }
     val loading = prices.values.all { it == null }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Column {
-                Text(
-                    "Preço médio dos combustíveis hoje",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    "Média de todas as bombas de Portugal. É um valor médio: em cada bomba o preço é diferente.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    SectionCard(
+        icon = "💶",
+        accent = SectionColors.Teal,
+        title = "Preço médio hoje",
+        subtitle = "Todas as bombas de Portugal, em €/L",
+        footnote = "É uma média: em cada bomba o preço é diferente. Fonte: DGEG.",
+    ) {
+        if (loading) {
+            Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
             }
-            if (loading) {
-                Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
+            return@SectionCard
+        }
+        // Tu combustible primero.
+        val ordered = FUEL_TYPES.sortedBy { if (it.id == myFuelId) 0 else 1 }
+        ordered.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pair.forEach { fuel ->
+                    PriceTile(fuel, prices[fuel.id], mine = fuel.id == myFuelId, modifier = Modifier.weight(1f))
                 }
-                return@Column
+                repeat(2 - pair.size) { Spacer(Modifier.weight(1f)) }
             }
-            // Tu combustible primero.
-            val ordered = FUEL_TYPES.sortedBy { if (it.id == myFuelId) 0 else 1 }
-            ordered.chunked(2).forEach { pair ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pair.forEach { fuel ->
-                        PriceTile(fuel, prices[fuel.id], mine = fuel.id == myFuelId, modifier = Modifier.weight(1f))
-                    }
-                    repeat(2 - pair.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-            Text(
-                "Fonte: DGEG — precoscombustiveis.dgeg.gov.pt",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
