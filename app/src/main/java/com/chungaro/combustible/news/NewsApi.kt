@@ -34,9 +34,17 @@ object NewsApi {
         "https://news.google.com/rss/search?q=" + URLEncoder.encode(query, "UTF-8") +
             "&hl=pt-PT&gl=PT&ceid=PT:pt-150"
 
-    suspend fun latest(limit: Int = 5): List<NewsItem> = withContext(Dispatchers.IO) {
-        parse(get(feedUrl(QUERY))).take(limit)
+    suspend fun latest(limit: Int = 5, query: String = QUERY): List<NewsItem> = withContext(Dispatchers.IO) {
+        parse(get(feedUrl(query))).take(limit)
     }
+
+    /** Categorías de la pestaña Notícias y su búsqueda en Google Notícias. */
+    val CATEGORIES: List<Pair<String, String>> = listOf(
+        "Preços" to QUERY,
+        "Mercado" to "petróleo Brent mercado combustíveis",
+        "Dicas" to "poupar combustível dicas condução",
+        "Mobilidade" to "mobilidade elétrica Portugal carregamento",
+    )
 
     private fun get(url: String): String {
         val conn = URL(url).openConnection() as HttpURLConnection

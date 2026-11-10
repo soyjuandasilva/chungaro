@@ -46,6 +46,15 @@ import com.chungaro.combustible.alerts.Notifier
 import com.chungaro.combustible.data.AppSettings
 import com.chungaro.combustible.data.Vehicle
 import com.chungaro.combustible.nearby.FUEL_TYPES
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Calculate
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Straighten
+import androidx.compose.material.icons.outlined.Sync
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,6 +68,10 @@ fun SettingsScreen(
     onImport: (android.net.Uri) -> Unit,
     onManageVehicles: () -> Unit,
     onBack: () -> Unit,
+    onVehicle: () -> Unit = {},
+    onAlerts: () -> Unit = {},
+    onCalculator: () -> Unit = {},
+    onTour: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var canNotify by remember { mutableStateOf(Notifier.canNotify(context)) }
@@ -77,21 +90,23 @@ fun SettingsScreen(
     val fuel = FUEL_TYPES.firstOrNull { it.id == vehicle?.fuelTypeId }
 
     Scaffold(
-        topBar = {
-            StatusBarIcons(darkBackground = true)
-            TopAppBar(
-                colors = atestaTopBarColors(),
-                title = { Text("Definições", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
-                },
-            )
-        },
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = { com.chungaro.combustible.nearby.DarkTopBar("Definições", androidx.compose.material.icons.Icons.Outlined.Settings, onBack) },
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // Accesos rápidos
+            com.chungaro.combustible.nearby.DarkCard {
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.DirectionsCar, "O meu veículo", vehicle?.name ?: "", onVehicle)
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.NotificationsNone, "Alertas de preço", if (settings.alertsEnabled) "Ativo" else "Desligado", onAlerts)
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.Calculate, "Calculadora de poupança", "", onCalculator)
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.Straighten, "Unidades", (if (settings.unit == "gal") "Galões" else "Litros") + " e " + settings.currency, null)
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.Sync, "Atualização de preços", "Automática", null)
+                SettingsRow(androidx.compose.material.icons.Icons.Outlined.HelpOutline, "Como funciona a Atesta", "", onTour)
+            }
+
             Section("Veículos") {
                 Text(
                     "Tipo, marca, modelo, ano, combustível e consumo de cada veículo.",
@@ -128,42 +143,6 @@ fun SettingsScreen(
                     },
                     label = { Text("Símbolo da moeda") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            Section("Alertas de preço") {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Avisar-me quando o preço descer", style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            "De ${fuel?.short ?: "o teu combustível"} (o de ${vehicle?.name ?: "o teu veículo"}), perto da tua última localização. Verificado a cada 6 horas.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = settings.alertsEnabled && canNotify,
-                        onCheckedChange = { on ->
-                            if (on && !canNotify && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                onChange(settings.copy(alertsEnabled = on))
-                            }
-                        },
-                    )
-                }
-                OutlinedTextField(
-                    value = threshold,
-                    onValueChange = { v ->
-                        threshold = v.filter { it.isDigit() || it == '.' || it == ',' }
-                        onChange(settings.copy(alertThreshold = parseNumber(threshold)?.takeIf { it > 0 }))
-                    },
-                    label = { Text("Avisar se descer abaixo de") },
-                    suffix = { Text("€/L") },
-                    placeholder = { Text("1.650") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -213,4 +192,22 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun Label(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge)
+}
+
+@Composable
+private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, onClick: (() -> Unit)?) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = AtestaGreenLight)
+        Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).padding(start = 14.dp))
+        if (value.isNotBlank()) Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (onClick != null) {
+            Icon(androidx.compose.material.icons.Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }

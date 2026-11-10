@@ -66,6 +66,36 @@ class NearbyViewModel(app: Application) : AndroidViewModel(app) {
         private set
     private var newsTime = 0L
 
+    /** Noticias de cada categoría de la pestaña Notícias (además de [news], que es «Preços»). */
+    var newsByCategory by mutableStateOf<Map<String, List<NewsItem>>>(emptyMap())
+        private set
+    private val categoriesLoading = mutableSetOf<String>()
+
+    fun loadNewsCategories() {
+        NewsApi.CATEGORIES.drop(1).forEach { (cat, query) ->
+            if (newsByCategory.containsKey(cat) || !categoriesLoading.add(cat)) return@forEach
+            viewModelScope.launch {
+                try {
+                    val items = NewsApi.latest(8, query)
+                    newsByCategory = newsByCategory + (cat to items)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Sin conexión: se reintenta al volver a la pestaña.
+                } finally {
+                    categoriesLoading.remove(cat)
+                }
+            }
+        }
+    }
+
+    /** Todas las bombas descargadas (de cualquier combustible), sin repetir, para el buscador. */
+    fun allStations(): List<PricedStation> = cache.values.flatMap { it.second }.distinctBy { it.id }
+
+    /** Histórico de los últimos [days] días de una bomba o de la zona. */
+    fun historyRange(fuelId: Int, stationId: Long, days: Int): Flow<List<PricePoint>> =
+        historyDao.observe(fuelId, stationId, LocalDate.now().toEpochDay() - days)
+
     fun loadNews(force: Boolean = false) {
         if (newsLoading) return
         if (!force && news.isNotEmpty() && System.currentTimeMillis() - newsTime < NEWS_CACHE_MS) return

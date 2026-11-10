@@ -1,7 +1,6 @@
 package com.chungaro.combustible.ui
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
@@ -13,69 +12,43 @@ import androidx.core.view.WindowCompat
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-// Paleta propia: verde oscuro + ámbar. No se usan los colores dinámicos del
-// sistema para que la app tenga siempre la misma identidad.
-private val Light = lightColorScheme(
-    primary = Color(0xFF15803D),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCFCE7),
-    onPrimaryContainer = Color(0xFF052E16),
-    secondary = Color(0xFFD97706),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFEF3C7),
-    onSecondaryContainer = Color(0xFF451A03),
-    tertiary = Color(0xFF1D4ED8),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFDBEAFE),
-    onTertiaryContainer = Color(0xFF172554),
-    // Un poco más oscuro que las tarjetas blancas, para que las secciones se distingan.
-    background = Color(0xFFEDF2EE),
-    onBackground = Color(0xFF0F1F1D),
-    surface = Color(0xFFF4F7F4),
-    onSurface = Color(0xFF0F1F1D),
-    surfaceVariant = Color(0xFFDDE8E6),
-    onSurfaceVariant = Color(0xFF4B5F5C),
-    outline = Color(0xFF7C908D),
-    outlineVariant = Color(0xFFC6D4D1),
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF8FBFA),
-    surfaceContainer = Color(0xFFEDF3EE),
-    surfaceContainerHigh = Color(0xFFFFFFFF),
-    surfaceContainerHighest = Color(0xFFFFFFFF),
-)
-
+// Tema oscuro de Atesta (verde casi negro con acentos verde brillante). Se usa
+// siempre, con el móvil en modo claro u oscuro, para mantener la identidad.
 private val Dark = darkColorScheme(
-    primary = Color(0xFF86EFAC),
-    onPrimary = Color(0xFF052E16),
+    primary = Color(0xFF22C55E),
+    onPrimary = Color(0xFF04140B),
     primaryContainer = Color(0xFF14532D),
     onPrimaryContainer = Color(0xFFDCFCE7),
     secondary = Color(0xFFFBBF24),
     onSecondary = Color(0xFF3B2300),
     secondaryContainer = Color(0xFF5C3B06),
     onSecondaryContainer = Color(0xFFFEF3C7),
-    tertiary = Color(0xFF93C5FD),
+    tertiary = Color(0xFF60A5FA),
     onTertiary = Color(0xFF0B2A5B),
     tertiaryContainer = Color(0xFF1E3A8A),
     onTertiaryContainer = Color(0xFFDBEAFE),
-    background = Color(0xFF0A1312),
-    onBackground = Color(0xFFE2ECEA),
-    surface = Color(0xFF0A1312),
-    onSurface = Color(0xFFE2ECEA),
-    surfaceVariant = Color(0xFF26332F),
-    onSurfaceVariant = Color(0xFFA7B8B5),
-    outline = Color(0xFF718481),
-    outlineVariant = Color(0xFF34433F),
-    surfaceContainerLowest = Color(0xFF060D0C),
-    surfaceContainerLow = Color(0xFF111C1A),
-    surfaceContainer = Color(0xFF13201E),
-    surfaceContainerHigh = Color(0xFF182826),
-    surfaceContainerHighest = Color(0xFF1C2D2B),
+    background = Color(0xFF071610),
+    onBackground = Color(0xFFF1F5F2),
+    surface = Color(0xFF071610),
+    onSurface = Color(0xFFF1F5F2),
+    surfaceVariant = Color(0xFF173A29),
+    onSurfaceVariant = Color(0xFFA7BEB0),
+    outline = Color(0xFF2F5C45),
+    outlineVariant = Color(0xFF1C3D2D),
+    error = Color(0xFFF87171),
+    onError = Color(0xFF450A0A),
+    inverseSurface = Color(0xFFE7F2EA),
+    inverseOnSurface = Color(0xFF0B1F15),
+    surfaceContainerLowest = Color(0xFF040E0A),
+    surfaceContainerLow = Color(0xFF0A1D15),
+    surfaceContainer = Color(0xFF0D2419),
+    surfaceContainerHigh = Color(0xFF102B1E),
+    surfaceContainerHighest = Color(0xFF123224),
 )
 
 private val AppShapes = Shapes(
@@ -84,10 +57,14 @@ private val AppShapes = Shapes(
     large = RoundedCornerShape(24.dp),
 )
 
-/** Verde oscuro de la marca: cabeceras, barras superiores y menú. */
-val AtestaGreen = Color(0xFF14532D)
-/** Verde claro para resaltar sobre el verde oscuro. */
-val AtestaGreenLight = Color(0xFF86EFAC)
+/** Fondo de cabeceras y barras: el mismo verde casi negro del fondo. */
+val AtestaGreen = Color(0xFF071610)
+/** Verde brillante de acento (botones, pestaña activa, precios). */
+val AtestaGreenLight = Color(0xFF22C55E)
+/** Tarjetas sobre el fondo oscuro. */
+val AtestaCard = Color(0xFF0E2A1D)
+/** Borde fino de las tarjetas. */
+val AtestaBorder = Color(0xFF1E4A34)
 
 /** Letra algo más pequeña que la de Material por defecto, para que quepa más información. */
 private val AppTypography: Typography = Typography().let { t ->
@@ -104,7 +81,7 @@ private val AppTypography: Typography = Typography().let { t ->
 @Composable
 fun ChungaroTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) Dark else Light,
+        colorScheme = Dark,
         shapes = AppShapes,
         typography = AppTypography,
         content = content,

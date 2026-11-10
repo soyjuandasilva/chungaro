@@ -11,6 +11,10 @@ data class AppSettings(
     val alertsEnabled: Boolean = false,
     /** Avisar cuando el combustible del vehículo baje de este precio (€/L). */
     val alertThreshold: Double? = null,
+    /** Combustible del aviso; null = el del vehículo en uso. */
+    val alertFuelId: Int? = null,
+    /** Avisar solo por las bombas favoritas (si no, todas las de la zona). */
+    val alertFavoritesOnly: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -22,6 +26,8 @@ class SettingsStore(context: Context) {
         consumptionUnit = prefs.getString("consumption_unit", "L100") ?: "L100",
         alertsEnabled = prefs.getBoolean("alerts", false),
         alertThreshold = prefs.getFloat("alert_threshold", -1f).takeIf { it > 0 }?.toDouble(),
+        alertFuelId = prefs.getInt("alert_fuel", 0).takeIf { it > 0 },
+        alertFavoritesOnly = prefs.getBoolean("alert_favorites_only", false),
     )
 
     fun save(s: AppSettings) {
@@ -31,6 +37,8 @@ class SettingsStore(context: Context) {
             .putString("consumption_unit", s.consumptionUnit)
             .putBoolean("alerts", s.alertsEnabled)
             .putFloat("alert_threshold", (s.alertThreshold ?: -1.0).toFloat())
+            .putInt("alert_fuel", s.alertFuelId ?: 0)
+            .putBoolean("alert_favorites_only", s.alertFavoritesOnly)
             .apply()
     }
 

@@ -1,9 +1,14 @@
 package com.chungaro.combustible.ui
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.BackHandler
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.rememberDrawerState
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.chungaro.combustible.nearby.AlertsScreen
+import com.chungaro.combustible.nearby.MainHome
+import com.chungaro.combustible.nearby.SavingsCalculatorScreen
+import com.chungaro.combustible.nearby.StationSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -20,8 +25,6 @@ import com.chungaro.combustible.ChungaroApplication
 import com.chungaro.combustible.nearby.DEFAULT_FUEL_ID
 import com.chungaro.combustible.nearby.FUEL_TYPES
 import com.chungaro.combustible.nearby.FuelRowState
-import com.chungaro.combustible.nearby.HomeScreen
-import com.chungaro.combustible.nearby.MapScreen
 import com.chungaro.combustible.nearby.NearbyViewModel
 import com.chungaro.combustible.nearby.VehiclePricesSection
 import com.chungaro.combustible.prices.PricesScreen
@@ -33,9 +36,10 @@ private const val NEW = 0L
 private const val TAB_HOME = 0
 /** «Meu veículo». */
 private const val TAB_REFUELS = 1
-/** «Preços e notícias»: precio medio, evolución y noticias. */
-private const val TAB_OVERVIEW = 2
+/** Búsqueda de bombas por distrito (antigua pantalla de favoritas). */
 private const val TAB_FAVORITES = 3
+private const val TAB_CALCULATOR = 4
+private const val TAB_ALERTS = 5
 
 /** Valor de editingVehicle para crear uno nuevo. */
 private const val NEW_VEHICLE = 0L
@@ -70,11 +74,15 @@ fun ChungaroApp(
         ?: vehicle?.consumption ?: 6.5
     val myFuelId = vehicle?.fuelTypeId ?: DEFAULT_FUEL_ID
 
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    fun go(screen: Int) {
-        tab = screen
-        scope.launch { drawerState.close() }
+    // Permiso de notificaciones para los avisos de precio (Android 13+).
+    var canNotify by remember { mutableStateOf(com.chungaro.combustible.alerts.Notifier.canNotify(context)) }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        canNotify = granted
+        if (granted) vm.updateSettings(vm.settings.copy(alertsEnabled = true))
+    }
+    val requestNotifications = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else canNotify = true
     }
 
     val id = editingId
@@ -117,6 +125,10 @@ fun ChungaroApp(
                 onManageVehicles = { showVehicles = true },
                 onImport = { vm.importFrom(it) },
                 onBack = { showSettings = false; vm.message = null },
+                onVehicle = { showSettings = false; tab = TAB_REFUELS },
+                onAlerts = { showSettings = false; tab = TAB_ALERTS },
+                onCalculator = { showSettings = false; tab = TAB_CALCULATOR },
+                onTour = { showSettings = false; showTour = true },
             )
         }
         id != null && loaded != null -> {
@@ -152,12 +164,29 @@ fun ChungaroApp(
                 onBack = { editingId = null },
             )
         }
-        tab == TAB_OVERVIEW -> {
+        tab == TAB_CALCULATOR -> {
             BackHandler { tab = TAB_HOME }
-            HomeScreen(
+            var calcStation by rememberSaveable { mutableStateOf<Long?>(null) }
+            SavingsCalculatorScreen(
                 vm = nearbyVm,
-                myFuelId = myFuelId,
-                onOpenSettings = { showSettings = true },
+                fuelId = myFuelId,
+                tankLiters = vehicle?.tankLiters ?: 50.0,
+                onBack = { tab = TAB_HOME },
+                onOpenStation = { calcStation = it },
+            )
+            calcStation?.let { sid ->
+                StationSheet(nearbyVm, sid, myFuelId, onDismiss = { calcStation = null }, isFavorite = sid in pricesVm.favorites, onToggleFavorite = { pricesVm.toggleFavoriteId(sid) })
+            }
+        }
+        tab == TAB_ALERTS -> {
+            BackHandler { tab = TAB_HOME }
+            AlertsScreen(
+                settings = vm.settings,
+                defaultFuelId = myFuelId,
+                favoritesCount = pricesVm.favorites.size,
+                canNotify = canNotify,
+                onRequestNotifications = requestNotifications,
+                onSave = { vm.updateSettings(it) },
                 onBack = { tab = TAB_HOME },
             )
         }
@@ -194,34 +223,21 @@ fun ChungaroApp(
                 },
             )
         }
-        else -> {
-            BackHandler(enabled = drawerState.isOpen) { scope.launch { drawerState.close() } }
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                // Sin gesto para abrirlo: arrastrar el dedo mueve el mapa.
-                gesturesEnabled = drawerState.isOpen,
-                drawerContent = {
-                    AppDrawer(
-                        vehicle = vehicle,
-                        onVehicle = { go(TAB_REFUELS) },
-                        onOverview = { go(TAB_OVERVIEW) },
-                        onFavorites = { go(TAB_FAVORITES) },
-                        onSettings = { scope.launch { drawerState.close() }; showSettings = true },
-                        onTour = { scope.launch { drawerState.close() }; showTour = true },
-                    )
-                },
-            ) {
-                MapScreen(
-                    vm = nearbyVm,
-                    defaultFuelId = myFuelId,
-                    tankLiters = vehicle?.tankLiters ?: 50.0,
-                    favorites = pricesVm.favorites,
-                    onToggleFavorite = { pricesVm.toggleFavoriteId(it) },
-                    onOpenMenu = { scope.launch { drawerState.open() } },
-                    onOpenNews = { tab = TAB_OVERVIEW },
-                )
-            }
-        }
+        else -> MainHome(
+            vm = nearbyVm,
+            myFuelId = myFuelId,
+            tankLiters = vehicle?.tankLiters ?: 50.0,
+            favorites = pricesVm.favorites,
+            onToggleFavorite = { pricesVm.toggleFavoriteId(it) },
+            alertsEnabled = vm.settings.alertsEnabled,
+            onToggleAlerts = { on ->
+                if (on && !canNotify) requestNotifications() else vm.updateSettings(vm.settings.copy(alertsEnabled = on))
+            },
+            onAlerts = { tab = TAB_ALERTS },
+            onSettings = { showSettings = true },
+            onCalculator = { tab = TAB_CALCULATOR },
+            onSearchByDistrict = { tab = TAB_FAVORITES },
+        )
     }
 
     crashReport?.let { report ->

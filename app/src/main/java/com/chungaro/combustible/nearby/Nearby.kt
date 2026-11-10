@@ -37,12 +37,12 @@ data class NearbyResult(
 data class FuelType(val id: Int, val name: String, val short: String, val color: Long)
 
 val FUEL_TYPES = listOf(
-    FuelType(3201, "Gasolina simples 95", "Gasolina 95", 0xFF16A34A),
-    FuelType(3205, "Gasolina especial 95", "Gasolina 95+", 0xFF0D9488),
-    FuelType(3400, "Gasolina 98", "Gasolina 98", 0xFF7C3AED),
-    FuelType(2101, "Gasóleo simples", "Gasóleo", 0xFFD97706),
-    FuelType(2105, "Gasóleo especial", "Gasóleo+", 0xFFB45309),
-    FuelType(1120, "GPL Auto", "GPL", 0xFF2563EB),
+    FuelType(3201, "Gasolina simples 95", "Gasolina 95", 0xFF22C55E),
+    FuelType(3205, "Gasolina especial 95", "Gasolina 95+", 0xFF2DD4BF),
+    FuelType(3400, "Gasolina 98", "Gasolina 98", 0xFF86EFAC),
+    FuelType(2101, "Gasóleo simples", "Gasóleo", 0xFFEAB308),
+    FuelType(2105, "Gasóleo especial", "Gasóleo Premium", 0xFF3B82F6),
+    FuelType(1120, "GPL Auto", "GPL", 0xFFA855F7),
 )
 const val DEFAULT_FUEL_ID = 3201
 

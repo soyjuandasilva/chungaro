@@ -142,13 +142,27 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 }
         }
 
-        // Aviso de precio para el vehículo en uso.
-        val vehicle = vehicles.firstOrNull { it.id == store.loadSelectedVehicle() } ?: vehicles.firstOrNull() ?: return
-        val fuel = FUEL_TYPES.firstOrNull { it.id == vehicle.fuelTypeId } ?: return
-        val stations = downloaded[fuel.id] ?: return
+        // Aviso de precio: combustible elegido en Alertas (o el del vehículo en uso).
+        val vehicle = vehicles.firstOrNull { it.id == store.loadSelectedVehicle() } ?: vehicles.firstOrNull()
+        val fuelId = settings.alertFuelId ?: vehicle?.fuelTypeId ?: return
+        val fuel = FUEL_TYPES.firstOrNull { it.id == fuelId } ?: return
         val threshold = settings.alertThreshold ?: return
         if (!settings.alertsEnabled || !Notifier.canNotify(ctx)) return
-        val cheapest = computeNearby(stations, lat, lon, store.loadRadius().toDouble()).cheapest ?: return
+        // Solo favoritas: se buscan en todo el país (pueden estar lejos de los distritos descargados).
+        val stations = if (settings.alertFavoritesOnly) {
+            val favs = store.loadFavorites().toSet()
+            if (favs.isEmpty()) return
+            runCatching { DgegApi.pricedStations(fuel.id) }.getOrNull()?.filter { it.id in favs } ?: return
+        } else {
+            downloaded[fuel.id] ?: return
+        }
+        val cheapest = if (settings.alertFavoritesOnly) {
+            stations.minByOrNull { it.price }?.let { s ->
+                com.chungaro.combustible.nearby.StationAtDistance(s, com.chungaro.combustible.nearby.distanceKm(lat, lon, s.lat, s.lon))
+            } ?: return
+        } else {
+            computeNearby(stations, lat, lon, store.loadRadius().toDouble()).cheapest ?: return
+        }
         if (cheapest.station.price > threshold) return
         val key = "price_${fuel.id}"
         val stamp = "${LocalDate.now()}_${cheapest.station.id}_${cheapest.station.price}"
