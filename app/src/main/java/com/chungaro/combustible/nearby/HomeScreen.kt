@@ -19,6 +19,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
+import com.chungaro.combustible.ui.StatusBarIcons
+import com.chungaro.combustible.ui.atestaTopBarColors
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
@@ -75,7 +79,6 @@ import com.chungaro.combustible.R
 import java.text.DateFormat
 import java.util.Date
 
-private val HeaderBrush = Brush.linearGradient(listOf(Color(0xFF14532D), Color(0xFF166534), Color(0xFF15803D)))
 
 @Composable
 fun HomeScreen(
@@ -112,8 +115,7 @@ fun HomeScreen(
         }
     }
 
-    com.chungaro.combustible.ui.StatusBarIcons(darkBackground = false)
-    Scaffold { padding ->
+    Scaffold(topBar = { TopBar(vm, onBack) }) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -122,8 +124,6 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(SectionSpacing),
         ) {
-            Header(vm, onOpenSettings, onBack)
-
             // 1) Precio medio de hoy en todo el país, en grande
             NationalPricesCard(vm, myFuelId)
 
@@ -159,8 +159,10 @@ fun HomeScreen(
     }
 }
 
+/** Barra superior verde, igual que en el resto de pantallas. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit, onBack: () -> Unit) {
+private fun TopBar(vm: NearbyViewModel, onBack: () -> Unit) {
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -168,67 +170,26 @@ private fun Header(vm: NearbyViewModel, onOpenSettings: () -> Unit, onBack: () -
             delay(20_000L)
         }
     }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp)),
-    ) {
-        // Ilustración (si se ha descargado) con un velo para que el texto se lea; si no, el dibujo.
-        val context = LocalContext.current
-        val artId = remember { context.resources.getIdentifier("header_art", "drawable", context.packageName) }
-        if (artId != 0) {
-            Image(
-                painterResource(artId),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.BottomEnd,
-                modifier = Modifier.matchParentSize(),
-            )
-            Box(
-                Modifier.matchParentSize().background(
-                    Brush.horizontalGradient(listOf(Color(0xE614532D), Color(0x9914532D), Color(0x1A14532D))),
-                ),
-            )
-        } else {
-            Box(Modifier.matchParentSize().background(HeaderBrush).drawBehind { drawHeaderScene() })
-        }
-        Column(
-            Modifier.padding(start = 18.dp, end = 8.dp, top = 18.dp, bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(onClick = onBack, shape = CircleShape, color = Color.White, shadowElevation = 4.dp, modifier = Modifier.size(44.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar ao mapa",
-                            tint = Color(0xFF14532D),
-                        )
-                    }
-                }
-                Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(
-                        "Preços e notícias",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                    )
-                    val sub = when {
-                        vm.locating -> "A procurar onde estás…"
-                        vm.pricesTime != null -> "Preços dos combustíveis · " + updatedAgo(vm.pricesTime!!, now)
-                        else -> "Preços dos combustíveis hoje"
-                    }
-                    Text(sub, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
-                }
-                IconButton(onClick = { vm.refresh(force = true) }) {
-                    Icon(Icons.Filled.Refresh, contentDescription = "Atualizar", tint = Color.White)
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Definições", tint = Color.White)
-                }
+    StatusBarIcons(darkBackground = true)
+    TopAppBar(
+        colors = atestaTopBarColors(),
+        navigationIcon = {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar ao mapa") }
+        },
+        title = {
+            Column {
+                Text("Preços e notícias", fontWeight = FontWeight.Bold)
+                Text(
+                    vm.pricesTime?.let { "Preços " + updatedAgo(it, now) } ?: "Preços dos combustíveis hoje",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.8f),
+                )
             }
-        }
-    }
+        },
+        actions = {
+            IconButton(onClick = { vm.refresh(force = true) }) { Icon(Icons.Filled.Refresh, contentDescription = "Atualizar") }
+        },
+    )
 }
 
 /** Bloque completo para pedir la ubicación. */

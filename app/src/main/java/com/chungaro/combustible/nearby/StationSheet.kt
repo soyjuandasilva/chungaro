@@ -89,7 +89,6 @@ fun StationSheet(
             Text("Sem dados para esta bomba.", Modifier.padding(24.dp))
             return@ModalBottomSheet
         }
-        LaunchedEffect(stationId) { vm.loadOpeningHours(base) }
         var selFuel by rememberSaveable(stationId) {
             mutableIntStateOf(entries.firstOrNull { it.first.id == defaultFuelId }?.first?.id ?: entries.first().first.id)
         }
@@ -187,22 +186,6 @@ fun StationSheet(
             Spacer(Modifier.height(8.dp))
             BlockTitle("Tendência de preços")
             TrendCard(selected.short, points, selected.uiColor)
-
-            Spacer(Modifier.height(8.dp))
-            BlockTitle("Horário")
-            val hours = vm.openingHours[stationId]
-            InfoCard {
-                when {
-                    stationId in vm.openingHoursFailed -> {
-                        Text("Não foi possível carregar o horário.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = { vm.loadOpeningHours(base, retry = true) }) { Text("Tentar outra vez") }
-                    }
-                    hours == null -> Text("A procurar…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    hours.isEmpty() -> Text("Esta bomba ainda não tem horário no OpenStreetMap.", style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    else -> hours.forEach { Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold) }
-                }
-                Text("Fonte: OpenStreetMap", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
 
             Spacer(Modifier.height(8.dp))
             BlockTitle("Morada")

@@ -140,11 +140,6 @@ fun MainScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 },
-                actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Definições")
-                    }
-                },
             )
         },
         floatingActionButton = {

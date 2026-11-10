@@ -16,8 +16,7 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
   próxima o favoritas), ahorro por depósito y la lista de bombas con precio y
   hace cuánto se actualizó. Botón de menú arriba a la izquierda.
 - **Ficha de gasolinera**: logotipo, favorita (♥) e «Ir lá»; precios de todos
-  sus combustibles, tendencia, **horario** (de OpenStreetMap, si la bomba lo
-  tiene) y morada.
+  sus combustibles, tendencia y morada.
 - **Menú lateral**: tu vehículo y las secciones:
   - **Meu veículo**: Preços (consejos, mejores opciones y otros combustibles),
     Histórico, Gráficos y Manutenção.
