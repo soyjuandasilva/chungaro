@@ -71,15 +71,14 @@ fun FuelDetailDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val zone by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    DetailSheet(title = fuel.short, subtitle = "Comparar bombas · raio de $radiusKm km", onDismiss = onDismiss) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp)
+                .padding(top = 12.dp, bottom = 24.dp)
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

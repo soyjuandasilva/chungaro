@@ -45,11 +45,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun StationSheet(vm: NearbyViewModel, stationId: Long, defaultFuelId: Int, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val entries = FUEL_TYPES.mapNotNull { f -> vm.stationsOf(f.id)?.firstOrNull { it.id == stationId }?.let { f to it } }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    val first = entries.firstOrNull()?.second
+    DetailSheet(
+        title = first?.let { stationTitle(it) } ?: "Bomba",
+        subtitle = "Ficha da bomba",
+        onDismiss = onDismiss,
+    ) {
         if (entries.isEmpty()) {
             Text("Sem dados para esta bomba.", Modifier.padding(24.dp))
-            return@ModalBottomSheet
+            return@DetailSheet
         }
         val base = entries.first().second
         var selFuel by rememberSaveable(stationId) {
@@ -65,7 +69,7 @@ fun StationSheet(vm: NearbyViewModel, stationId: Long, defaultFuelId: Int, onDis
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp)
+                .padding(top = 12.dp, bottom = 24.dp)
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
