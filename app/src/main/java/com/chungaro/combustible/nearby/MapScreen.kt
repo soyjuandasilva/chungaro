@@ -144,7 +144,7 @@ internal fun OsmMap(
             val result = context.imageLoader.execute(
                 ImageRequest.Builder(context).data(brandLogoUrl(domain)).size(96).allowHardware(false).build(),
             )
-            ((result as? SuccessResult)?.drawable as? BitmapDrawable)?.bitmap?.let { logos[domain] = it }
+            ((result as? SuccessResult)?.drawable as? BitmapDrawable)?.bitmap?.let { logos[domain] = trimLogo(it) }
         }
     }
 
@@ -250,7 +250,7 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
     val style = brandStyle(brand)
     val shadowPad = 6 * d
     val padH = 10 * d
-    val logoH = 24 * d
+    val logoH = 26 * d
     val gap = 4 * d
     val textH = paint.textSize * 1.15f
     val bodyW = maxOf(paint.measureText(text) + padH * 2, 72 * d)
@@ -301,8 +301,8 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
     val logo = localLogo(context, style.logo) ?: style.domain?.let { logos[it] }
     if (logo != null) {
         // Encaja el logotipo manteniendo su proporción
-        val availH = logoH - 4 * d
-        val availW = logoRect.width() - 8 * d
+        val availH = logoH - 3 * d
+        val availW = logoRect.width() - 6 * d
         val ratio = logo.width.toFloat() / logo.height.coerceAtLeast(1)
         var lw = availH * ratio
         var lh = availH
@@ -374,7 +374,40 @@ private fun localLogo(context: Context, key: String?): Bitmap? {
     key ?: return null
     return localLogoCache.getOrPut(key) {
         val id = context.resources.getIdentifier("brand_$key", "drawable", context.packageName)
-        if (id == 0) null
-        else android.graphics.BitmapFactory.decodeResource(context.resources, id)?.takeIf { it.width <= it.height * 2 }
+        if (id == 0) null else android.graphics.BitmapFactory.decodeResource(context.resources, id)?.let { trimLogo(it) }
     }
+}
+
+/**
+ * Recorta el margen blanco o transparente alrededor de un logotipo para que
+ * ocupe toda la pastilla del marcador (algunos traen mucho aire y se ven diminutos).
+ */
+internal fun trimLogo(src: Bitmap): Bitmap {
+    val w = src.width
+    val h = src.height
+    if (w < 4 || h < 4) return src
+    val px = IntArray(w * h)
+    src.getPixels(px, 0, w, 0, 0, w, h)
+    fun empty(c: Int): Boolean {
+        val a = (c ushr 24) and 0xFF
+        if (a < 24) return true
+        val r = (c shr 16) and 0xFF
+        val g = (c shr 8) and 0xFF
+        val b = c and 0xFF
+        return r > 238 && g > 238 && b > 238
+    }
+    var minX = w; var minY = h; var maxX = -1; var maxY = -1
+    for (y in 0 until h) for (x in 0 until w) {
+        if (!empty(px[y * w + x])) {
+            if (x < minX) minX = x
+            if (x > maxX) maxX = x
+            if (y < minY) minY = y
+            if (y > maxY) maxY = y
+        }
+    }
+    if (maxX < minX || maxY < minY) return src
+    val pad = (maxOf(maxX - minX, maxY - minY) * 0.04f).toInt()
+    minX = (minX - pad).coerceAtLeast(0); minY = (minY - pad).coerceAtLeast(0)
+    maxX = (maxX + pad).coerceAtMost(w - 1); maxY = (maxY + pad).coerceAtMost(h - 1)
+    return Bitmap.createBitmap(src, minX, minY, maxX - minX + 1, maxY - minY + 1)
 }
