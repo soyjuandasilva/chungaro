@@ -78,4 +78,11 @@ class SettingsStore(context: Context) {
     fun saveRadius(km: Int) {
         prefs.edit().putInt("nearby_radius", km).apply()
     }
+
+    /** Si ya se vio el tour de bienvenida. */
+    fun tourSeen(): Boolean = prefs.getBoolean("tour_seen", false)
+
+    fun setTourSeen() {
+        prefs.edit().putBoolean("tour_seen", true).apply()
+    }
 }

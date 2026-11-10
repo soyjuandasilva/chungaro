@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -58,6 +59,9 @@ fun ChungaroApp(
     var showVehicles by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     var crashReport by rememberSaveable { mutableStateOf(ChungaroApplication.takeLastCrash(context)) }
+    val store = remember { com.chungaro.combustible.data.SettingsStore(context) }
+    // Tour de bienvenida: la primera vez que se abre la app (y desde el menú).
+    var showTour by rememberSaveable { mutableStateOf(!store.tourSeen()) }
 
     // Consumo real (historial) o el estimado del vehículo, en L/100 km.
     val consumptionL100 = stats.summary.avgEfficiency
@@ -76,6 +80,11 @@ fun ChungaroApp(
     val id = editingId
     val editVehicleId = editingVehicle
     when {
+        showTour -> QuickTour(onFinish = {
+            store.setTourSeen()
+            showTour = false
+            tab = TAB_HOME
+        })
         editVehicleId != null -> {
             BackHandler { editingVehicle = null }
             VehicleEditScreen(
@@ -198,6 +207,7 @@ fun ChungaroApp(
                         onOverview = { go(TAB_OVERVIEW) },
                         onFavorites = { go(TAB_FAVORITES) },
                         onSettings = { scope.launch { drawerState.close() }; showSettings = true },
+                        onTour = { scope.launch { drawerState.close() }; showTour = true },
                     )
                 },
             ) {

@@ -10,6 +10,11 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
 
 ## Pantallas
 
+- **Tour de bienvenida**: la primera vez que se abre la app, 4 pantallas
+  animadas (bienvenida, mapa, «¿abastecer hoy o esperar al lunes?» y Meu
+  veículo) que terminan pidiendo la ubicación. Se puede volver a ver desde el
+  menú: «Como funciona a Atesta».
+
 - **Inicio (mapa)**: mapa a pantalla completa con el precio de cada gasolinera
   (verde las baratas, rojo las caras) y una hoja que se arrastra desde abajo:
   combustible (desplegable), radio (5, 10 o 20 km), orden (más barata, más

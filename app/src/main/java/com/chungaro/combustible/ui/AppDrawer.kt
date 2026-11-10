@@ -42,6 +42,7 @@ fun AppDrawer(
     onOverview: () -> Unit,
     onFavorites: () -> Unit,
     onSettings: () -> Unit,
+    onTour: () -> Unit,
 ) {
     // Sin márgenes de sistema: el verde de la cabecera llega bajo la barra de estado.
     ModalDrawerSheet(
@@ -82,6 +83,7 @@ fun AppDrawer(
 
             HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
             DrawerItem("⚙️", "Definições", null, onSettings)
+            DrawerItem("👋", "Como funciona a Atesta", null, onTour)
 
             Spacer(Modifier.height(24.dp))
             Text(
