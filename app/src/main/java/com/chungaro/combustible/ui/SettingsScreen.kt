@@ -91,7 +91,7 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = Modifier.appBackground(),
-        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        containerColor = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = { com.chungaro.combustible.nearby.DarkTopBar("Definições", androidx.compose.material.icons.Icons.Outlined.Settings, onBack) },
     ) { padding ->
         Column(

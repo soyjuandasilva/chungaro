@@ -91,7 +91,7 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
     val sel = options.firstOrNull { it.station.id == picked } ?: options.firstOrNull()
     val worst = options.maxByOrNull { it.station.price }
 
-    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, topBar = { DarkTopBar("Calculadora de poupança", Icons.Outlined.Calculate, onBack) }) { padding ->
+    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Calculadora de poupança", Icons.Outlined.Calculate, onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -182,7 +182,7 @@ fun AlertsScreen(
     var saved by remember { mutableStateOf(false) }
     val f = FUEL_TYPES.first { it.id == fuel }
 
-    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, topBar = { DarkTopBar("Alertas de preço", Icons.Outlined.NotificationsNone, onBack) }) { padding ->
+    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Alertas de preço", Icons.Outlined.NotificationsNone, onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),

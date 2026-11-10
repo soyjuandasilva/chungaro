@@ -150,7 +150,7 @@ fun PricesTab(
                         Modifier
                             .weight(1f)
                             .shadow(if (sel) 12.dp else 6.dp, shape, spotColor = f.uiColor, ambientColor = Color.Black)
-                            .background(Brush.verticalGradient(listOf(tileColor(f.uiColor, 0.85f), tileColor(f.uiColor, 0.42f))), shape)
+                            .background(Brush.verticalGradient(listOf(tileColor(f.uiColor, 0.68f), tileColor(f.uiColor, 0.36f))), shape)
                             .border(BorderStroke(if (sel) 2.dp else 1.dp, if (sel) SolidColor(Color.White) else Brush.verticalGradient(listOf(f.uiColor, Color.Transparent))), shape)
                             .clip(shape)
                             .clickable { onFuel(f.id) },

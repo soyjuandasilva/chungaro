@@ -146,7 +146,7 @@ fun MainHome(
     var stationId by rememberSaveable { mutableStateOf<Long?>(null) }
     val openStation: (Long) -> Unit = { stationId = it }
 
-    Scaffold(containerColor = Color.Transparent, modifier = Modifier.appBackground()) { padding ->
+    Scaffold(containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, modifier = Modifier.appBackground()) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Cabecera
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {

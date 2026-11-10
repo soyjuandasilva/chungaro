@@ -100,7 +100,7 @@ private fun StationDetail(
 
     Scaffold(
         modifier = Modifier.appBackground(),
-        containerColor = Color.Transparent,
+        containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             DarkTopBar("Detalhes do posto", icon = null, onBack = onBack) {
                 if (base != null) {

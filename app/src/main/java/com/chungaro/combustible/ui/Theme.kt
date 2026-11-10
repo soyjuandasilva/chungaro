@@ -9,6 +9,8 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -119,8 +121,11 @@ fun ChungaroTheme(content: @Composable () -> Unit) {
         colorScheme = Dark,
         shapes = AppShapes,
         typography = appTypography(appFontFamily()),
-        content = content,
-    )
+    ) {
+        // Texto e iconos claros por defecto: sobre los fondos con degradado no hay
+        // una superficie que lo indique y quedarían en negro.
+        CompositionLocalProvider(LocalContentColor provides Dark.onBackground, content = content)
+    }
 }
 
 /** Barra superior verde oscuro, igual en todas las pantallas. */
