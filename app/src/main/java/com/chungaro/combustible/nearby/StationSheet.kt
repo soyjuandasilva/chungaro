@@ -36,6 +36,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -201,8 +204,19 @@ private fun StationDetail(
             DarkCard {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("Preços de combustíveis", fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
-                    entries.firstOrNull { it.first.id == selFuel }?.second?.updated?.takeIf { it.isNotBlank() }?.let {
-                        Text("Atualizado " + updatedText(it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // Cuándo comprobó la app los precios en la DGEG (lo hace cada 10 minutos).
+                    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            delay(30_000L)
+                            now = System.currentTimeMillis()
+                        }
+                    }
+                    vm.pricesTime?.let { t ->
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Atualizado " + agoText(t, now), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AtestaGreenLight)
+                            Text("a cada 10 min", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
                 entries.forEachIndexed { i, (fuel, st) ->
