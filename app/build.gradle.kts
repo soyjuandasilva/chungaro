@@ -13,8 +13,8 @@ android {
         applicationId = "com.chungaro.combustible"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "2.6"
+        versionCode = 12
+        versionName = "2.7"
     }
 
     signingConfigs {
@@ -63,6 +63,7 @@ dependencies {
 
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

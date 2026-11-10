@@ -189,7 +189,8 @@ fun SettingsScreen(
             }
 
             Text(
-                stringResource(R.string.app_name) + " ${BuildConfig.VERSION_NAME} · Preços: DGEG · Mapa: © OpenStreetMap",
+                stringResource(R.string.app_name) + " ${BuildConfig.VERSION_NAME} · Preços: DGEG · Mapa: © OpenStreetMap\n" +
+                    "Os logótipos e marcas pertencem aos respetivos proprietários e são usados apenas para identificar as bombas.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

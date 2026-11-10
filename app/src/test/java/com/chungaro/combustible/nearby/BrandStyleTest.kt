@@ -30,4 +30,12 @@ class BrandStyleTest {
         // "bp" no debe coincidir dentro de otra palabra.
         assertEquals("AB", brandStyle("Abpetro Bombas").label)
     }
+
+    @Test
+    fun logoDomains() {
+        assertEquals("galp.com", brandStyle("GALP").domain)
+        assertEquals("prio.pt", brandStyle("PRIO").domain)
+        assertEquals(null, brandStyle("Genérico").domain)
+        assertEquals(null, brandStyle("Posto Central").domain)
+    }
 }

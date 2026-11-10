@@ -41,6 +41,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
+import androidx.compose.runtime.mutableStateMapOf
+import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import java.util.Locale
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -168,6 +172,18 @@ private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDist
     }
     var centered by remember { mutableStateOf(false) }
 
+    // Logotipos de las marcas presentes, descargados una vez y en caché.
+    val logos = remember { mutableStateMapOf<String, Bitmap>() }
+    val domains = remember(stations) { stations.mapNotNull { brandStyle(it.station.brand).domain }.toSet() }
+    LaunchedEffect(domains) {
+        domains.filter { it !in logos }.forEach { domain ->
+            val result = context.imageLoader.execute(
+                ImageRequest.Builder(context).data(brandLogoUrl(domain)).size(96).allowHardware(false).build(),
+            )
+            ((result as? SuccessResult)?.drawable as? BitmapDrawable)?.bitmap?.let { logos[domain] = it }
+        }
+    }
+
     AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize(), update = { map ->
         map.overlays.clear()
         val prices = stations.map { it.station.price }
@@ -179,7 +195,7 @@ private fun OsmMap(location: Pair<Double, Double>?, stations: List<StationAtDist
             map.overlays.add(
                 Marker(map).apply {
                     position = GeoPoint(s.station.lat, s.station.lon)
-                    icon = BitmapDrawable(map.resources, priceBubble(map.context, s.station.price, priceColor(t), s.station.brand))
+                    icon = BitmapDrawable(map.resources, priceBubble(map.context, s.station.price, priceColor(t), s.station.brand, logos))
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     setOnMarkerClickListener { _, _ -> onSelect(s.station.id); true }
                 },
@@ -216,17 +232,17 @@ private fun priceColor(t: Double): Int {
     return (0xFF shl 24) or (mix(16) shl 16) or (mix(8) shl 8) or mix(0)
 }
 
-private fun priceBubble(context: Context, price: Double, color: Int, brand: String): Bitmap {
+private fun priceBubble(context: Context, price: Double, color: Int, brand: String, logos: Map<String, Bitmap>): Bitmap {
     val d = context.resources.displayMetrics.density
     val text = String.format(Locale.getDefault(), "%.3f", price)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 12 * d
+        textSize = 13 * d
         typeface = Typeface.DEFAULT_BOLD
         this.color = android.graphics.Color.WHITE
     }
     val style = brandStyle(brand)
-    val padH = 6 * d
-    val padV = 4 * d
+    val padH = 7 * d
+    val padV = 6 * d
     val tail = 6 * d
     val h = paint.textSize + padV * 2
     val badge = h - 4 * d
@@ -246,14 +262,20 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
     val cx = 1 + 2 * d + badge / 2
     val cy = 1 + h / 2
     c.drawCircle(cx, cy, badge / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
-    c.drawCircle(cx, cy, badge / 2 - 1.5f * d, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = style.background.toInt() })
-    val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.color = style.foreground.toInt()
-        typeface = Typeface.DEFAULT_BOLD
-        textAlign = Paint.Align.CENTER
-        textSize = badge * if (style.label.length > 1) 0.42f else 0.55f
+    val logo = style.domain?.let { logos[it] }
+    if (logo != null) {
+        val r = badge / 2 - 2.5f * d
+        c.drawBitmap(logo, null, RectF(cx - r, cy - r, cx + r, cy + r), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+    } else {
+        c.drawCircle(cx, cy, badge / 2 - 1.5f * d, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = style.background.toInt() })
+        val lp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = style.foreground.toInt()
+            typeface = Typeface.DEFAULT_BOLD
+            textAlign = Paint.Align.CENTER
+            textSize = badge * if (style.label.length > 1) 0.42f else 0.55f
+        }
+        c.drawText(style.label, cx, cy - (lp.descent() + lp.ascent()) / 2, lp)
     }
-    c.drawText(style.label, cx, cy - (lp.descent() + lp.ascent()) / 2, lp)
     c.drawText(text, 1 + 2 * d + badge + 4 * d, padV + paint.textSize * 0.85f + 1, paint)
     return bmp
 }

@@ -1,5 +1,6 @@
 package com.chungaro.combustible.nearby
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -23,29 +30,36 @@ import java.util.Locale
  * Insignia de marca: colores característicos y unas letras.
  * No son los logotipos oficiales (marcas registradas de sus dueños).
  */
-data class BrandStyle(val label: String, val background: Long, val foreground: Long, val accent: Long? = null)
+data class BrandStyle(
+    val label: String,
+    val background: Long,
+    val foreground: Long,
+    val accent: Long? = null,
+    /** Web oficial de la marca: de ahí se descarga su icono (logotipo). */
+    val domain: String? = null,
+)
 
 private data class BrandRule(val keys: List<String>, val style: BrandStyle)
 
 private val RULES = listOf(
-    BrandRule(listOf("galp", "petrogal"), BrandStyle("G", 0xFFFF6A13, 0xFFFFFFFF)),
-    BrandRule(listOf("repsol", "campsa", "petronor"), BrandStyle("R", 0xFFFF8200, 0xFFFFFFFF, 0xFFE4002B)),
-    BrandRule(listOf("bp"), BrandStyle("bp", 0xFF009B3A, 0xFFFFFFFF, 0xFFFFE600)),
-    BrandRule(listOf("prio"), BrandStyle("P", 0xFF5CB531, 0xFFFFFFFF)),
-    BrandRule(listOf("moeve"), BrandStyle("M", 0xFF00A19A, 0xFFFFFFFF)),
-    BrandRule(listOf("cepsa"), BrandStyle("C", 0xFFE30613, 0xFFFFFFFF)),
-    BrandRule(listOf("shell"), BrandStyle("S", 0xFFFFD500, 0xFFDD1D21, 0xFFDD1D21)),
-    BrandRule(listOf("totalenergies", "total"), BrandStyle("T", 0xFFED0000, 0xFFFFFFFF, 0xFF0055A4)),
-    BrandRule(listOf("intermarche", "ecomarche"), BrandStyle("I", 0xFFE2001A, 0xFFFFFFFF)),
-    BrandRule(listOf("leclerc"), BrandStyle("E", 0xFF0066B3, 0xFFFFFFFF, 0xFFF39200)),
-    BrandRule(listOf("auchan", "jumbo"), BrandStyle("A", 0xFFE2001A, 0xFFFFFFFF, 0xFF00A650)),
-    BrandRule(listOf("alves bandeira"), BrandStyle("AB", 0xFF003DA5, 0xFFFFFFFF, 0xFFFFCD00)),
-    BrandRule(listOf("oz energia", "oz"), BrandStyle("OZ", 0xFF1D70B7, 0xFFFFFFFF)),
+    BrandRule(listOf("galp", "petrogal"), BrandStyle("G", 0xFFFF6A13, 0xFFFFFFFF, domain = "galp.com")),
+    BrandRule(listOf("repsol", "campsa", "petronor"), BrandStyle("R", 0xFFFF8200, 0xFFFFFFFF, 0xFFE4002B, domain = "repsol.pt")),
+    BrandRule(listOf("bp"), BrandStyle("bp", 0xFF009B3A, 0xFFFFFFFF, 0xFFFFE600, domain = "bp.com")),
+    BrandRule(listOf("prio"), BrandStyle("P", 0xFF5CB531, 0xFFFFFFFF, domain = "prio.pt")),
+    BrandRule(listOf("moeve"), BrandStyle("M", 0xFF00A19A, 0xFFFFFFFF, domain = "moeveglobal.com")),
+    BrandRule(listOf("cepsa"), BrandStyle("C", 0xFFE30613, 0xFFFFFFFF, domain = "cepsa.pt")),
+    BrandRule(listOf("shell"), BrandStyle("S", 0xFFFFD500, 0xFFDD1D21, 0xFFDD1D21, domain = "shell.pt")),
+    BrandRule(listOf("totalenergies", "total"), BrandStyle("T", 0xFFED0000, 0xFFFFFFFF, 0xFF0055A4, domain = "totalenergies.com")),
+    BrandRule(listOf("intermarche", "ecomarche"), BrandStyle("I", 0xFFE2001A, 0xFFFFFFFF, domain = "intermarche.pt")),
+    BrandRule(listOf("leclerc"), BrandStyle("E", 0xFF0066B3, 0xFFFFFFFF, 0xFFF39200, domain = "e-leclerc.pt")),
+    BrandRule(listOf("auchan", "jumbo"), BrandStyle("A", 0xFFE2001A, 0xFFFFFFFF, 0xFF00A650, domain = "auchan.pt")),
+    BrandRule(listOf("alves bandeira"), BrandStyle("AB", 0xFF003DA5, 0xFFFFFFFF, 0xFFFFCD00, domain = "alvesbandeira.pt")),
+    BrandRule(listOf("oz energia", "oz"), BrandStyle("OZ", 0xFF1D70B7, 0xFFFFFFFF, domain = "ozenergia.pt")),
     BrandRule(listOf("avia"), BrandStyle("A", 0xFFE30613, 0xFFFFFFFF, 0xFF003B7A)),
-    BrandRule(listOf("q8"), BrandStyle("Q8", 0xFF003B7A, 0xFFFFD200)),
-    BrandRule(listOf("esso"), BrandStyle("E", 0xFFFFFFFF, 0xFF0051A5, 0xFFE21B26)),
-    BrandRule(listOf("petroiberica"), BrandStyle("PI", 0xFF00539F, 0xFFFFFFFF)),
-    BrandRule(listOf("plenergy"), BrandStyle("PL", 0xFF7AB800, 0xFFFFFFFF)),
+    BrandRule(listOf("q8"), BrandStyle("Q8", 0xFF003B7A, 0xFFFFD200, domain = "q8.it")),
+    BrandRule(listOf("esso"), BrandStyle("E", 0xFFFFFFFF, 0xFF0051A5, 0xFFE21B26, domain = "esso.com")),
+    BrandRule(listOf("petroiberica"), BrandStyle("PI", 0xFF00539F, 0xFFFFFFFF, domain = "petroiberica.pt")),
+    BrandRule(listOf("plenergy"), BrandStyle("PL", 0xFF7AB800, 0xFFFFFFFF, domain = "plenergy.es")),
     BrandRule(listOf("bxpress", "pingo doce"), BrandStyle("BX", 0xFF6CB33F, 0xFFFFFFFF)),
     BrandRule(listOf("mais combustiveis"), BrandStyle("+", 0xFF00843D, 0xFFFFFFFF)),
 )
@@ -79,9 +93,48 @@ fun brandStyle(brand: String): BrandStyle {
     return BrandStyle(initials, color, 0xFFFFFFFF)
 }
 
+/** URL del icono de la web oficial de la marca (servicio de iconos de Google). */
+fun brandLogoUrl(domain: String): String = "https://www.google.com/s2/favicons?domain=$domain&sz=128"
+
+/**
+ * Insignia de la marca: muestra su logotipo (descargado de su web y guardado en
+ * caché) y, si no hay o no carga, la insignia de colores con iniciales.
+ */
 @Composable
 fun BrandBadge(brand: String, size: Dp = 36.dp, modifier: Modifier = Modifier) {
     val st = brandStyle(brand)
+    val domain = st.domain
+    if (domain != null) {
+        val context = LocalContext.current
+        val request = remember(domain) {
+            // Tamaño fijo: así la descarga empieza sin esperar a que se dibuje.
+            ImageRequest.Builder(context).data(brandLogoUrl(domain)).size(128).build()
+        }
+        val painter = rememberAsyncImagePainter(request)
+        if (painter.state is AsyncImagePainter.State.Success) {
+            Box(
+                modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .border(1.dp, Color(0x22000000), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painter,
+                    contentDescription = brand,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(size * 0.66f),
+                )
+            }
+            return
+        }
+    }
+    InitialsBadge(st, size, modifier)
+}
+
+@Composable
+private fun InitialsBadge(st: BrandStyle, size: Dp, modifier: Modifier) {
     val ring = st.accent?.let { Color(it) } ?: Color.White.copy(alpha = 0.0f)
     val fontSize = when (st.label.length) {
         1 -> size.value * 0.48f
