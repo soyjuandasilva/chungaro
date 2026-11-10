@@ -205,12 +205,12 @@ private fun Header(vm: NearbyViewModel, hasPermission: Boolean, onOpenSettings: 
                 painterResource(artId),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                alignment = Alignment.CenterEnd,
+                alignment = Alignment.BottomEnd,
                 modifier = Modifier.matchParentSize(),
             )
             Box(
                 Modifier.matchParentSize().background(
-                    Brush.horizontalGradient(listOf(Color(0xE6042F2E), Color(0x99042F2E), Color(0x11042F2E))),
+                    Brush.horizontalGradient(listOf(Color(0xD9042F2E), Color(0x80042F2E), Color(0x00042F2E))),
                 ),
             )
         } else {
