@@ -25,7 +25,7 @@ fun DrawScope.drawHeaderScene() {
     }
 
     // Sol
-    val sun = Offset(w * 0.74f, h * 0.42f)
+    val sun = Offset(w * 0.70f, h * 0.60f)
     drawCircle(
         Brush.radialGradient(listOf(Color(0x66FBBF24), Color(0x00FBBF24)), center = sun, radius = h * 0.55f),
         radius = h * 0.55f,
