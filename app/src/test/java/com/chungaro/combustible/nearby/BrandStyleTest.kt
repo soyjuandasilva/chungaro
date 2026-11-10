@@ -38,4 +38,12 @@ class BrandStyleTest {
         assertEquals(null, brandStyle("Genérico").domain)
         assertEquals(null, brandStyle("Posto Central").domain)
     }
+
+    @Test
+    fun bundledLogos() {
+        assertEquals("intermarche", brandStyle("INTERMARCHÉ").logo)
+        assertEquals("moeve", brandStyle("CEPSA").logo)
+        assertEquals("petroprix", brandStyle("PETROPRIX").logo)
+        assertEquals(null, brandStyle("BXPRESS").logo)
+    }
 }

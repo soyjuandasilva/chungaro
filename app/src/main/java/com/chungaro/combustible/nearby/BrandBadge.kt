@@ -5,6 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +41,16 @@ data class BrandStyle(
     val accent: Long? = null,
     /** Web oficial de la marca: de ahí se descarga su icono (logotipo). */
     val domain: String? = null,
+    /** Logotipo incluido en la app (res/drawable-nodpi/brand_<logo>.webp). */
+    val logo: String? = null,
+)
+
+/** Logotipos incluidos en la app, por la primera clave de cada marca. */
+private val LOGOS = mapOf(
+    "galp" to "galp", "repsol" to "repsol", "bp" to "bp", "prio" to "prio", "moeve" to "moeve", "cepsa" to "moeve",
+    "shell" to "shell", "totalenergies" to "totalenergies", "intermarche" to "intermarche", "leclerc" to "leclerc",
+    "auchan" to "auchan", "alves bandeira" to "alvesbandeira", "q8" to "q8", "esso" to "esso", "avia" to "avia",
+    "petroprix" to "petroprix",
 )
 
 private data class BrandRule(val keys: List<String>, val style: BrandStyle)
@@ -62,6 +76,7 @@ private val RULES = listOf(
     BrandRule(listOf("plenergy"), BrandStyle("PL", 0xFF7AB800, 0xFFFFFFFF, domain = "plenergy.es")),
     BrandRule(listOf("bxpress", "pingo doce"), BrandStyle("BX", 0xFF6CB33F, 0xFFFFFFFF)),
     BrandRule(listOf("mais combustiveis"), BrandStyle("+", 0xFF00843D, 0xFFFFFFFF)),
+    BrandRule(listOf("petroprix"), BrandStyle("P", 0xFF2D3436, 0xFFFFFFFF)),
 )
 
 private val GENERIC = BrandStyle("⛽", 0xFF64748B, 0xFFFFFFFF)
@@ -84,7 +99,7 @@ fun brandStyle(brand: String): BrandStyle {
     val words = n.split(' ')
     RULES.forEach { rule ->
         if (rule.keys.any { key -> n == key || n.startsWith("$key ") || (" $key " in " $n ") || (key.length > 3 && n.contains(key)) }) {
-            return rule.style
+            return rule.style.copy(logo = LOGOS[rule.keys.first()])
         }
     }
     val initials = words.filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }.uppercase(Locale.ROOT)
@@ -103,6 +118,33 @@ fun brandLogoUrl(domain: String): String = "https://www.google.com/s2/favicons?d
 @Composable
 fun BrandBadge(brand: String, size: Dp = 36.dp, modifier: Modifier = Modifier) {
     val st = brandStyle(brand)
+    // 1) Logotipo incluido en la app
+    val ctx = LocalContext.current
+    val localId = remember(st.logo) {
+        st.logo?.let { ctx.resources.getIdentifier("brand_$it", "drawable", ctx.packageName) } ?: 0
+    }
+    if (localId != 0) {
+        val painter = painterResource(localId)
+        val ratio = painter.intrinsicSize.width / painter.intrinsicSize.height
+        val wide = ratio > 2f
+        Box(
+            modifier
+                .size(if (wide) size * 1.9f else size, size)
+                .clip(if (wide) RoundedCornerShape(50) else CircleShape)
+                .background(Color.White)
+                .border(1.dp, Color(0x22000000), if (wide) RoundedCornerShape(50) else CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painter,
+                contentDescription = brand,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize().padding(if (wide) size * 0.14f else size * 0.16f),
+            )
+        }
+        return
+    }
+    // 2) Icono de su web; 3) insignia de colores
     val domain = st.domain
     if (domain != null) {
         val context = LocalContext.current

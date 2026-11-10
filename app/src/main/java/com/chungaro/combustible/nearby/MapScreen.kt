@@ -319,7 +319,7 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
     val cx = 1 + 2 * d + badge / 2
     val cy = 1 + h / 2
     c.drawCircle(cx, cy, badge / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = android.graphics.Color.WHITE })
-    val logo = style.domain?.let { logos[it] }
+    val logo = localLogo(context, style.logo) ?: style.domain?.let { logos[it] }
     if (logo != null) {
         val r = badge / 2 - 2.5f * d
         c.drawBitmap(logo, null, RectF(cx - r, cy - r, cx + r, cy + r), Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
@@ -386,5 +386,17 @@ private fun CostBox(label: String, price: Double, liters: Double, color: android
             Text(formatMoney(price * liters), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
             Text("${formatEuro(price)}/L", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+private val localLogoCache = HashMap<String, Bitmap?>()
+
+/** Logotipo cuadrado incluido en la app (los anchos, como Intermarché, no caben en la burbuja). */
+private fun localLogo(context: Context, key: String?): Bitmap? {
+    key ?: return null
+    return localLogoCache.getOrPut(key) {
+        val id = context.resources.getIdentifier("brand_$key", "drawable", context.packageName)
+        if (id == 0) null
+        else android.graphics.BitmapFactory.decodeResource(context.resources, id)?.takeIf { it.width <= it.height * 2 }
     }
 }
