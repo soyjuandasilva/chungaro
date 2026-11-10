@@ -186,7 +186,6 @@ fun ChungaroApp(
                 onOpen = { editingId = it.id },
                 onOpenSettings = { showSettings = true },
                 onSelectVehicle = { vm.selectVehicle(it) },
-            extraTips = maintenanceTips(reminders, stats.rows.lastOrNull()?.refuel?.odometer),
                 onEditVehicle = { editingVehicle = it?.id ?: NEW_VEHICLE },
                 onManageVehicles = { showVehicles = true },
                 onSaveReminder = { vm.saveReminder(it) },
