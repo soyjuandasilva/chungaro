@@ -1,5 +1,13 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,7 +99,7 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
     val sel = options.firstOrNull { it.station.id == picked } ?: options.firstOrNull()
     val worst = options.maxByOrNull { it.station.price }
 
-    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Calculadora de poupança", Icons.Outlined.Calculate, onBack) }) { padding ->
+    Scaffold(modifier = Modifier.appBackground(), containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Calculadora de poupança", Icons.Outlined.Calculate, onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -102,10 +110,14 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Combustível", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                DropPill(f.short, FUEL_TYPES.map { it.short }, FUEL_TYPES.indexOf(f), selected = true) { fuel = FUEL_TYPES[it].id; picked = null }
+                DropPill(f.short, FUEL_TYPES.map { it.short }, FUEL_TYPES.indexOf(f), selected = true, label = "Combustível") { fuel = FUEL_TYPES[it].id; picked = null }
             }
             if (options.isEmpty()) {
-                Text("Sem preços na tua zona ainda. Ativa a localização no mapa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (vm.rows[fuel] is FuelRowState.Error) {
+                    DarkCard { ErrorRetry("Sem ligação: não conseguimos descarregar os preços.", onRetry = { vm.refresh(force = true) }) }
+                } else {
+                    Text("Sem preços na tua zona ainda. Ativa a localização no mapa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             } else {
                 DarkCard {
                     options.forEachIndexed { i, s ->
@@ -117,46 +129,45 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
                             subtitle = "${euro3(s.station.price)} / L · ${formatKm(s.km)}",
                         ) {
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("Total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(formatMoney(s.station.price * liters), fontWeight = FontWeight.ExtraBold)
+                                Text("Total", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(formatMoney(s.station.price * liters), fontWeight = FontWeight.Bold)
                             }
-                            RadioButton(
-                                selected = isSel,
-                                onClick = { picked = s.station.id },
-                                colors = RadioButtonDefaults.colors(selectedColor = AtestaGreenLight),
-                            )
+                            RadioButton(selected = isSel, onClick = { picked = s.station.id })
                         }
                     }
                 }
                 if (sel != null && worst != null) {
                     val saving = (worst.station.price - sel.station.price) * liters
-                    Surface(shape = RoundedCornerShape(18.dp), color = Color(0xFF14532D), border = BorderStroke(1.dp, AtestaGreenLight.copy(alpha = 0.6f)), modifier = Modifier.fillMaxWidth()) {
+                    Surface(
+                        shape = CardShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.Savings, contentDescription = null, tint = AtestaGreenLight, modifier = Modifier.size(40.dp))
+                            Icon(Icons.Outlined.Savings, contentDescription = null, modifier = Modifier.size(36.dp))
                             Column(Modifier.padding(start = 12.dp)) {
                                 Text(
                                     if (saving > 0.005) "Poupas ${formatMoney(saving)}" else "É o mais caro da lista",
                                     style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontWeight = FontWeight.Bold,
                                 )
                                 Text(
                                     if (saving > 0.005) "no ${stationTitle(sel.station)} (vs. ${stationTitle(worst.station)})" else "Escolhe outro posto para poupar.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
                     }
                     Button(
                         onClick = { onOpenStation(sel.station.id) },
-                        colors = ButtonDefaults.buttonColors(containerColor = AtestaGreenLight, contentColor = Color(0xFF052E16)),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Ver o posto escolhido", fontWeight = FontWeight.ExtraBold) }
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) { Text("Ver o posto escolhido", fontWeight = FontWeight.Bold) }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                Text("  Diferença para $liters litros. Valores indicativos.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Diferença para $liters litros. Valores indicativos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -182,7 +193,7 @@ fun AlertsScreen(
     var saved by remember { mutableStateOf(false) }
     val f = FUEL_TYPES.first { it.id == fuel }
 
-    Scaffold(modifier = Modifier.appBackground(), containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Alertas de preço", Icons.Outlined.NotificationsNone, onBack) }) { padding ->
+    Scaffold(modifier = Modifier.appBackground(), containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground, topBar = { DarkTopBar("Alertas de preço", Icons.Outlined.NotificationsNone, onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -190,19 +201,19 @@ fun AlertsScreen(
             DarkCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (settings.alertsEnabled) "Alerta ativo" else "Criar alerta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                        BlockTitle(if (settings.alertsEnabled) "Alerta ativo" else "Criar alerta", Modifier.weight(1f))
                         Switch(
                             checked = settings.alertsEnabled,
                             onCheckedChange = { on -> if (on && !canNotify) onRequestNotifications() else onSave(settings.copy(alertsEnabled = on)) },
-                            colors = SwitchDefaults.colors(checkedTrackColor = AtestaGreenLight, checkedThumbColor = Color.White),
+                            modifier = Modifier.semantics { contentDescription = "Alerta de preço ligado" },
                         )
                     }
-                    HorizontalDivider(color = AtestaBorder)
+                    HorizontalDivider(color = Atesta.colors.cardBorder)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Combustível", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         var open by remember { mutableStateOf(false) }
                         Box {
-                            FilterPill(f.short, onClick = { open = true }) {
+                            FilterPill(f.short, onClick = { open = true }, description = "Combustível: ${f.short}") {
                                 Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(18.dp))
                             }
                             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -220,12 +231,19 @@ fun AlertsScreen(
                     }
                 }
             }
-            Text("Aplicar em", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold)
-            DarkCard {
-                listOf(false to "Todas as estações (na tua zona)", true to "Apenas nas favoritas ($favoritesCount)").forEach { (fav, label) ->
-                    Row(Modifier.fillMaxWidth().clickableNoRipple { favoritesOnly = fav }.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = favoritesOnly == fav, onClick = { favoritesOnly = fav }, colors = RadioButtonDefaults.colors(selectedColor = AtestaGreenLight))
-                        Text(label)
+            BlockTitle("Aplicar em")
+            DarkCard(Modifier.selectableGroup()) {
+                listOf(false to "Todas as bombas da tua zona", true to "Apenas nas favoritas ($favoritesCount)").forEach { (fav, label) ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = favoritesOnly == fav, role = Role.RadioButton, onClick = { favoritesOnly = fav })
+                            .heightIn(min = 52.dp)
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = favoritesOnly == fav, onClick = null)
+                        Text(label, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
@@ -235,19 +253,22 @@ fun AlertsScreen(
                     onSave(settings.copy(alertsEnabled = true, alertFuelId = fuel, alertThreshold = target, alertFavoritesOnly = favoritesOnly))
                     saved = true
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AtestaGreenLight, contentColor = Color(0xFF052E16)),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 Icon(Icons.Outlined.NotificationsNone, contentDescription = null)
-                Text("  Guardar alerta", fontWeight = FontWeight.ExtraBold)
+                Spacer(Modifier.width(8.dp))
+                Text("Guardar alerta", fontWeight = FontWeight.Bold)
             }
             if (saved) {
-                Text(
-                    "✅ Alerta guardado: avisamos-te quando o ${f.short} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
-                        (if (favoritesOnly) " numa favorita." else " perto de ti.") + " Verificamos a cada 6 horas.",
-                    color = AtestaGreenLight,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(20.dp))
+                    Text(
+                        "Alerta guardado: avisamos-te quando o ${f.short} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
+                            (if (favoritesOnly) " numa favorita." else " perto de ti.") + " Verificamos a cada 6 horas.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
             Spacer(Modifier.height(16.dp))
         }

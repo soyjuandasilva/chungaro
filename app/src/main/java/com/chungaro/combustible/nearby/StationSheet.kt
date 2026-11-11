@@ -1,5 +1,14 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.filled.Star
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -61,9 +70,6 @@ import com.chungaro.combustible.ui.AtestaGreenLight
 import com.chungaro.combustible.ui.ChungaroTheme
 import kotlin.math.roundToInt
 
-/** Fondo oscuro de las cabeceras. */
-val HeaderDark = com.chungaro.combustible.ui.AtestaGreen
-
 /**
  * «Detalhes do posto» a pantalla completa: banner con la marca, nombre,
  * morada, distancia, «Como chegar», precios de todos sus combustibles,
@@ -103,7 +109,7 @@ private fun StationDetail(
 
     Scaffold(
         modifier = Modifier.appBackground(),
-        containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground,
+        containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             DarkTopBar("Detalhes do posto", icon = null, onBack = onBack) {
                 if (base != null) {
@@ -119,9 +125,9 @@ private fun StationDetail(
                 isFavorite?.let { fav ->
                     IconButton(onClick = onToggleFavorite) {
                         Icon(
-                            if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder,
                             contentDescription = if (fav) "Tirar dos favoritos" else "Guardar nos favoritos",
-                            tint = if (fav) Color(0xFFEF4444) else Color.White,
+                            tint = if (fav) Atesta.colors.star else MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -138,7 +144,6 @@ private fun StationDetail(
         val selected = FUEL_TYPES.first { it.id == selFuel }
         val km = vm.location?.let { (lat, lon) -> distanceKm(lat, lon, base.lat, base.lon) }
         val points by remember(selFuel, stationId) { vm.history(selFuel, stationId) }.collectAsStateWithLifecycle(emptyList())
-        val brandColor = Color(pinColor(base.brand))
 
         Column(
             Modifier
@@ -149,27 +154,11 @@ private fun StationDetail(
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Banner con la marca (la DGEG no tiene fotos de los postos)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .background(
-                        Brush.linearGradient(listOf(brandColor, brandColor.copy(alpha = 0.55f), Color(0xFF0E2A1D))),
-                        RoundedCornerShape(18.dp),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Surface(shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 8.dp, modifier = Modifier.size(96.dp)) {
-                    Box(contentAlignment = Alignment.Center) { BrandBadge(base.brand, size = 84.dp) }
-                }
-            }
-
             // Nombre, morada, distancia y «Como chegar»
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandTile(base.brand, size = 56.dp)
+                BrandTile(base.brand, size = 64.dp)
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    Text(stationTitle(base), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(stationTitle(base), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Place, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
@@ -191,19 +180,17 @@ private fun StationDetail(
                 } else {
                     Spacer(Modifier.weight(1f))
                 }
-                Button(
-                    onClick = { openMaps(context, base) },
-                    colors = ButtonDefaults.buttonColors(containerColor = AtestaGreenLight, contentColor = Color(0xFF052E16)),
-                ) {
+                Button(onClick = { openMaps(context, base) }) {
                     Icon(Icons.Outlined.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("  Como chegar", fontWeight = FontWeight.ExtraBold)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Como chegar", fontWeight = FontWeight.Bold)
                 }
             }
 
             // Precios de todos sus combustibles
             DarkCard {
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Preços de combustíveis", fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f))
+                    BlockTitle("Preços de combustíveis", Modifier.weight(1f))
                     // Cuándo comprobó la app los precios en la DGEG (lo hace cada 10 minutos).
                     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
                     LaunchedEffect(Unit) {
@@ -214,20 +201,26 @@ private fun StationDetail(
                     }
                     vm.pricesTime?.let { t ->
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Atualizado " + agoText(t, now), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AtestaGreenLight)
-                            Text("a cada 10 min", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Atualizado " + agoText(t, now), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.accent)
+                            Text("a cada 10 min", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
                 entries.forEachIndexed { i, (fuel, st) ->
-                    if (i > 0) HorizontalDivider(color = AtestaBorder)
+                    if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
                     val isSel = fuel.id == selFuel
-                    Surface(onClick = { selFuel = fuel.id }, color = if (isSel) fuel.uiColor.copy(alpha = 0.10f) else Color.Transparent) {
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = fuel.uiColor, modifier = Modifier.size(24.dp))
-                            Text("  " + fuel.short, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-                            PriceChip(st.price, fuel.uiColor, big = true)
-                        }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(if (isSel) fuel.uiColor.copy(alpha = 0.12f) else Color.Transparent)
+                            .selectable(selected = isSel, role = Role.RadioButton, onClick = { selFuel = fuel.id })
+                            .heightIn(min = 56.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = fuel.uiColor, modifier = Modifier.size(22.dp))
+                        Text(fuel.short, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                        PriceChip(st.price, fuel.uiColor, big = true)
                     }
                 }
                 // Comparación con la media de la zona del combustible elegido
@@ -239,7 +232,7 @@ private fun StationDetail(
                         else "${selected.short}: ${formatEuro(d)} acima da média da zona",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (d <= 0) AtestaGreenLight else MaterialTheme.colorScheme.error,
+                        color = if (d <= 0) Atesta.colors.down else Atesta.colors.up,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     )
                 }
@@ -252,8 +245,8 @@ private fun StationDetail(
             DarkCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Info, contentDescription = null, tint = AtestaGreenLight)
-                        Text("  Informações do posto", fontWeight = FontWeight.ExtraBold)
+                        Icon(Icons.Outlined.Info, contentDescription = null, tint = Atesta.colors.accent)
+                        BlockTitle("Informações do posto", Modifier.padding(start = 10.dp))
                     }
                     InfoLine("Morada", listOf(base.address, base.locality).filter { it.isNotBlank() }.distinct().joinToString(", ").ifBlank { "—" })
                     if (base.brand.isNotBlank()) InfoLine("Marca", base.brand)
@@ -262,7 +255,7 @@ private fun StationDetail(
             }
             Text(
                 "Preços oficiais da DGEG. A app guarda o histórico desde que a começaste a usar.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),

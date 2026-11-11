@@ -1,5 +1,6 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.material.icons.outlined.Build
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -258,9 +259,9 @@ private fun maintenanceTips(
         if (!soon) return@mapNotNull null
         val overdue = (days != null && days < 0) || (km != null && km <= 0)
         com.chungaro.combustible.nearby.Tip(
-            emoji = "🔧",
+            icon = androidx.compose.material.icons.Icons.Outlined.Build,
             text = "${r.title}: " + com.chungaro.combustible.alerts.reminderStatus(r.dueEpochDay, r.dueOdometer, today, odometer).lowercase(),
-            color = if (overdue) 0xFFDC2626 else 0xFFD97706,
+            tone = if (overdue) com.chungaro.combustible.nearby.Tone.BAD else com.chungaro.combustible.nearby.Tone.WARN,
         )
     }
 }

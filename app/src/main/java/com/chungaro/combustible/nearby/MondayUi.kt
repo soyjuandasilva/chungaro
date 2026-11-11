@@ -1,5 +1,14 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.Newspaper
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -36,8 +45,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
 
-private val Amber = Color(0xFFD97706)
-private val Green = Color(0xFF15803D)
 private val mondayFormat = DateTimeFormatter.ofPattern("d/MM", APP_LOCALE)
 
 /**
@@ -56,10 +63,10 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
     val zone by remember(fuel.id) { vm.history(fuel.id, HistoryRecorder.ZONE_AVG) }.collectAsStateWithLifecycle(emptyList())
     val zonePct = remember(zone) { computeWeekly(zone, emptyList()).changePct }
 
-    val (emoji, title, color) = when (verdict.kind) {
-        MondayKind.FILL_NOW -> Triple("⛽", if (days == 1) "Abastece hoje" else "Abastece antes de segunda", Amber)
-        MondayKind.WAIT -> Triple("⏳", "Se puderes, espera por segunda", Green)
-        MondayKind.UNCLEAR -> Triple("🤔", "Sem previsão clara para segunda", MaterialTheme.colorScheme.onSurfaceVariant)
+    val (icon, title, color) = when (verdict.kind) {
+        MondayKind.FILL_NOW -> Triple(Icons.Outlined.LocalGasStation, if (days == 1) "Abastece hoje" else "Abastece antes de segunda", Atesta.colors.warning)
+        MondayKind.WAIT -> Triple(Icons.Outlined.Schedule, "Se puderes, espera por segunda", Atesta.colors.down)
+        MondayKind.UNCLEAR -> Triple(Icons.AutoMirrored.Outlined.HelpOutline, "Sem previsão clara para segunda", MaterialTheme.colorScheme.onSurfaceVariant)
     }
     val body = when (verdict.kind) {
         MondayKind.FILL_NOW -> "As notícias apontam para uma subida do ${fuel.short} na segunda-feira" +
@@ -74,39 +81,40 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
     }
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = CardShape,
         color = color.copy(alpha = 0.10f),
-        border = BorderStroke(1.5.dp, color.copy(alpha = 0.45f)),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(emoji, style = MaterialTheme.typography.headlineSmall)
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
                 Column(Modifier.padding(start = 12.dp)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.semantics { heading() })
                     Text(
-                        "${fuel.short.uppercase()} · SEGUNDA ${nextMonday.format(mondayFormat)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                        "${fuel.short} · segunda-feira, ${nextMonday.format(mondayFormat)}",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = color)
                 }
             }
             Text(body, style = MaterialTheme.typography.bodyMedium)
             verdict.evidence?.let { n ->
                 Surface(
                     onClick = { openLink(context, n.link) },
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Atesta.colors.card,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text("📰 «${n.title}»", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 3, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            n.source + (if (verdict.upVotes + verdict.downVotes > 1) " · ${verdict.upVotes + verdict.downVotes} notícias esta semana" else ""),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    Row(Modifier.padding(12.dp)) {
+                        Icon(Icons.Outlined.Newspaper, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                        Column(Modifier.padding(start = 8.dp)) {
+                            Text("«${n.title}»", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                n.source + (if (verdict.upVotes + verdict.downVotes > 1) " · ${verdict.upVotes + verdict.downVotes} notícias esta semana" else ""),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
@@ -144,58 +152,3 @@ fun rememberMondayVerdict(vm: NearbyViewModel, fuel: FuelType, today: LocalDate 
 /** Inicio (martes 00:00, hora de Lisboa) de la ventana de noticias que hablan del próximo lunes. */
 fun predictionWindowStart(today: LocalDate): Long =
     today.plusDays(daysToMonday(today).toLong() - 6).atStartOfDay(ZoneId.of("Europe/Lisbon")).toInstant().toEpochMilli()
-
-private val TickerBg = Color(0xFFFFF4DC)
-private val TickerInk = Color(0xFF7C2D12)
-
-/**
- * Cintillo de noticias (ticker) para el mapa: una sola línea que se desplaza
- * con el veredicto del lunes y el titular que lo respalda. Al tocarlo se abren
- * las noticias.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun MondayTicker(vm: NearbyViewModel, fuel: FuelType, onOpenNews: () -> Unit) {
-    LaunchedEffect(Unit) { vm.loadNews() }
-    val today = LocalDate.now()
-    val days = daysToMonday(today)
-    val nextMonday = today.plusDays(days.toLong())
-    val verdict = rememberMondayVerdict(vm, fuel, today)
-    val (dot, message) = when (verdict.kind) {
-        MondayKind.FILL_NOW -> Amber to (if (days == 1) "⛽ ${fuel.short}: abastece hoje, amanhã sobe" else "⛽ ${fuel.short}: abastece antes de segunda, vai subir")
-        MondayKind.WAIT -> Green to "⏳ ${fuel.short}: se puderes, espera por segunda, vai descer"
-        MondayKind.UNCLEAR -> TickerInk.copy(alpha = 0.6f) to when {
-            vm.news.isEmpty() && vm.newsLoading -> "A ler as notícias da semana…"
-            days >= 5 -> "🤔 ${fuel.short}: as previsões para segunda costumam sair à quinta e à sexta"
-            else -> "🤔 ${fuel.short}: sem previsão clara para segunda"
-        }
-    }
-    val text = message + (verdict.evidence?.let { "   ·   📰 «${it.title}» (${it.source})" } ?: "") + "          "
-
-    Surface(onClick = onOpenNews, color = TickerBg, modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Etiqueta fija a la izquierda, como en los rótulos de las noticias
-            Surface(color = TickerInk, contentColor = Color.White) {
-                Row(Modifier.padding(horizontal = 10.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).background(dot, CircleShape))
-                    Text(
-                        " SEG ${nextMonday.format(mondayFormat)}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
-            }
-            Text(
-                text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = TickerInk,
-                maxLines = 1,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 10.dp)
-                    .basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 800),
-            )
-        }
-    }
-}

@@ -1,5 +1,6 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.foundation.layout.heightIn
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -91,7 +92,7 @@ fun SettingsScreen(
 
     Scaffold(
         modifier = Modifier.appBackground(),
-        containerColor = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground,
+        containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = { com.chungaro.combustible.nearby.DarkTopBar("Definições", androidx.compose.material.icons.Icons.Outlined.Settings, onBack) },
     ) { padding ->
         Column(
@@ -103,9 +104,25 @@ fun SettingsScreen(
                 SettingsRow(androidx.compose.material.icons.Icons.Outlined.DirectionsCar, "O meu veículo", vehicle?.name ?: "", onVehicle)
                 SettingsRow(androidx.compose.material.icons.Icons.Outlined.NotificationsNone, "Alertas de preço", if (settings.alertsEnabled) "Ativo" else "Desligado", onAlerts)
                 SettingsRow(androidx.compose.material.icons.Icons.Outlined.Calculate, "Calculadora de poupança", "", onCalculator)
-                SettingsRow(androidx.compose.material.icons.Icons.Outlined.Straighten, "Unidades", (if (settings.unit == "gal") "Galões" else "Litros") + " e " + settings.currency, null)
                 SettingsRow(androidx.compose.material.icons.Icons.Outlined.Sync, "Atualização de preços", "Automática", null)
                 SettingsRow(androidx.compose.material.icons.Icons.Outlined.HelpOutline, "Como funciona a Atesta", "", onTour)
+            }
+
+            Section("Aparência") {
+                Text(
+                    "O tema claro lê-se melhor ao sol; o escuro, à noite. Automático segue o telemóvel.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(ThemeMode.AUTO to "Automático", ThemeMode.LIGHT to "Claro", ThemeMode.DARK to "Escuro").forEach { (mode, label) ->
+                        FilterChip(
+                            selected = settings.themeMode == mode,
+                            onClick = { onChange(settings.copy(themeMode = mode)) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
             }
 
             Section("Veículos") {
@@ -182,9 +199,9 @@ fun SettingsScreen(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    com.chungaro.combustible.nearby.DarkCard {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            com.chungaro.combustible.nearby.BlockTitle(title)
             content()
         }
     }
@@ -201,10 +218,11 @@ private fun SettingsRow(icon: androidx.compose.ui.graphics.vector.ImageVector, t
         Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .heightIn(min = 52.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = AtestaGreenLight)
+        Icon(icon, contentDescription = null, tint = Atesta.colors.accent)
         Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).padding(start = 14.dp))
         if (value.isNotBlank()) Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (onClick != null) {

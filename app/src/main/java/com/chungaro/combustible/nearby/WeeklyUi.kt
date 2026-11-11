@@ -1,5 +1,14 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,8 +32,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.util.Locale
 import kotlin.math.abs
 
-private val Green = Color(0xFF16A34A)
-private val Red = Color(0xFFDC2626)
+private val Green: Color @Composable get() = Atesta.colors.down
+private val Red: Color @Composable get() = Atesta.colors.up
 
 /** "Recomendação da semana": compara esta semana con la anterior en la zona. */
 @Composable
@@ -37,28 +46,28 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
 
     val (emoji, title, body, tint) = when (w.advice) {
         WeeklyAdvice.COLLECTING -> Quad(
-            "📊",
+            Icons.Outlined.BarChart,
             "A recolher histórico",
             "A app guarda automaticamente, várias vezes por dia e mesmo fechada, o preço de cada combustível em cada bomba da tua zona. " +
                 "A comparação semanal aparece quando houver uma semana de dados (dia ${w.days.coerceAtLeast(1)} de $WEEK_DAYS).",
             MaterialTheme.colorScheme.primary,
         )
         WeeklyAdvice.FILL_THIS_WEEK -> Quad(
-            "📉",
+            Icons.AutoMirrored.Outlined.TrendingDown,
             "Boa semana para abastecer",
             "O ${fuel.short} está $pct mais barato do que na semana passada na tua zona " +
                 "(média ${formatEuro(w.zoneBefore!!)} → ${formatEuro(w.zoneNow!!)}).",
             Green,
         )
         WeeklyAdvice.WAIT -> Quad(
-            "📈",
+            Icons.AutoMirrored.Outlined.TrendingUp,
             "Se puderes, adia o abastecimento",
             "O ${fuel.short} subiu $pct face à semana passada " +
                 "(média ${formatEuro(w.zoneBefore!!)} → ${formatEuro(w.zoneNow!!)}). Abastece só o necessário.",
             Red,
         )
         WeeklyAdvice.STABLE -> Quad(
-            "➖",
+            Icons.AutoMirrored.Outlined.TrendingFlat,
             "Preços estáveis esta semana",
             "O ${fuel.short} variou só $pct face à semana passada (média ${formatEuro(w.zoneNow!!)}). " +
                 "Abastece quando precisares, de preferência na mais barata.",
@@ -66,14 +75,11 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
         )
     }
 
-    Surface(shape = RoundedCornerShape(20.dp), color = tint.copy(alpha = 0.10f), modifier = Modifier.fillMaxWidth()) {
+    Surface(shape = CardShape, color = tint.copy(alpha = 0.10f), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(emoji, style = MaterialTheme.typography.headlineSmall)
-                Column(Modifier.padding(start = 10.dp)) {
-                    Text("${fuel.short.uppercase()} · ESTA SEMANA", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = tint)
-                }
+                Icon(emoji, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 10.dp))
             }
             Text(body, style = MaterialTheme.typography.bodyMedium)
             if (w.advice == WeeklyAdvice.COLLECTING) {
@@ -125,4 +131,4 @@ private fun ChangeRow(c: StationChange, station: PricedStation?, onOpen: (Long) 
     }
 }
 
-private data class Quad(val a: String, val b: String, val c: String, val d: Color)
+private data class Quad(val a: ImageVector, val b: String, val c: String, val d: Color)

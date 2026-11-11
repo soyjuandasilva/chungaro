@@ -1,5 +1,15 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.automirrored.outlined.TrendingFlat
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.ThumbUp
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -34,8 +44,8 @@ import java.util.Locale
 import kotlin.math.abs
 
 private val dayFormat = DateTimeFormatter.ofPattern("d MMM", APP_LOCALE)
-private val Up = Color(0xFFDC2626)
-private val Down = Color(0xFF16A34A)
+private val Up: Color @Composable get() = Atesta.colors.up
+private val Down: Color @Composable get() = Atesta.colors.down
 
 /** Tarjeta "Tendência do preço": precio, variación, gráfico y recomendación. */
 @Composable
@@ -107,6 +117,7 @@ fun TrendCard(title: String, points: List<PricePoint>, color: Color) {
 @Composable
 private fun TrendChart(points: List<PricePoint>, color: Color) {
     val grid = MaterialTheme.colorScheme.outlineVariant
+    val ring = Atesta.colors.card
     val values = points.map { it.price }
     val min = values.min()
     val max = values.max()
@@ -134,7 +145,7 @@ private fun TrendChart(points: List<PricePoint>, color: Color) {
         drawPath(area, Brush.verticalGradient(listOf(color.copy(alpha = 0.25f), Color.Transparent)))
         drawPath(line, color, style = Stroke(width = 5f, cap = StrokeCap.Round))
         val last = pt(points.last())
-        drawCircle(Color.White, radius = 9f, center = last)
+        drawCircle(ring, radius = 9f, center = last)
         drawCircle(color, radius = 6f, center = last)
     }
 }
@@ -142,27 +153,25 @@ private fun TrendChart(points: List<PricePoint>, color: Color) {
 @Composable
 fun AdviceBanner(trend: Trend) {
     val pct = trend.changePct?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(it)) } ?: ""
-    val (emoji, title, sub) = when (trend.advice) {
-        Advice.COLLECTING -> Triple(
-            "📊",
+    data class A(val icon: ImageVector, val tone: Tone, val title: String, val sub: String)
+    val a = when (trend.advice) {
+        Advice.COLLECTING -> A(
+            Icons.Outlined.BarChart, Tone.NEUTRAL,
             "A recolher histórico",
             "Faltam ${(MIN_DAYS_FOR_TREND - trend.days).coerceAtLeast(1)} dia(s) para ver a tendência. A app guarda os preços automaticamente várias vezes por dia.",
         )
-        Advice.LOWEST -> Triple("😍", "Preço mais baixo dos últimos 14 dias!", "Bom momento para abastecer.")
-        Advice.BUY_NOW_RISING -> Triple("😨", "Mais vale abastecer hoje!", "O preço subiu $pct na última semana.")
-        Advice.WAIT_FALLING -> Triple("😎", "Podes esperar", "O preço desceu $pct na última semana.")
-        Advice.STABLE -> Triple("😐", "Preço estável", "Sem grandes mudanças na última semana.")
+        Advice.LOWEST -> A(Icons.Outlined.ThumbUp, Tone.GOOD, "Preço mais baixo dos últimos 14 dias", "Bom momento para abastecer.")
+        Advice.BUY_NOW_RISING -> A(Icons.AutoMirrored.Outlined.TrendingUp, Tone.WARN, "Mais vale abastecer hoje", "O preço subiu $pct na última semana.")
+        Advice.WAIT_FALLING -> A(Icons.AutoMirrored.Outlined.TrendingDown, Tone.GOOD, "Podes esperar", "O preço desceu $pct na última semana.")
+        Advice.STABLE -> A(Icons.AutoMirrored.Outlined.TrendingFlat, Tone.NEUTRAL, "Preço estável", "Sem grandes mudanças na última semana.")
     }
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.secondary),
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-    ) {
+    val tint = a.tone.color()
+    Surface(shape = RoundedCornerShape(12.dp), color = tint.copy(alpha = 0.12f)) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(emoji, style = MaterialTheme.typography.headlineMedium)
+            Icon(a.icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
             Column(Modifier.padding(start = 12.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.secondary)
-                Text(sub, style = MaterialTheme.typography.bodySmall)
+                Text(a.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(a.sub, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
