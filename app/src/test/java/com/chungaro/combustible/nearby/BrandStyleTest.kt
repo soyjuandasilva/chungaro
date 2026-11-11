@@ -18,8 +18,9 @@ class BrandStyleTest {
 
     @Test
     fun genericAndUnknown() {
-        assertEquals("⛽", brandStyle("Genérico").label)
-        assertEquals("⛽", brandStyle("").label)
+        // Sin marca: etiqueta vacía, se dibuja el icono de surtidor.
+        assertEquals("", brandStyle("Genérico").label)
+        assertEquals("", brandStyle("").label)
         assertEquals("PC", brandStyle("Posto Central").label)
         // El color de una marca desconocida es estable.
         assertEquals(brandStyle("Posto Central").background, brandStyle("posto central").background)

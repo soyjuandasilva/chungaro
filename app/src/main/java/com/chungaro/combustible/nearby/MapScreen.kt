@@ -318,7 +318,7 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
             textAlign = Paint.Align.CENTER
             textSize = logoH * 0.62f
         }
-        val label = if (brand.isNotBlank() && brand.length <= 12) brand.uppercase() else style.label
+        val label = if (brand.isNotBlank() && brand.length <= 12) brand.uppercase() else style.label.ifEmpty { "POSTO" }
         while (lp.measureText(label) > logoRect.width() - 8 * d && lp.textSize > 6 * d) lp.textSize *= 0.9f
         c.drawText(label, logoRect.centerX(), logoRect.centerY() - (lp.descent() + lp.ascent()) / 2, lp)
     }
