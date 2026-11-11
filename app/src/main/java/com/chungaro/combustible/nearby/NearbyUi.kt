@@ -46,65 +46,6 @@ val FuelType.uiColor: Color
     @Composable @androidx.compose.runtime.ReadOnlyComposable
     get() = Color(if (com.chungaro.combustible.ui.Atesta.colors.isDark) color else lightColor)
 
-@Composable
-fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier, compact: Boolean = false) {
-    Surface(
-        color = fuel.uiColor.copy(alpha = 0.15f),
-        contentColor = fuel.uiColor,
-        shape = RoundedCornerShape(50),
-        modifier = modifier,
-    ) {
-        Row(
-            Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(if (compact) 6.dp else 8.dp).background(fuel.uiColor, CircleShape))
-            Text(
-                (if (compact) " " else "  ") + fuel.short,
-                style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
-    }
-}
-
-@Composable
-fun StationBlock(s: StationAtDistance, context: Context, accent: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(stationTitle(s.station), style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(
-                listOf(formatKm(s.km), s.station.locality).filter { it.isNotBlank() }.joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                "${formatEuro(s.station.price)}/L",
-                style = if (accent) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (accent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            )
-            TextButton(onClick = { openMaps(context, s.station) }) { Text("Como chegar") }
-        }
-    }
-}
-
-fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: Double = TANK_LITERS.toDouble()): String {
-    if (nearest.station.id == cheapest.station.id) return "A mais próxima é também a mais barata. Perfeito!"
-    val diff = nearest.station.price - cheapest.station.price
-    if (abs(diff) < 0.0005) return "A mais próxima tem o mesmo preço que a mais barata."
-    return if (diff > 0) {
-        "A mais próxima custa mais ${formatEuro(diff)}/L: em ${liters.toInt()} L pagavas mais ${formatMoney(diff * liters)}. " +
-            "A mais barata fica ${formatKm(cheapest.km - nearest.km)} mais longe."
-    } else {
-        "A mais próxima é ${formatEuro(-diff)}/L mais barata que a melhor dentro do raio."
-    }
-}
-
 /** Abre un enlace en el navegador (si no hay ninguno, no hace nada). */
 internal fun openLink(context: Context, url: String) {
     try {
@@ -116,7 +57,7 @@ internal fun openLink(context: Context, url: String) {
 
 fun stationTitle(s: PricedStation): String =
     // La insignia ya muestra la marca: aquí solo el nombre de la bomba.
-    s.name.ifBlank { s.brand }.ifBlank { "Bomba ${s.id}" }
+    s.name.ifBlank { s.brand }.ifBlank { "Posto ${s.id}" }
 
 fun formatEuro(v: Double): String = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", v)
 fun formatMoney(v: Double): String = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.2f €", v)

@@ -116,7 +116,7 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
                 if (vm.rows[fuel] is FuelRowState.Error) {
                     DarkCard { ErrorRetry("Sem ligação: não conseguimos descarregar os preços.", onRetry = { vm.refresh(force = true) }) }
                 } else {
-                    Text("Sem preços na tua zona ainda. Ativa a localização no mapa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Ainda não há preços para a tua zona. Ativa a localização no mapa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 DarkCard {
@@ -167,7 +167,7 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-                Text("Diferença para $liters litros. Valores indicativos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+                Text("Calculado para $liters litros. Valores indicativos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
             }
             Spacer(Modifier.height(16.dp))
         }
@@ -233,7 +233,7 @@ fun AlertsScreen(
             }
             BlockTitle("Aplicar em")
             DarkCard(Modifier.selectableGroup()) {
-                listOf(false to "Todas as bombas da tua zona", true to "Apenas nas favoritas ($favoritesCount)").forEach { (fav, label) ->
+                listOf(false to "Todos os postos da tua zona", true to "Só nos favoritos ($favoritesCount)").forEach { (fav, label) ->
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -263,7 +263,7 @@ fun AlertsScreen(
                 Row(verticalAlignment = Alignment.Top) {
                     Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(20.dp))
                     Text(
-                        "Alerta guardado: avisamos-te quando o ${f.short} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
+                        "Alerta guardado: avisamos-te quando ${f.withArticle} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
                             (if (favoritesOnly) " numa favorita." else " perto de ti.") + " Verificamos a cada 6 horas.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 8.dp),

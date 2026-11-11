@@ -337,36 +337,6 @@ private fun meDot(context: Context): Bitmap {
     return bmp
 }
 
-@Composable
-private fun PriceLegend(min: Double, max: Double, count: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(formatEuro(min), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.down)
-            Box(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(
-                        androidx.compose.ui.graphics.Brush.horizontalGradient(
-                            listOf(
-                                androidx.compose.ui.graphics.Color(0xFF16A34A),
-                                androidx.compose.ui.graphics.Color(0xFFF59E0B),
-                                androidx.compose.ui.graphics.Color(0xFFDC2626),
-                            ),
-                        ),
-                    ),
-            )
-            Text(formatEuro(max), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.up)
-        }
-        Row {
-            Text("mais barata", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-            Text("$count bombas", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("mais cara", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.End)
-        }
-    }
-}
 
 private val localLogoCache = HashMap<String, Bitmap?>()
 

@@ -423,7 +423,7 @@ private fun MapTab(
                         Column(Modifier.padding(16.dp)) { LocationPrompt(onRequestLocation) }
                         return@Column
                     }
-                    val title = if (sort == SORT_FAVORITES) "As tuas favoritas (${listed.size})" else "Mais baratos perto de ti"
+                    val title = if (sort == SORT_FAVORITES) "Os teus favoritos (${listed.size})" else "Mais baratos perto de ti"
                     Row(
                         Modifier
                             .fillMaxWidth()

@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 internal fun LocationPrompt(onRequest: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            "Com a tua localização mostramos como mudam os preços das bombas da tua zona e onde fica a mais barata.",
+            "Com a tua localização mostramos os postos da tua zona, o preço de cada um e onde fica o mais barato.",
             style = MaterialTheme.typography.bodyMedium,
         )
         Button(onClick = onRequest, modifier = Modifier.fillMaxWidth()) {

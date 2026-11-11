@@ -80,7 +80,7 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
             StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
-                title = { Text("Bombas favoritas", fontWeight = FontWeight.Bold) },
+                title = { Text("Postos por distrito", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -99,12 +99,12 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SectionTitle("As minhas bombas") }
+            item { SectionTitle("Os meus postos") }
             if (vm.favoritesLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             vm.favoritesError?.let { msg -> item { ErrorText(msg) } }
             if (vm.favorites.isEmpty()) {
                 item {
-                    Hint("Procura a tua bomba aqui em baixo e marca-a com a estrela para veres os preços sempre que abrires a app.")
+                    Hint("Procura o teu posto aqui em baixo e marca-o com a estrela para veres os preços sempre que abrires a app.")
                 }
             } else {
                 items(vm.favorites, key = { "fav-$it" }) { id ->
@@ -113,13 +113,13 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
                         FavoriteCard(d, onClick = { vm.openStation(id) })
                     } else if (!vm.favoritesLoading) {
                         Card(Modifier.fillMaxWidth().clickable { vm.openStation(id) }) {
-                            Text("Bomba $id: sem dados", Modifier.padding(16.dp))
+                            Text("Posto $id: sem dados", Modifier.padding(16.dp))
                         }
                     }
                 }
             }
 
-            item { SectionTitle("Procurar bomba", Modifier.padding(top = 12.dp)) }
+            item { SectionTitle("Procurar posto", Modifier.padding(top = 12.dp)) }
             item {
                 OutlinedButton(onClick = { pickDistrict = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Filled.LocationOn, contentDescription = null)
@@ -147,14 +147,14 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
                 vm.stationsError != null -> item {
                     Column {
                         ErrorText(vm.stationsError!!)
-                        TextButton(onClick = { vm.retryStations() }) { Text("Tentar novamente") }
+                        TextButton(onClick = { vm.retryStations() }) { Text("Tentar de novo") }
                     }
                 }
                 vm.districtId != null -> {
                     item {
                         Text(
-                            if (filtered.size > MAX_RESULTS) "${filtered.size} bombas, a mostrar $MAX_RESULTS. Escreva para filtrar."
-                            else "${filtered.size} bombas",
+                            if (filtered.size > MAX_RESULTS) "${filtered.size} postos; mostramos $MAX_RESULTS. Escreve para filtrar."
+                            else "${filtered.size} postos",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -209,7 +209,7 @@ private fun StationDialog(vm: PricesViewModel) {
     val d = vm.selected
     AlertDialog(
         onDismissRequest = { vm.closeStation() },
-        title = { Text(d?.name?.ifBlank { null } ?: "Bomba") },
+        title = { Text(d?.name?.ifBlank { null } ?: "Posto") },
         text = {
             Column(
                 Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
@@ -274,7 +274,7 @@ private fun FavoriteCard(d: StationDetail, onClick: () -> Unit) {
 @Composable
 private fun FuelGrid(fuels: List<FuelPrice>) {
     if (fuels.isEmpty()) {
-        Text("Esta bomba não indica preços.", style = MaterialTheme.typography.bodySmall)
+        Text("Este posto não indica preços.", style = MaterialTheme.typography.bodySmall)
         return
     }
     FlowRow(
@@ -353,7 +353,7 @@ private fun StationRow(s: Station, isFavorite: Boolean, onClick: () -> Unit) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             BrandBadge(s.brand, size = 36.dp, modifier = Modifier.padding(end = 12.dp))
             Column(Modifier.weight(1f)) {
-                Text(s.name.ifBlank { "Bomba ${s.id}" }, style = MaterialTheme.typography.titleSmall)
+                Text(s.name.ifBlank { "Posto ${s.id}" }, style = MaterialTheme.typography.titleSmall)
                 Text(
                     listOf(s.brand, s.locality.ifBlank { s.municipality }).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,

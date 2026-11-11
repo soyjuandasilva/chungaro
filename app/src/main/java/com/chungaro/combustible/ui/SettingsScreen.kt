@@ -97,7 +97,7 @@ fun SettingsScreen(
             }
 
             DarkCard {
-                SettingsRow(Icons.Outlined.NotificationsNone, "Alertas de preço", if (settings.alertsEnabled) "Ligados" else "Desligados", onAlerts)
+                SettingsRow(Icons.Outlined.NotificationsNone, "Alertas de preço", if (settings.alertsEnabled) "Ativos" else "Desligados", onAlerts)
                 HorizontalDivider(color = Atesta.colors.cardBorder)
                 SettingsRow(Icons.Outlined.Calculate, "Calculadora de poupança", null, onCalculator)
                 HorizontalDivider(color = Atesta.colors.cardBorder)

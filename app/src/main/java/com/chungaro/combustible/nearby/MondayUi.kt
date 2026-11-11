@@ -69,14 +69,14 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
         MondayKind.UNCLEAR -> Triple(Icons.AutoMirrored.Outlined.HelpOutline, "Sem previsão clara para segunda", MaterialTheme.colorScheme.onSurfaceVariant)
     }
     val body = when (verdict.kind) {
-        MondayKind.FILL_NOW -> "As notícias apontam para uma subida do ${fuel.short} na segunda-feira" +
+        MondayKind.FILL_NOW -> "As notícias apontam para uma subida ${fuel.ofThe} na segunda-feira" +
             (if (days == 1) ": amanhã já pode estar mais caro." else ". Enche o depósito esta semana.")
-        MondayKind.WAIT -> "As notícias apontam para uma descida do ${fuel.short} na segunda-feira. " +
+        MondayKind.WAIT -> "As notícias apontam para uma descida ${fuel.ofThe} na segunda-feira. " +
             "Se tiveres combustível para aguentar, abastece só o necessário até lá."
         MondayKind.UNCLEAR -> when {
             vm.news.isEmpty() && vm.newsLoading -> "A ler as notícias da semana…"
             days >= 5 -> "As previsões para a próxima semana costumam sair à quinta e à sexta-feira."
-            else -> "Não há notícias claras sobre o ${fuel.short}."
+            else -> "Ainda não há notícias claras sobre ${fuel.withArticle}."
         } + (zonePct?.let { " Na tua zona, " + trendText(it) + " face à semana passada." } ?: "")
     }
 

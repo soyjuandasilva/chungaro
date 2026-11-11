@@ -49,6 +49,18 @@ val FUEL_TYPES = listOf(
 )
 const val DEFAULT_FUEL_ID = 3201
 
+/** Si el nombre corto es femenino («a Gasolina 95») o masculino («o Gasóleo», «o GPL»). */
+private val FuelType.feminine: Boolean get() = short.startsWith("Gasolina")
+
+/** «a Gasolina 95» / «o Gasóleo». */
+val FuelType.withArticle: String get() = (if (feminine) "a " else "o ") + short
+
+/** «da Gasolina 95» / «do Gasóleo». */
+val FuelType.ofThe: String get() = (if (feminine) "da " else "do ") + short
+
+/** «na Gasolina 95» / «no Gasóleo». */
+val FuelType.inThe: String get() = (if (feminine) "na " else "no ") + short
+
 /** Distancia en km entre dos puntos (fórmula del haversine). */
 fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
     val r = 6371.0

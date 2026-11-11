@@ -158,7 +158,7 @@ fun AdviceBanner(trend: Trend) {
         Advice.COLLECTING -> A(
             Icons.Outlined.BarChart, Tone.NEUTRAL,
             "A recolher histórico",
-            "Faltam ${(MIN_DAYS_FOR_TREND - trend.days).coerceAtLeast(1)} dia(s) para ver a tendência. A app guarda os preços automaticamente várias vezes por dia.",
+            (MIN_DAYS_FOR_TREND - trend.days).coerceAtLeast(1).let { n -> if (n == 1) "Falta 1 dia" else "Faltam $n dias" } + " para veres a tendência. A app guarda os preços automaticamente várias vezes por dia.",
         )
         Advice.LOWEST -> A(Icons.Outlined.ThumbUp, Tone.GOOD, "Preço mais baixo dos últimos 14 dias", "Bom momento para abastecer.")
         Advice.BUY_NOW_RISING -> A(Icons.AutoMirrored.Outlined.TrendingUp, Tone.WARN, "Mais vale abastecer hoje", "O preço subiu $pct na última semana.")

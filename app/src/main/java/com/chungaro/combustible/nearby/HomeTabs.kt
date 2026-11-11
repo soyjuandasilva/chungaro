@@ -178,7 +178,7 @@ fun PricesTab(
             }
         }
         Text(
-            "Preço médio na tua zona; em baixo, a média de todas as bombas de Portugal. Em cada bomba o preço é diferente.",
+            "Em cima, o preço médio na tua zona; em baixo, a média de todos os postos de Portugal. Em cada posto o preço é diferente.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -371,7 +371,7 @@ fun FavoritesTab(
                 Icon(Icons.Outlined.NotificationsNone, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(28.dp))
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text("Alertas de preço", fontWeight = FontWeight.Bold)
-                    Text("Recebe um aviso quando o preço descer nas tuas estações favoritas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Recebe um aviso quando o preço descer nos teus postos favoritos.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(
                     checked = alertsEnabled,
@@ -507,7 +507,7 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
                     }
                 }
             }
-            Text("Preço médio das bombas a menos de ${HistoryRecorder.ZONE_KM.toInt()} km de ti.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Preço médio dos postos a menos de ${HistoryRecorder.ZONE_KM.toInt()} km de ti.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             // Comparar: todos los combustibles, ahora frente al inicio del periodo
             DarkCard {
