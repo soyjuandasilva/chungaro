@@ -1,5 +1,17 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.tabTransition
+import com.chungaro.combustible.ui.rememberReduceMotion
+import com.chungaro.combustible.ui.Motion
+import com.chungaro.combustible.R
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -70,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -161,11 +174,12 @@ fun MainHome(
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Cabecera
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Logotipo: la gota de Atesta, como el icono de la app.
                 Box(
-                    Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
+                    Modifier.size(40.dp).background(LogoGreen, RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
+                    Icon(painterResource(R.drawable.ic_logo), contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 Text("Atesta", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 12.dp))
                 IconButton(onClick = onAlerts) { Icon(Icons.Outlined.NotificationsNone, contentDescription = "Alertas de preço") }
@@ -175,11 +189,18 @@ fun MainHome(
             HomeTabs(tab, onSelect = { tab = it; query = "" })
             Spacer(Modifier.height(8.dp))
 
-            Box(Modifier.weight(1f).fillMaxWidth()) {
-                if (query.isNotBlank()) {
+            val reduce = rememberReduceMotion()
+            // Las pestañas son hermanas: fundido corto, sin desplazamiento.
+            AnimatedContent(
+                targetState = if (query.isNotBlank()) -1 else tab,
+                transitionSpec = { tabTransition(reduce) },
+                label = "tab",
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+            ) { shown ->
+                if (shown == -1) {
                     SearchResults(vm, query, fuelId, onOpenStation = openStation)
                 } else {
-                    when (tab) {
+                    when (shown) {
                         HOME_MAP -> MapTab(vm, fuelId, { fuelId = it }, favorites, hasPermission, requestLocation, openStation)
                         HOME_PRICES -> PricesTab(vm, fuelId, { fuelId = it }, favorites, onToggleFavorite, openStation, onCalculator, hasPermission, requestLocation)
                         HOME_NEWS -> NewsTab(vm, fuelId)
@@ -200,6 +221,9 @@ fun MainHome(
         )
     }
 }
+
+/** Verde del icono de la app (igual en los dos temas). */
+private val LogoGreen = Color(0xFF15803D)
 
 private const val SEARCH_HINT = "Procurar posto, morada ou marca"
 
@@ -414,33 +438,41 @@ private fun MapTab(
                         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         Icon(if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp, contentDescription = null)
                     }
-                    if (expanded) {
-                        Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
-                            when {
-                                noPrices && rowState is FuelRowState.Error -> ErrorRetry(
-                                    "Sem ligação: não conseguimos descarregar os preços.",
-                                    onRetry = { vm.refresh(force = true) },
-                                )
-                                noPrices -> MutedText("A carregar os preços…")
-                                location == null && vm.locationError != null -> ErrorRetry(
-                                    vm.locationError ?: "",
-                                    onRetry = { vm.refresh() },
-                                )
-                                location == null -> MutedText("A procurar onde estás…")
-                                listed.isEmpty() -> MutedText(
-                                    if (sort == SORT_FAVORITES) "Ainda não tens favoritos. Abre um posto e toca na estrela."
-                                    else "Não há postos com ${fuel.short} a menos de ${vm.radiusKm} km. Aumenta o raio.",
-                                )
-                                else -> listed.forEachIndexed { i, s ->
-                                    if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
-                                    StationRow(s.station, s.km, onClick = { onOpenStation(s.station.id) }) {
-                                        PriceChip(s.station.price, big = true)
-                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val reduce = rememberReduceMotion()
+                    // La lista se despliega desde su cabecera.
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = if (reduce) EnterTransition.None else expandVertically(Motion.enter(false), expandFrom = Alignment.Top) + fadeIn(Motion.enter(false)),
+                        exit = if (reduce) ExitTransition.None else shrinkVertically(Motion.exit(false, 200), shrinkTowards = Alignment.Top) + fadeOut(Motion.exit(false)),
+                    ) {
+                        Column {
+                            Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
+                                when {
+                                    noPrices && rowState is FuelRowState.Error -> ErrorRetry(
+                                        "Sem ligação: não conseguimos descarregar os preços.",
+                                        onRetry = { vm.refresh(force = true) },
+                                    )
+                                    noPrices -> MutedText("A carregar os preços…")
+                                    location == null && vm.locationError != null -> ErrorRetry(
+                                        vm.locationError ?: "",
+                                        onRetry = { vm.refresh() },
+                                    )
+                                    location == null -> MutedText("A procurar onde estás…")
+                                    listed.isEmpty() -> MutedText(
+                                        if (sort == SORT_FAVORITES) "Ainda não tens favoritos. Abre um posto e toca na estrela."
+                                        else "Não há postos com ${fuel.short} a menos de ${vm.radiusKm} km. Aumenta o raio.",
+                                    )
+                                    else -> listed.forEachIndexed { i, s ->
+                                        if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
+                                        StationRow(s.station, s.km, onClick = { onOpenStation(s.station.id) }) {
+                                            PriceChip(s.station.price, big = true)
+                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
                                 }
                             }
+                            Spacer(Modifier.height(8.dp))
                         }
-                        Spacer(Modifier.height(8.dp))
                     }
                 }
             }

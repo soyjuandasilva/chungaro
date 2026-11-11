@@ -105,35 +105,12 @@ fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: 
     }
 }
 
-@Composable
-fun TripAdviceBox(a: TripAdvice) {
-    val good = a.worthIt
-    Surface(
-        color = if (good) Atesta.colors.downContainer else Atesta.colors.warningContainer,
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    if (good) Icons.Outlined.CheckCircle else Icons.Outlined.PanTool,
-                    contentDescription = null,
-                    tint = if (good) Atesta.colors.down else Atesta.colors.warning,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(
-                    if (good) "Compensa ir à mais barata" else "O desvio não compensa",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-            Text(
-                "Poupas ${formatMoney(a.savings)} no depósito; o desvio (~${formatKm(a.extraKm)} ida e volta) " +
-                    "gasta cerca de ${formatMoney(a.tripCost)} de combustível. " +
-                    if (good) "Ganhas ${formatMoney(a.net)}." else "Perdias ${formatMoney(-a.net)}.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
+/** Abre un enlace en el navegador (si no hay ninguno, no hace nada). */
+internal fun openLink(context: Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (e: ActivityNotFoundException) {
+        // Sin navegador: no hay nada que abrir.
     }
 }
 

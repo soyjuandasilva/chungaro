@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -16,20 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.chungaro.combustible.ui.Atesta
-
-/** Bloque completo para pedir la ubicación. */
-@Composable
-internal fun PermissionCard(onRequest: () -> Unit) {
-    SectionCard(
-        icon = Icons.Outlined.LocationOn,
-        accent = Atesta.colors.accent,
-        title = "Ativa a localização",
-        subtitle = "Para veres as bombas perto de ti",
-    ) {
-        LocationPrompt(onRequest)
-    }
-}
 
 /** Texto y botón para pedir la ubicación, dentro de una sección. */
 @Composable

@@ -1,5 +1,10 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.sheetExit
+import com.chungaro.combustible.ui.sheetEnter
+import com.chungaro.combustible.ui.rememberReduceMotion
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.AnimatedVisibility
 import com.chungaro.combustible.ui.Atesta
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
@@ -67,7 +72,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chungaro.combustible.ui.AtestaBorder
 import com.chungaro.combustible.ui.AtestaGreenLight
-import com.chungaro.combustible.ui.ChungaroTheme
 import kotlin.math.roundToInt
 
 /**
@@ -84,12 +88,20 @@ fun StationSheet(
     isFavorite: Boolean? = null,
     onToggleFavorite: () -> Unit = {},
 ) {
+    // Sube desde abajo al abrir y baja al cerrar; onDismiss llega al terminar.
+    val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+    val reduce = rememberReduceMotion()
+    val close = { visible.targetState = false }
+    LaunchedEffect(visible.isIdle, visible.currentState) {
+        if (visible.isIdle && !visible.currentState && !visible.targetState) onDismiss()
+    }
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = close,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        ChungaroTheme {
-            StationDetail(vm, stationId, defaultFuelId, onDismiss, isFavorite, onToggleFavorite)
+        // El tema (claro u oscuro, según Definições) llega desde la pantalla de debajo.
+        AnimatedVisibility(visibleState = visible, enter = sheetEnter(reduce), exit = sheetExit(reduce)) {
+            StationDetail(vm, stationId, defaultFuelId, close, isFavorite, onToggleFavorite)
         }
     }
 }

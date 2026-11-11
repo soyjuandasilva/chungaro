@@ -1,5 +1,16 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.rememberReduceMotion
+import com.chungaro.combustible.ui.Motion
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -94,14 +105,31 @@ fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big:
             Modifier.padding(horizontal = if (big) 10.dp else 8.dp, vertical = if (caption != null) 3.dp else 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                euro3(price),
-                color = ink,
-                fontWeight = FontWeight.Bold,
-                style = if (big) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                softWrap = false,
-            )
+            // Si el precio cambia, la cifra se desliza: hacia abajo si baja, hacia arriba si sube.
+            val reduce = rememberReduceMotion()
+            AnimatedContent(
+                targetState = price,
+                transitionSpec = {
+                    val change = if (reduce) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        val dir = if (targetState < initialState) -1 else 1
+                        (slideInVertically(Motion.enter(false)) { h -> dir * h } + fadeIn(Motion.enter(false))) togetherWith
+                            (slideOutVertically(Motion.exit(false)) { h -> -dir * h } + fadeOut(Motion.exit(false)))
+                    }
+                    change.using(SizeTransform(clip = true))
+                },
+                label = "price",
+            ) { p ->
+                Text(
+                    euro3(p),
+                    color = ink,
+                    fontWeight = FontWeight.Bold,
+                    style = if (big) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
             caption?.let { Text(it, color = ink, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
         }
     }
@@ -229,4 +257,16 @@ fun FilterPill(
 @Composable
 fun Dot(color: Color, size: Dp = 8.dp) {
     Box(Modifier.size(size).background(color, CircleShape))
+}
+
+/** Qué tipo de noticia es un aviso: buena (baja), mala (sube), aviso o neutra. */
+enum class Tone { GOOD, BAD, WARN, NEUTRAL }
+
+/** Color del tono según el tema. */
+@Composable
+fun Tone.color(): Color = when (this) {
+    Tone.GOOD -> Atesta.colors.down
+    Tone.BAD -> Atesta.colors.up
+    Tone.WARN -> Atesta.colors.warning
+    Tone.NEUTRAL -> Atesta.colors.accent
 }

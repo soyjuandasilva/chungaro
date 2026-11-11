@@ -7,9 +7,8 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Refuel::class, Vehicle::class, Reminder::class, PricePoint::class], version = 4, exportSchema = false)
+@Database(entities = [PricePoint::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun refuelDao(): RefuelDao
     abstract fun historyDao(): HistoryDao
 
     companion object {
@@ -57,6 +56,27 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 -> v5: se quita «O meu veículo». Antes de borrar sus tablas, el
+         * combustible del vehículo elegido pasa a ser el combustible habitual.
+         */
+        fun migration4to5(context: Context) = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val store = SettingsStore(context)
+                if (!store.hasFuel()) {
+                    runCatching {
+                        db.query("SELECT `fuelTypeId` FROM `vehicles` WHERE `id` = ?", arrayOf<Any>(store.legacySelectedVehicle())).use { c ->
+                            if (c.moveToFirst()) store.saveFuel(c.getInt(0))
+                        }
+                    }
+                }
+                store.clearLegacyVehicleSettings()
+                db.execSQL("DROP TABLE IF EXISTS `refuels`")
+                db.execSQL("DROP TABLE IF EXISTS `vehicles`")
+                db.execSQL("DROP TABLE IF EXISTS `reminders`")
+            }
+        }
+
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -64,12 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "chungaro.db",
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
-                    .addCallback(object : Callback() {
-                        override fun onCreate(db: SupportSQLiteDatabase) {
-                            db.execSQL(DEFAULT_VEHICLE_SQL)
-                        }
-                    })
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, migration4to5(context.applicationContext))
                     .build().also { instance = it }
             }
     }

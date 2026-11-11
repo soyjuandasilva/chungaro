@@ -45,7 +45,8 @@ object AlertScheduler {
 
 object Notifier {
     const val CHANNEL_PRICES = "prices"
-    const val CHANNEL_MAINTENANCE = "maintenance"
+    /** Canal de las versiones con «O meu veículo»; se borra si existe. */
+    private const val CHANNEL_MAINTENANCE = "maintenance"
 
     fun canNotify(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -56,9 +57,7 @@ object Notifier {
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_PRICES, "Alertas de preço", NotificationManager.IMPORTANCE_DEFAULT),
         )
-        nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_MAINTENANCE, "Manutenção", NotificationManager.IMPORTANCE_DEFAULT),
-        )
+        nm.deleteNotificationChannel(CHANNEL_MAINTENANCE)
     }
 
     fun show(context: Context, channel: String, id: Int, title: String, text: String) {
@@ -71,7 +70,7 @@ object Notifier {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val n = NotificationCompat.Builder(context, channel)
-            .setSmallIcon(R.drawable.ic_fuel)
+            .setSmallIcon(R.drawable.ic_logo)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -90,45 +89,19 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
     override suspend fun doWork(): Result {
         val ctx = applicationContext
         val store = SettingsStore(ctx)
-        val dao = AppDatabase.get(ctx).refuelDao()
-        // El histórico de precios se guarda siempre; los avisos, solo con permiso.
-        if (Notifier.canNotify(ctx)) checkReminders(ctx, store, dao)
-        runCatching { checkPrice(ctx, store, dao) }
+        // El histórico de precios se guarda siempre; el aviso, solo con permiso.
+        runCatching { checkPrice(ctx, store) }
         return Result.success()
     }
 
-    private suspend fun checkReminders(
-        ctx: Context,
-        store: SettingsStore,
-        dao: com.chungaro.combustible.data.RefuelDao,
-    ) {
-        val today = LocalDate.now().toEpochDay()
-        val vehicles = dao.vehicles().associateBy { it.id }
-        dao.pendingReminders().forEach { r ->
-            val odo = dao.maxOdometer(r.vehicleId)
-            val byDate = r.dueEpochDay?.let { it - today <= 7 } ?: false
-            val byKm = if (r.dueOdometer != null && odo != null) r.dueOdometer - odo <= 500 else false
-            if (!byDate && !byKm) return@forEach
-            val key = "rem_${r.id}"
-            val stamp = today.toString()
-            if (store.lastNotified(key) == stamp) return@forEach
-            store.setLastNotified(key, stamp)
-            val vehicle = vehicles[r.vehicleId]?.name ?: ""
-            val detail = reminderStatus(r.dueEpochDay, r.dueOdometer, today, odo)
-            Notifier.show(ctx, Notifier.CHANNEL_MAINTENANCE, 1000 + r.id.toInt(), "${r.title} · $vehicle", detail)
-        }
-    }
-
     /**
-     * Guarda el histórico de precios automáticamente: cada vez, los combustibles
-     * de todos los vehículos; una vez al día, todos los combustibles. Después
-     * avisa si el combustible del vehículo en uso bajó del umbral.
+     * Guarda el histórico de precios de todos los combustibles y después avisa
+     * si el combustible de la alerta bajó del precio-alvo.
      */
-    private suspend fun checkPrice(ctx: Context, store: SettingsStore, dao: com.chungaro.combustible.data.RefuelDao) {
+    private suspend fun checkPrice(ctx: Context, store: SettingsStore) {
         val settings = store.load()
         val (lat, lon) = store.loadLastLocation() ?: return
-        val vehicles = dao.vehicles()
-        // Histórico de TODOS los combustibles y cada bomba, independiente del vehículo.
+        // Histórico de TODOS los combustibles y cada bomba.
         // Para gastar pocos datos, solo los dos distritos más cercanos.
         val districts = DgegApi.nearestDistricts(lat, lon)
         val downloaded = mutableMapOf<Int, List<com.chungaro.combustible.nearby.PricedStation>>()
@@ -142,9 +115,8 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 }
         }
 
-        // Aviso de precio: combustible elegido en Alertas (o el del vehículo en uso).
-        val vehicle = vehicles.firstOrNull { it.id == store.loadSelectedVehicle() } ?: vehicles.firstOrNull()
-        val fuelId = settings.alertFuelId ?: vehicle?.fuelTypeId ?: return
+        // Aviso de precio: combustible elegido en Alertas (o el habitual).
+        val fuelId = settings.alertFuelId ?: settings.fuelId
         val fuel = FUEL_TYPES.firstOrNull { it.id == fuelId } ?: return
         val threshold = settings.alertThreshold ?: return
         if (!settings.alertsEnabled || !Notifier.canNotify(ctx)) return
@@ -178,27 +150,4 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 "Está abaixo do teu alerta (${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", threshold)}).",
         )
     }
-}
-
-/** Texto del estado de un recordatorio (también usado en la pantalla). */
-fun reminderStatus(dueEpochDay: Long?, dueOdometer: Double?, today: Long, odometer: Double?): String {
-    val parts = mutableListOf<String>()
-    dueEpochDay?.let {
-        val days = it - today
-        parts += when {
-            days < 0 -> "venceu há ${-days} dia(s)"
-            days == 0L -> "vence hoje"
-            else -> "vence daqui a $days dia(s)"
-        }
-    }
-    if (dueOdometer != null) {
-        if (odometer != null) {
-            val left = dueOdometer - odometer
-            parts += if (left <= 0) "ultrapassado em ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", -left)} km"
-            else "faltam ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", left)} km"
-        } else {
-            parts += "aos ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", dueOdometer)} km"
-        }
-    }
-    return parts.joinToString(" · ").replaceFirstChar { it.uppercase() }
 }

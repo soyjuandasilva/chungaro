@@ -3,29 +3,29 @@ package com.chungaro.combustible.data
 import android.content.Context
 
 data class AppSettings(
-    /** "L" o "gal". */
-    val unit: String = "L",
-    val currency: String = "€",
-    /** "L100" (L/100 km) o "KML" (km/L). */
-    val consumptionUnit: String = "L100",
+    /** Combustible habitual (id de la DGEG): el que se muestra por defecto en toda la app. */
+    val fuelId: Int = DEFAULT_FUEL,
     val alertsEnabled: Boolean = false,
-    /** Avisar cuando el combustible del vehículo baje de este precio (€/L). */
+    /** Avisar cuando el combustible baje de este precio (€/L). */
     val alertThreshold: Double? = null,
-    /** Combustible del aviso; null = el del vehículo en uso. */
+    /** Combustible del aviso; null = el combustible habitual. */
     val alertFuelId: Int? = null,
     /** Avisar solo por las bombas favoritas (si no, todas las de la zona). */
     val alertFavoritesOnly: Boolean = false,
     /** Tema: "auto" (el del sistema), "light" o "dark". */
     val themeMode: String = "auto",
-)
+) {
+    companion object {
+        /** Gasolina simples 95. */
+        const val DEFAULT_FUEL = 3201
+    }
+}
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     fun load() = AppSettings(
-        unit = prefs.getString("unit", "L") ?: "L",
-        currency = prefs.getString("currency", "€") ?: "€",
-        consumptionUnit = prefs.getString("consumption_unit", "L100") ?: "L100",
+        fuelId = prefs.getInt("fuel", AppSettings.DEFAULT_FUEL),
         alertsEnabled = prefs.getBoolean("alerts", false),
         alertThreshold = prefs.getFloat("alert_threshold", -1f).takeIf { it > 0 }?.toDouble(),
         alertFuelId = prefs.getInt("alert_fuel", 0).takeIf { it > 0 },
@@ -35,9 +35,7 @@ class SettingsStore(context: Context) {
 
     fun save(s: AppSettings) {
         prefs.edit()
-            .putString("unit", s.unit)
-            .putString("currency", s.currency)
-            .putString("consumption_unit", s.consumptionUnit)
+            .putInt("fuel", s.fuelId)
             .putBoolean("alerts", s.alertsEnabled)
             .putFloat("alert_threshold", (s.alertThreshold ?: -1.0).toFloat())
             .putInt("alert_fuel", s.alertFuelId ?: 0)
@@ -46,10 +44,19 @@ class SettingsStore(context: Context) {
             .apply()
     }
 
-    fun loadSelectedVehicle(): Long = prefs.getLong("vehicle", 1L)
+    /** Si ya hay combustible habitual guardado. */
+    fun hasFuel(): Boolean = prefs.contains("fuel")
 
-    fun saveSelectedVehicle(id: Long) {
-        prefs.edit().putLong("vehicle", id).apply()
+    fun saveFuel(id: Int) {
+        prefs.edit().putInt("fuel", id).apply()
+    }
+
+    /** Vehículo elegido en versiones antiguas (solo para heredar su combustible). */
+    fun legacySelectedVehicle(): Long = prefs.getLong("vehicle", 1L)
+
+    /** Borra los ajustes que solo usaba «O meu veículo». */
+    fun clearLegacyVehicleSettings() {
+        prefs.edit().remove("vehicle").remove("unit").remove("currency").remove("consumption_unit").apply()
     }
 
     /** Última ubicación usada en Inicio (para alertas en segundo plano). */
