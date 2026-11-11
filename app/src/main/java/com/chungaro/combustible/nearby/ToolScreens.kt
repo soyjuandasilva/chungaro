@@ -213,7 +213,7 @@ fun AlertsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Preço-alvo (€/L)", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         Stepper(
-                            String.format(Locale.getDefault(), "%.3f", target),
+                            String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", target),
                             onMinus = { target = ((target - 0.005) * 1000).toLong() / 1000.0 },
                             onPlus = { target = ((target + 0.005) * 1000).toLong() / 1000.0 },
                         )
@@ -243,7 +243,7 @@ fun AlertsScreen(
             }
             if (saved) {
                 Text(
-                    "✅ Alerta guardado: avisamos-te quando o ${f.short} descer de ${String.format(Locale.getDefault(), "%.3f €", target)}" +
+                    "✅ Alerta guardado: avisamos-te quando o ${f.short} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
                         (if (favoritesOnly) " numa favorita." else " perto de ti.") + " Verificamos a cada 6 horas.",
                     color = AtestaGreenLight,
                     style = MaterialTheme.typography.bodyMedium,

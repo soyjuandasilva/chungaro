@@ -3,15 +3,9 @@ package com.chungaro.combustible.nearby
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import com.chungaro.combustible.ui.appBackground
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,11 +19,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -37,6 +35,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.LocalGasStation
@@ -53,6 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,21 +67,29 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import com.chungaro.combustible.prices.DgegApi
-import com.chungaro.combustible.ui.AtestaBorder
-import com.chungaro.combustible.ui.AtestaCard
-import com.chungaro.combustible.ui.AtestaGreenLight
+import com.chungaro.combustible.ui.Atesta
 import com.chungaro.combustible.ui.StatusBarIcons
+import com.chungaro.combustible.ui.appBackground
 import kotlinx.coroutines.delay
 
 const val HOME_MAP = 0
@@ -113,7 +121,7 @@ fun MainHome(
     onCalculator: () -> Unit,
     onSearchByDistrict: () -> Unit,
 ) {
-    StatusBarIcons(darkBackground = true)
+    StatusBarIcons()
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(LocationHelper.hasPermission(context)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
@@ -124,7 +132,8 @@ fun MainHome(
         launcher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
     LaunchedEffect(Unit) { if (!vm.started) vm.refresh() }
-    // Recarga sola: al volver a la app y cada 10 minutos.
+    // Recarga sola al volver a la app y cada 10 minutos, solo mientras se ve
+    // (en segundo plano no gasta datos ni batería).
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
@@ -133,10 +142,12 @@ fun MainHome(
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(10 * 60_000L)
-            vm.refresh()
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                delay(10 * 60_000L)
+                vm.refresh()
+            }
         }
     }
 
@@ -146,20 +157,15 @@ fun MainHome(
     var stationId by rememberSaveable { mutableStateOf<Long?>(null) }
     val openStation: (Long) -> Unit = { stationId = it }
 
-    Scaffold(containerColor = Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground, modifier = Modifier.appBackground()) { padding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, contentColor = MaterialTheme.colorScheme.onBackground, modifier = Modifier.appBackground()) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Cabecera
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Logotipo: círculo verde con brillo
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier
-                        .size(46.dp)
-                        .shadow(12.dp, CircleShape, spotColor = AtestaGreenLight, ambientColor = AtestaGreenLight)
-                        .background(GreenBrush, CircleShape)
-                        .border(BorderStroke(1.5.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.6f), Color.Transparent))), CircleShape),
+                    Modifier.size(40.dp).background(MaterialTheme.colorScheme.primary, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
                 }
                 Text("Atesta", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 12.dp))
                 IconButton(onClick = onAlerts) { Icon(Icons.Outlined.NotificationsNone, contentDescription = "Alertas de preço") }
@@ -174,7 +180,7 @@ fun MainHome(
                     SearchResults(vm, query, fuelId, onOpenStation = openStation)
                 } else {
                     when (tab) {
-                        HOME_MAP -> MapTab(vm, fuelId, { fuelId = it }, favorites, hasPermission, requestLocation, openStation, onOpenNews = { tab = HOME_NEWS })
+                        HOME_MAP -> MapTab(vm, fuelId, { fuelId = it }, favorites, hasPermission, requestLocation, openStation)
                         HOME_PRICES -> PricesTab(vm, fuelId, { fuelId = it }, favorites, onToggleFavorite, openStation, onCalculator, hasPermission, requestLocation)
                         HOME_NEWS -> NewsTab(vm, fuelId)
                         HOME_FAVORITES -> FavoritesTab(vm, fuelId, favorites, onToggleFavorite, openStation, alertsEnabled, onToggleAlerts, onAlerts, onSearchByDistrict)
@@ -195,31 +201,36 @@ fun MainHome(
     }
 }
 
+private const val SEARCH_HINT = "Procurar posto, morada ou marca"
+
 @Composable
 private fun SearchField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().glassCard(RoundedCornerShape(50), elevation = 6.dp)) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-            Box(Modifier.weight(1f).padding(start = 10.dp)) {
+    val focus = LocalFocusManager.current
+    val c = MaterialTheme.colorScheme
+    Box(modifier.fillMaxWidth().heightIn(min = 48.dp).cardSurface(RoundedCornerShape(50)), contentAlignment = Alignment.CenterStart) {
+        Row(Modifier.padding(start = 14.dp, end = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Search, contentDescription = null, tint = c.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            Box(Modifier.weight(1f).padding(start = 10.dp, top = 12.dp, bottom = 12.dp)) {
                 if (value.isEmpty()) {
-                    Text("Procurar posto, morada ou marca", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(SEARCH_HINT, style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onChange,
                     singleLine = true,
-                    textStyle = TextStyle(color = Color.White, fontSize = MaterialTheme.typography.bodyMedium.fontSize),
-                    cursorBrush = SolidColor(AtestaGreenLight),
-                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = c.onSurface),
+                    cursorBrush = SolidColor(c.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = SEARCH_HINT },
                 )
             }
             if (value.isNotEmpty()) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Limpar",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp).clickableNoRipple { onChange("") },
-                )
+                IconButton(onClick = { onChange("") }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Limpar a pesquisa", tint = c.onSurfaceVariant)
+                }
+            } else {
+                Spacer(Modifier.size(12.dp))
             }
         }
     }
@@ -234,38 +245,43 @@ private fun HomeTabs(selected: Int, onSelect: (Int) -> Unit) {
         Icons.Outlined.StarBorder to "Favoritos",
         Icons.Outlined.History to "Histórico",
     )
+    val c = MaterialTheme.colorScheme
+    // Con letra grande las cinco pestañas no caben: pasan a desplazarse en horizontal.
+    val bigText = LocalDensity.current.fontScale > 1.15f
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 12.dp).glassCard(RoundedCornerShape(18.dp), elevation = 8.dp).padding(4.dp),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .cardSurface(RoundedCornerShape(16.dp))
+            .then(if (bigText) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
+            .padding(4.dp)
+            .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEachIndexed { i, (icon, label) ->
             val sel = i == selected
-            // Separador fino entre pestañas no seleccionadas
-            if (i > 0 && !sel && i - 1 != selected) {
-                Box(Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.12f)))
-            }
-            val shape = RoundedCornerShape(14.dp)
+            val shape = RoundedCornerShape(12.dp)
             Box(
                 Modifier
-                    .weight(1f)
-                    .then(
-                        if (sel) Modifier
-                            .shadow(10.dp, shape, spotColor = AtestaGreenLight, ambientColor = AtestaGreenLight)
-                            .background(GreenBrush, shape)
-                            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), Color.Transparent))), shape)
-                        else Modifier,
-                    )
+                    .then(if (bigText) Modifier.widthIn(min = 84.dp) else Modifier.weight(1f))
                     .clip(shape)
-                    .clickable { onSelect(i) },
+                    .background(if (sel) c.primary else Color.Transparent, shape)
+                    .selectable(selected = sel, role = Role.Tab, onClick = { onSelect(i) }),
             ) {
-                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(icon, contentDescription = null, tint = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
+                Column(
+                    Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 4.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    val tint = if (sel) c.onPrimary else c.onSurfaceVariant
+                    Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
                     Text(
                         label,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (sel) FontWeight.Bold else FontWeight.Medium,
-                        color = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = tint,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -289,12 +305,16 @@ private fun SearchResults(vm: NearbyViewModel, query: String, fuelId: Int, onOpe
     val prices = vm.stationsOf(fuelId)?.associateBy { it.id }.orEmpty()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).navigationBarsPadding()) {
         if (results.isEmpty()) {
-            Text("Nenhuma bomba encontrada para «$query».", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
+            Text(
+                "Nenhum posto encontrado para «$query». Experimenta o nome da marca ou da localidade.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
             return@Column
         }
         DarkCard {
             results.forEachIndexed { i, (s, km) ->
-                if (i > 0) HorizontalDivider(color = AtestaBorder)
+                if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
                 StationRow(s, km, onClick = { onOpenStation(s.id) }, subtitle = listOfNotNull(km?.let { formatKm(it) }, s.locality.ifBlank { null }).joinToString(" · ")) {
                     prices[s.id]?.let { PriceChip(it.price) }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -305,7 +325,7 @@ private fun SearchResults(vm: NearbyViewModel, query: String, fuelId: Int, onOpe
     }
 }
 
-/** Pestaña Mapa: filtros, cintillo del lunes, mapa y «Mais baratos perto de ti». */
+/** Pestaña Mapa: filtros, mapa y «Mais baratos perto de ti». */
 @Composable
 private fun MapTab(
     vm: NearbyViewModel,
@@ -315,7 +335,6 @@ private fun MapTab(
     hasPermission: Boolean,
     onRequestLocation: () -> Unit,
     onOpenStation: (Long) -> Unit,
-    onOpenNews: () -> Unit,
 ) {
     var sort by rememberSaveable { mutableIntStateOf(SORT_CHEAPEST) }
     var expanded by rememberSaveable { mutableStateOf(true) }
@@ -336,24 +355,26 @@ private fun MapTab(
         SORT_FAVORITES -> all.filter { it.station.id in favorites }.sortedBy { it.station.price }
         else -> inRadius.sortedWith(compareBy({ it.station.price }, { it.km }))
     }.take(10)
+    // Sin precios guardados: ¿se están descargando o falló la conexión?
+    val noPrices = vm.stationsOf(fuelId).isNullOrEmpty()
+    val rowState = vm.rows[fuelId]
 
     Column(Modifier.fillMaxSize()) {
         // Filtros
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            DropPill(fuel.short, FUEL_TYPES.map { it.short }, FUEL_TYPES.indexOf(fuel), selected = true) { onFuel(FUEL_TYPES[it].id) }
-            DropPill("≤ ${vm.radiusKm} km", NearbyViewModel.RADIUS_OPTIONS.map { "$it km" }, NearbyViewModel.RADIUS_OPTIONS.indexOf(vm.radiusKm)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            DropPill(fuel.short, FUEL_TYPES.map { it.short }, FUEL_TYPES.indexOf(fuel), selected = true, label = "Combustível") { onFuel(FUEL_TYPES[it].id) }
+            DropPill("≤ ${vm.radiusKm} km", NearbyViewModel.RADIUS_OPTIONS.map { "$it km" }, NearbyViewModel.RADIUS_OPTIONS.indexOf(vm.radiusKm), label = "Raio") {
                 vm.selectRadius(NearbyViewModel.RADIUS_OPTIONS[it])
             }
-            DropPill(SORT_LABELS[sort], SORT_LABELS, sort) { sort = it }
+            DropPill(SORT_LABELS[sort], SORT_LABELS, sort, label = "Ordenar por") { sort = it }
         }
-        Spacer(Modifier.height(10.dp))
-        // Mapa como tarjeta redondeada con borde, igual que el diseño
+        Spacer(Modifier.height(6.dp))
         Box(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, bottom = 10.dp)
-                .glassCard(RoundedCornerShape(24.dp), elevation = 12.dp),
+                .cardSurface(RoundedCornerShape(20.dp)),
         ) {
             OsmMap(location, onMap, recenter, topo = topo, pastel = true, onSelect = onOpenStation)
 
@@ -362,47 +383,58 @@ private fun MapTab(
                 Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                MapButton(Icons.Outlined.Layers, if (topo) "Mapa normal" else "Mapa de relevo") { topo = !topo }
+                MapButton(Icons.Outlined.Layers, if (topo) "Mostrar mapa normal" else "Mostrar mapa de relevo") { topo = !topo }
                 if (hasPermission) MapButton(Icons.Outlined.MyLocation, "Centrar na minha localização") { vm.refresh(); recenter++ }
             }
 
-            // Panel inferior, sobre el mapa
+            // Panel inferior, flotando sobre el mapa
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .glassCard(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp), elevation = 16.dp),
+                    .cardSurface(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp), floating = true),
             ) {
                 Column {
                     if (!hasPermission) {
                         Column(Modifier.padding(16.dp)) { LocationPrompt(onRequestLocation) }
                         return@Column
                     }
+                    val title = if (sort == SORT_FAVORITES) "As tuas favoritas (${listed.size})" else "Mais baratos perto de ti"
                     Row(
-                        Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 12.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                role = Role.Button,
+                                onClickLabel = if (expanded) "Recolher a lista" else "Mostrar a lista",
+                            ) { expanded = !expanded }
+                            .semantics { stateDescription = if (expanded) "Lista aberta" else "Lista fechada" }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            if (sort == SORT_FAVORITES) "As tuas favoritas (${listed.size})" else "Mais baratos perto de ti",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp, contentDescription = if (expanded) "Recolher" else "Expandir")
+                        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Icon(if (expanded) Icons.Filled.KeyboardArrowDown else Icons.Filled.KeyboardArrowUp, contentDescription = null)
                     }
                     if (expanded) {
-                        Column(Modifier.heightIn(max = 230.dp).verticalScroll(rememberScrollState())) {
+                        Column(Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState())) {
                             when {
-                                location == null -> Text("A procurar onde estás…", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
-                                listed.isEmpty() -> Text(
-                                    if (sort == SORT_FAVORITES) "Ainda não tens favoritos. Abre um posto e toca no ♥." else "Sem postos a menos de ${vm.radiusKm} km.",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(16.dp),
+                                noPrices && rowState is FuelRowState.Error -> ErrorRetry(
+                                    "Sem ligação: não conseguimos descarregar os preços.",
+                                    onRetry = { vm.refresh(force = true) },
+                                )
+                                noPrices -> MutedText("A carregar os preços…")
+                                location == null && vm.locationError != null -> ErrorRetry(
+                                    vm.locationError ?: "",
+                                    onRetry = { vm.refresh() },
+                                )
+                                location == null -> MutedText("A procurar onde estás…")
+                                listed.isEmpty() -> MutedText(
+                                    if (sort == SORT_FAVORITES) "Ainda não tens favoritos. Abre um posto e toca na estrela."
+                                    else "Não há postos com ${fuel.short} a menos de ${vm.radiusKm} km. Aumenta o raio.",
                                 )
                                 else -> listed.forEachIndexed { i, s ->
-                                    if (i > 0) HorizontalDivider(color = AtestaBorder)
+                                    if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
                                     StationRow(s.station, s.km, onClick = { onOpenStation(s.station.id) }) {
-                                        PriceChip(s.station.price, Color(0xFF22B455), big = true)
+                                        PriceChip(s.station.price, big = true)
                                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
@@ -417,31 +449,56 @@ private fun MapTab(
 }
 
 @Composable
-private fun MapButton(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(50.dp)
-            .shadow(10.dp, CircleShape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF1C3B2C), Color(0xFF07140D))), CircleShape)
-            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.Transparent))), CircleShape)
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { Icon(icon, contentDescription = description, tint = Color.White) }
+private fun MutedText(text: String) {
+    Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(16.dp))
 }
 
-/** Pastilla con menú desplegable. */
+/** Aviso de error con la causa y cómo arreglarlo. */
 @Composable
-fun DropPill(text: String, options: List<String>, selectedIndex: Int, selected: Boolean = false, onPick: (Int) -> Unit) {
+fun ErrorRetry(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            Text(message, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 10.dp))
+        }
+        OutlinedButton(onClick = onRetry) { Text("Tentar de novo") }
+    }
+}
+
+@Composable
+private fun MapButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Atesta.colors.floating,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shadowElevation = 6.dp,
+        modifier = Modifier.size(48.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = description) }
+    }
+}
+
+/** Pastilla con menú desplegable. [label] dice a TalkBack qué se elige («Raio: 10 km»). */
+@Composable
+fun DropPill(
+    text: String,
+    options: List<String>,
+    selectedIndex: Int,
+    selected: Boolean = false,
+    label: String? = null,
+    onPick: (Int) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
+    val c = MaterialTheme.colorScheme
     Box {
-        FilterPill(text, selected = selected, onClick = { open = true }) {
-            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = if (selected) AtestaGreenLight else Color.White, modifier = Modifier.size(18.dp))
+        FilterPill(text, selected = selected, onClick = { open = true }, description = label?.let { "$it: $text" }) {
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = if (selected) c.onPrimaryContainer else c.onSurface, modifier = Modifier.size(18.dp))
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEachIndexed { i, o ->
                 DropdownMenuItem(
-                    text = { Text(o, fontWeight = if (i == selectedIndex) FontWeight.ExtraBold else FontWeight.Normal, color = if (i == selectedIndex) AtestaGreenLight else Color.Unspecified) },
+                    text = { Text(o, fontWeight = if (i == selectedIndex) FontWeight.Bold else FontWeight.Normal, color = if (i == selectedIndex) c.primary else c.onSurface) },
                     onClick = { open = false; onPick(i) },
                 )
             }
@@ -449,7 +506,7 @@ fun DropPill(text: String, options: List<String>, selectedIndex: Int, selected: 
     }
 }
 
-/** Clic sin efecto de onda (para filas de cabecera). */
+/** Clic sin efecto de onda (solo para superficies que ya tienen su propio feedback). */
 @Composable
 fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier {
     val source = remember { MutableInteractionSource() }

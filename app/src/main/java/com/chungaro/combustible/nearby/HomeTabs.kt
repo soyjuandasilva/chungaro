@@ -1,5 +1,12 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -85,10 +92,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
 
-private val Star = Color(0xFFFBBF24)
-
-/** Fondo de una casilla de combustible: su color oscurecido, para que el texto blanco se lea. */
-private fun tileColor(c: Color, k: Float = 0.55f): Color = Color(c.red * k, c.green * k, c.blue * k)
 
 // ---------------------------------------------------------------- Preços
 
@@ -145,18 +148,22 @@ fun PricesTab(
                     val r = (vm.rows[f.id] as? FuelRowState.Ready)?.result
                     val national = remember(version, f.id) { vm.nationalPrice(f.id) }
                     val sel = f.id == fuelId
-                    val shape = RoundedCornerShape(14.dp)
+                    val shape = RoundedCornerShape(12.dp)
+                    val cs = MaterialTheme.colorScheme
                     Box(
                         Modifier
                             .weight(1f)
-                            .shadow(if (sel) 12.dp else 6.dp, shape, spotColor = f.uiColor, ambientColor = Color.Black)
-                            .background(Brush.verticalGradient(listOf(tileColor(f.uiColor, 0.68f), tileColor(f.uiColor, 0.36f))), shape)
-                            .border(BorderStroke(if (sel) 2.dp else 1.dp, if (sel) SolidColor(Color.White) else Brush.verticalGradient(listOf(f.uiColor, Color.Transparent))), shape)
                             .clip(shape)
-                            .clickable { onFuel(f.id) },
+                            .background(if (sel) cs.primaryContainer else Atesta.colors.card, shape)
+                            .border(if (sel) 2.dp else 1.dp, if (sel) cs.primary else Atesta.colors.cardBorder, shape)
+                            .selectable(selected = sel, role = Role.RadioButton, onClick = { onFuel(f.id) }),
                     ) {
                         Column(Modifier.padding(vertical = 10.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(f.short, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2, minLines = 2)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Dot(f.uiColor, 8.dp)
+                                Spacer(Modifier.width(5.dp))
+                                Text(f.short, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis)
+                            }
                             Text(
                                 (r?.averageInRadius ?: national?.average)?.let { euro3(it) } ?: "—",
                                 style = MaterialTheme.typography.titleMedium,
@@ -164,7 +171,7 @@ fun PricesTab(
                                 maxLines = 1,
                                 softWrap = false,
                             )
-                            national?.let { Text("PT ${euro3(it.average)}", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.75f)) }
+                            national?.let { Text("PT ${euro3(it.average)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
                 }
@@ -172,11 +179,11 @@ fun PricesTab(
         }
         Text(
             "Preço médio na tua zona; em baixo, a média de todas as bombas de Portugal. Em cada bomba o preço é diferente.",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Text("Postos mais baratos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+        BlockTitle("Postos mais baratos", Modifier.padding(top = 8.dp))
         val list = ready?.cheapestList.orEmpty()
         val all = remember(version, fuelId, vm.radiusKm, vm.location) {
             val loc = vm.location ?: return@remember emptyList<StationAtDistance>()
@@ -187,7 +194,15 @@ fun PricesTab(
         }
         val shown = if (showAll) all else (all.ifEmpty { list }).take(3)
         if (shown.isEmpty()) {
-            Text("Sem dados de preços ainda.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val state = vm.rows[fuelId]
+            if (state is FuelRowState.Error && vm.stationsOf(fuelId).isNullOrEmpty()) {
+                DarkCard { ErrorRetry("Sem ligação: não conseguimos descarregar os preços.", onRetry = { vm.refresh(force = true) }) }
+            } else {
+                Text(
+                    if (vm.location == null) "Ativa a localização para veres os postos mais baratos perto de ti." else "A carregar os preços…",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         } else {
             DarkCard {
                 shown.forEachIndexed { i, s ->
@@ -196,7 +211,7 @@ fun PricesTab(
                         PriceChip(s.station.price, caption = fuel.short)
                         val fav = s.station.id in favorites
                         IconButton(onClick = { onToggleFavorite(s.station.id) }) {
-                            Icon(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = if (fav) "Tirar dos favoritos" else "Guardar nos favoritos", tint = if (fav) Star else Color.White)
+                            Icon(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = if (fav) "Tirar dos favoritos" else "Guardar nos favoritos", tint = if (fav) Atesta.colors.star else MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -205,18 +220,23 @@ fun PricesTab(
         if (all.size > 3) {
             OutlinedButton(
                 onClick = { showAll = !showAll },
-                border = BorderStroke(1.dp, AtestaGreenLight),
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text(if (showAll) "Ver menos" else "Ver todos os postos (${all.size})", color = Color.White, fontWeight = FontWeight.Bold) }
+            ) { Text(if (showAll) "Ver menos" else "Ver todos os postos (${all.size})", fontWeight = FontWeight.Bold) }
         }
 
         // Calculadora
-        Surface(onClick = onCalculator, shape = RoundedCornerShape(18.dp), color = Color(0xFF14532D), border = BorderStroke(1.dp, AtestaGreenLight.copy(alpha = 0.6f)), modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            onClick = onCalculator,
+            shape = CardShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Calculate, contentDescription = null, tint = AtestaGreenLight, modifier = Modifier.size(32.dp))
+                Icon(Icons.Outlined.Calculate, contentDescription = null, modifier = Modifier.size(28.dp))
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text("Calculadora de poupança", fontWeight = FontWeight.ExtraBold)
-                    Text("Quanto pagas por um depósito em cada posto", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Calculadora de poupança", fontWeight = FontWeight.Bold)
+                    Text("Quanto pagas por um depósito em cada posto", style = MaterialTheme.typography.bodySmall)
                 }
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
@@ -227,12 +247,14 @@ fun PricesTab(
 
 // ---------------------------------------------------------------- Notícias
 
-private val CATEGORY_STYLE: Map<String, Pair<ImageVector, Color>> = mapOf(
-    "Preços" to (Icons.Outlined.LocalGasStation to Color(0xFF16A34A)),
-    "Mercado" to (Icons.Outlined.ShowChart to Color(0xFF2563EB)),
-    "Dicas" to (Icons.Outlined.Lightbulb to Color(0xFFD97706)),
-    "Mobilidade" to (Icons.Outlined.ElectricCar to Color(0xFF7C3AED)),
-)
+/** Icono y color de cada categoría de noticias, según el tema. */
+@Composable
+private fun categoryStyle(category: String): Pair<ImageVector, Color> = when (category) {
+    "Mercado" -> Icons.Outlined.ShowChart to Atesta.colors.info
+    "Dicas" -> Icons.Outlined.Lightbulb to Atesta.colors.warning
+    "Mobilidade" -> Icons.Outlined.ElectricCar to Atesta.colors.purple
+    else -> Icons.Outlined.LocalGasStation to Atesta.colors.accent
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -261,47 +283,36 @@ fun NewsTab(vm: NearbyViewModel, fuelId: Int) {
         }
         when {
             items.isEmpty() && vm.newsLoading -> Text("A carregar notícias…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            items.isEmpty() -> Text(
-                if (vm.newsError) "Não conseguimos carregar as notícias. Verifica a ligação." else "Sem notícias de momento.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            items.isEmpty() && vm.newsError -> DarkCard {
+                ErrorRetry("Não conseguimos carregar as notícias. Verifica a ligação.", onRetry = { vm.loadNews(force = true); vm.loadNewsCategories() })
+            }
+            items.isEmpty() -> Text("Sem notícias de momento.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             else -> items.forEach { (c, n) ->
-                val (icon, color) = CATEGORY_STYLE[c] ?: (Icons.Outlined.LocalGasStation to AtestaGreenLight)
-                Box(Modifier.fillMaxWidth().glassCard().clickable { openLink(context, n.link) }) {
-                    Row(Modifier.padding(10.dp)) {
-                        // Miniatura: el feed no trae imágenes, se usa el icono de la categoría.
+                val (icon, color) = categoryStyle(c)
+                Box(Modifier.fillMaxWidth().cardSurface().clickable(onClickLabel = "Abrir a notícia") { openLink(context, n.link) }) {
+                    Row(Modifier.padding(12.dp)) {
+                        // El feed no trae imágenes: icono de la categoría sobre su color suave.
                         Box(
-                            Modifier.size(width = 96.dp, height = 96.dp),
+                            Modifier.size(48.dp).background(color.copy(alpha = 0.14f), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .shadow(6.dp, RoundedCornerShape(12.dp))
-                                    .background(Brush.linearGradient(listOf(color, tileColor(color, 0.35f))), RoundedCornerShape(12.dp))
-                                    .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.4f), Color.Transparent))), RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) { Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(46.dp)) }
-                        }
+                        ) { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(26.dp)) }
                         Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(n.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                            Text(n.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, maxLines = 3, overflow = TextOverflow.Ellipsis)
                             if (n.snippet.isNotBlank()) {
                                 Text(n.snippet, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             } else {
                                 Text(n.source, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(shape = RoundedCornerShape(50), color = Color(0xFF16A34A)) {
-                                    Text(c, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp))
-                                }
-                                n.publishedAt?.let { Text("  " + agoText(it), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                Text(c, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = color)
+                                n.publishedAt?.let { Text(" · " + agoText(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                             }
                         }
                     }
                 }
             }
         }
-        Text("Notícias via Google Notícias. Os textos pertencem aos respetivos meios.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Notícias via Google Notícias. Os textos pertencem aos respetivos meios.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
     }
 }
@@ -331,8 +342,8 @@ fun FavoritesTab(
         if (favorites.isEmpty()) {
             DarkCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Ainda não tens favoritos", fontWeight = FontWeight.ExtraBold)
-                    Text("Toca na ☆ de um posto (ou no ♥ da ficha) para o guardares aqui.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Ainda não tens favoritos", fontWeight = FontWeight.Bold)
+                    Text("Toca na estrela de um posto para o guardares aqui e veres o preço de um relance.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
@@ -345,27 +356,27 @@ fun FavoritesTab(
                     } else {
                         StationRow(s, null, onClick = { onOpenStation(id) }, subtitle = listOf(s.address, s.locality).filter { it.isNotBlank() }.joinToString(", ")) {
                             prices[id]?.let { PriceChip(it.price, caption = fuel.short) }
-                            IconButton(onClick = { onToggleFavorite(id) }) { Icon(Icons.Filled.Star, contentDescription = "Tirar dos favoritos", tint = Star) }
+                            IconButton(onClick = { onToggleFavorite(id) }) { Icon(Icons.Filled.Star, contentDescription = "Tirar dos favoritos", tint = Atesta.colors.star) }
                         }
                     }
                 }
             }
         }
-        OutlinedButton(onClick = onSearchByDistrict, border = BorderStroke(1.dp, AtestaBorder), modifier = Modifier.fillMaxWidth()) {
-            Text("Procurar postos por distrito", color = Color.White)
+        OutlinedButton(onClick = onSearchByDistrict, modifier = Modifier.fillMaxWidth()) {
+            Text("Procurar postos por distrito")
         }
 
-        Surface(onClick = onAlerts, shape = RoundedCornerShape(18.dp), color = Color(0xFF0F3A26), border = BorderStroke(1.dp, AtestaGreenLight.copy(alpha = 0.5f)), modifier = Modifier.fillMaxWidth()) {
+        Surface(onClick = onAlerts, shape = CardShape, color = Atesta.colors.card, border = BorderStroke(1.dp, Atesta.colors.cardBorder), modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.NotificationsNone, contentDescription = null, tint = AtestaGreenLight, modifier = Modifier.size(34.dp))
+                Icon(Icons.Outlined.NotificationsNone, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(28.dp))
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text("Alertas de preço", fontWeight = FontWeight.ExtraBold)
+                    Text("Alertas de preço", fontWeight = FontWeight.Bold)
                     Text("Recebe um aviso quando o preço descer nas tuas estações favoritas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(
                     checked = alertsEnabled,
                     onCheckedChange = onToggleAlerts,
-                    colors = SwitchDefaults.colors(checkedTrackColor = AtestaGreenLight, checkedThumbColor = Color.White),
+                    modifier = Modifier.semantics { contentDescription = "Alertas de preço" },
                 )
             }
         }
@@ -388,37 +399,46 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         // Evolução | Comparar
-        Surface(shape = RoundedCornerShape(14.dp), color = AtestaCard, border = BorderStroke(1.dp, AtestaBorder), modifier = Modifier.fillMaxWidth()) {
-            Row(Modifier.padding(4.dp)) {
+        val cs = MaterialTheme.colorScheme
+        Surface(shape = RoundedCornerShape(14.dp), color = Atesta.colors.card, border = BorderStroke(1.dp, Atesta.colors.cardBorder), modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(4.dp).selectableGroup()) {
                 listOf("Evolução", "Comparar").forEachIndexed { i, label ->
-                    Surface(
-                        onClick = { mode = i },
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (mode == i) Color(0xFF16A34A) else Color.Transparent,
-                        modifier = Modifier.weight(1f),
+                    val sel = mode == i
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = 44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (sel) cs.primary else Color.Transparent)
+                            .selectable(selected = sel, role = Role.Tab, onClick = { mode = i }),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Text(label, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 10.dp))
+                        Text(label, fontWeight = FontWeight.Bold, color = if (sel) cs.onPrimary else cs.onSurface)
                     }
                 }
             }
         }
         // Periodo
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             PERIODS.forEach { (d, label) ->
-                Surface(
-                    onClick = { days = d },
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (d == days) AtestaGreenLight else AtestaCard,
-                    border = BorderStroke(1.dp, if (d == days) AtestaGreenLight else AtestaBorder),
-                    modifier = Modifier.weight(1f),
+                val sel = d == days
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 44.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (sel) cs.primaryContainer else Atesta.colors.card)
+                        .border(1.dp, if (sel) cs.primary else cs.outline, RoundedCornerShape(10.dp))
+                        .selectable(selected = sel, role = Role.RadioButton, onClick = { days = d }),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         label,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = if (d == days) Color(0xFF052E16) else Color.White,
+                        color = if (sel) cs.onPrimaryContainer else cs.onSurface,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        maxLines = 1,
                     )
                 }
             }
@@ -461,19 +481,19 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
                 val pct = diff / first * 100
                 val up = diff > 0
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = if (up) Color(0xFF3B1212) else Color(0xFF0F3A26), border = BorderStroke(1.dp, AtestaBorder), modifier = Modifier.weight(1f)) {
+                    Surface(shape = CardShape, color = if (up) Atesta.colors.upContainer else Atesta.colors.downContainer, modifier = Modifier.weight(1f)) {
                         Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                (if (up) "↑ +" else "↓ −") + String.format(Locale.getDefault(), "%.3f€", abs(diff)),
-                                color = if (up) Color(0xFFF87171) else AtestaGreenLight,
+                                (if (up) "↑ +" else "↓ −") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f€", abs(diff)),
+                                color = if (up) Atesta.colors.up else Atesta.colors.down,
                                 fontWeight = FontWeight.ExtraBold,
                                 style = MaterialTheme.typography.titleMedium,
                             )
-                            Text((if (up) "+" else "−") + String.format(Locale.getDefault(), "%.1f%%", abs(pct)), fontWeight = FontWeight.Bold)
-                            Text("(últimos ${PERIODS.first { it.first == days }.second})", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text((if (up) "+" else "−") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(pct)), fontWeight = FontWeight.Bold)
+                            Text("últimos ${PERIODS.first { it.first == days }.second}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
-                    Surface(shape = RoundedCornerShape(16.dp), color = AtestaCard, border = BorderStroke(1.dp, AtestaBorder), modifier = Modifier.weight(1f)) {
+                    Surface(shape = CardShape, color = Atesta.colors.card, border = BorderStroke(1.dp, Atesta.colors.cardBorder), modifier = Modifier.weight(1f)) {
                         Row(Modifier.padding(12.dp)) {
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Mínimo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -487,7 +507,7 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
                     }
                 }
             }
-            Text("Preço médio das bombas a menos de ${HistoryRecorder.ZONE_KM.toInt()} km de ti.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Preço médio das bombas a menos de ${HistoryRecorder.ZONE_KM.toInt()} km de ti.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             // Comparar: todos los combustibles, ahora frente al inicio del periodo
             DarkCard {
@@ -500,8 +520,8 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
                         if (pts.size >= 2) {
                             val d = pts.last().price - pts.first().price
                             Text(
-                                (if (d > 0) "↑ +" else if (d < 0) "↓ −" else "→ ") + String.format(Locale.getDefault(), "%.3f", abs(d)),
-                                color = if (d > 0) Color(0xFFF87171) else if (d < 0) AtestaGreenLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                                (if (d > 0) "↑ +" else if (d < 0) "↓ −" else "→ ") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", abs(d)),
+                                color = if (d > 0) Atesta.colors.up else if (d < 0) Atesta.colors.down else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.labelLarge,
                             )
@@ -511,7 +531,7 @@ fun HistoryTab(vm: NearbyViewModel, fuelId: Int, onFuel: (Int) -> Unit) {
                     }
                 }
             }
-            Text("Variação do preço médio da tua zona nos últimos ${PERIODS.first { it.first == days }.second}.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Variação do preço médio da tua zona nos últimos ${PERIODS.first { it.first == days }.second}.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(16.dp))
     }
@@ -530,7 +550,9 @@ fun PriceLineChart(points: List<PricePoint>, color: Color) {
     val lastDay = sorted.last().day
     val span = (lastDay - firstDay).coerceAtLeast(1)
     val last = sorted.last()
-    val lineColor = if (color.luminance() < 0.2f) AtestaGreenLight else color
+    val lineColor = color
+    val grid = MaterialTheme.colorScheme.outlineVariant
+    val ring = Atesta.colors.card
 
     Column {
         Row {
@@ -538,7 +560,7 @@ fun PriceLineChart(points: List<PricePoint>, color: Color) {
             Column(Modifier.height(180.dp).width(56.dp), verticalArrangement = Arrangement.SpaceBetween) {
                 (0..4).forEach { i ->
                     val v = hi - (hi - lo) * i / 4
-                    Text(String.format(Locale.getDefault(), "%.3f", v), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", v), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Box(Modifier.weight(1f).height(180.dp)) {
@@ -548,7 +570,7 @@ fun PriceLineChart(points: List<PricePoint>, color: Color) {
                     // Rejilla
                     (0..4).forEach { i ->
                         val gy = size.height * i / 4
-                        drawLine(Color.White.copy(alpha = 0.08f), Offset(0f, gy), Offset(size.width, gy), 1f)
+                        drawLine(grid, Offset(0f, gy), Offset(size.width, gy), 1f)
                     }
                     val line = Path()
                     sorted.forEachIndexed { i, p -> if (i == 0) line.moveTo(x(p.day), y(p.price)) else line.lineTo(x(p.day), y(p.price)) }
@@ -558,15 +580,15 @@ fun PriceLineChart(points: List<PricePoint>, color: Color) {
                         lineTo(x(firstDay), size.height)
                         close()
                     }
-                    drawPath(fill, Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.35f), Color.Transparent)))
+                    drawPath(fill, Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.20f), Color.Transparent)))
                     drawPath(line, lineColor, style = Stroke(width = 5f, cap = StrokeCap.Round))
-                    drawCircle(Color.White, 9f, Offset(x(last.day), y(last.price)))
+                    drawCircle(ring, 9f, Offset(x(last.day), y(last.price)))
                     drawCircle(lineColor, 6f, Offset(x(last.day), y(last.price)))
                 }
                 // Etiqueta del último valor
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF0F3A26),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     border = BorderStroke(1.dp, lineColor),
                     modifier = Modifier.align(Alignment.TopEnd),
                 ) {

@@ -102,7 +102,7 @@ fun RefuelFormScreen(
 
     Scaffold(
         topBar = {
-            StatusBarIcons(darkBackground = true)
+            StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
                 title = { Text(if (existing == null) "Novo abastecimento" else "Editar abastecimento") },

@@ -3,11 +3,6 @@ package com.chungaro.combustible.nearby
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,87 +28,97 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.chungaro.combustible.ui.AtestaBorder
-import com.chungaro.combustible.ui.AtestaCard
-import com.chungaro.combustible.ui.AtestaGreenLight
+import com.chungaro.combustible.ui.APP_LOCALE
+import com.chungaro.combustible.ui.Atesta
 import com.chungaro.combustible.ui.StatusBarIcons
 import com.chungaro.combustible.ui.atestaTopBarColors
-import java.util.Locale
+import com.chungaro.combustible.ui.inkOn
 
-/** Precio con coma decimal y €: "1,659€". */
-fun euro3(v: Double): String = String.format(Locale.getDefault(), "%.3f€", v)
+/** Precio con coma decimal y €: "1,659€" (siempre en português de Portugal). */
+fun euro3(v: Double): String = String.format(APP_LOCALE, "%.3f€", v)
 
-/** Relleno de las tarjetas: un poco más claro arriba, como el diseño. */
-val CardBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF15402C), Color(0xFF0C2619)))
-/** Borde con brillo arriba que se apaga hacia abajo. */
-val CardBorderBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF3F7A5C), Color(0xFF173828)))
-/** Verde de los botones y etiquetas de precio, con volumen. */
-val GreenBrush: Brush = Brush.verticalGradient(listOf(Color(0xFF34D46F), Color(0xFF15803D)))
+/** Radio de las tarjetas en toda la app. */
+val CardShape = RoundedCornerShape(16.dp)
 
-/** Aplica el aspecto de tarjeta: sombra, degradado y borde brillante. */
-fun Modifier.glassCard(shape: Shape = RoundedCornerShape(18.dp), elevation: Dp = 10.dp): Modifier = this
-    .shadow(elevation, shape, ambientColor = Color.Black, spotColor = Color.Black)
-    .background(CardBrush, shape)
-    .border(BorderStroke(1.dp, CardBorderBrush), shape)
-    .clip(shape)
+/**
+ * Superficie de tarjeta. Sobre el fondo: color de tarjeta y borde fino, sin sombra.
+ * Flotando sobre el mapa ([floating]): sombra suave, sin borde. Nunca las dos cosas.
+ */
+@Composable
+fun Modifier.cardSurface(shape: Shape = CardShape, floating: Boolean = false): Modifier {
+    val c = Atesta.colors
+    return if (floating) {
+        this.shadow(8.dp, shape).background(c.floating, shape).clip(shape)
+    } else {
+        this.background(c.card, shape).border(1.dp, c.cardBorder, shape).clip(shape)
+    }
+}
 
-/** Tarjeta oscura con profundidad, base de todo el diseño. */
+/** Tarjeta base de todo el diseño. */
 @Composable
 fun DarkCard(
     modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
-    @Suppress("UNUSED_PARAMETER") color: Color = AtestaCard,
+    shape: Shape = CardShape,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.fillMaxWidth().glassCard(shape), content = content)
+    Column(modifier.fillMaxWidth().cardSurface(shape), content = content)
 }
 
-/** Etiqueta de precio con fondo de color; texto oscuro si el fondo es claro. */
+/**
+ * Etiqueta de precio: relleno sólido y texto con contraste ≥ 4,5:1.
+ * Sin [color], el verde de precio del tema.
+ */
 @Composable
-fun PriceChip(price: Double, color: Color = AtestaGreenLight, caption: String? = null, big: Boolean = false) {
-    val ink = if (color.luminance() > 0.45f) Color(0xFF052E16) else Color.White
-    val shape = RoundedCornerShape(10.dp)
-    // Degradado del propio color (más claro arriba) y un brillo en el borde
-    val light = Color(
-        (color.red + (1 - color.red) * 0.25f),
-        (color.green + (1 - color.green) * 0.25f),
-        (color.blue + (1 - color.blue) * 0.25f),
-    )
-    val dark = Color(color.red * 0.78f, color.green * 0.78f, color.blue * 0.78f)
-    Box(
-        Modifier
-            .shadow(4.dp, shape, spotColor = color, ambientColor = Color.Black)
-            .background(Brush.verticalGradient(listOf(light, color, dark)), shape)
-            .border(BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.55f), Color.Transparent))), shape),
-    ) {
+fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big: Boolean = false) {
+    val fill = color ?: Atesta.colors.price
+    val ink = if (color == null) Atesta.colors.onPrice else inkOn(fill)
+    Box(Modifier.background(fill, RoundedCornerShape(8.dp))) {
         Column(
-            Modifier.padding(horizontal = if (big) 12.dp else 10.dp, vertical = if (caption != null) 4.dp else 6.dp),
+            Modifier.padding(horizontal = if (big) 10.dp else 8.dp, vertical = if (caption != null) 3.dp else 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 euro3(price),
                 color = ink,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 style = if (big) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
                 maxLines = 1,
                 softWrap = false,
             )
-            caption?.let { Text(it, color = ink.copy(alpha = 0.85f), style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+            caption?.let { Text(it, color = ink, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
         }
     }
 }
 
-/** Barra superior: flecha, icono verde y título, sobre el fondo oscuro. */
+/** Título de bloque, anunciado como encabezado por TalkBack. */
+@Composable
+fun BlockTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        modifier = modifier.semantics { heading() },
+    )
+}
+
+/** Barra superior: flecha, icono de acento y título. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DarkTopBar(
@@ -121,7 +127,7 @@ fun DarkTopBar(
     onBack: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    StatusBarIcons(darkBackground = true)
+    StatusBarIcons()
     TopAppBar(
         colors = atestaTopBarColors(),
         navigationIcon = {
@@ -130,20 +136,25 @@ fun DarkTopBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon?.let {
-                    Icon(it, contentDescription = null, tint = AtestaGreenLight, modifier = Modifier.size(26.dp))
+                    Icon(it, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
                 }
-                Text(title, fontWeight = FontWeight.ExtraBold)
+                Text(title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
             }
         },
         actions = actions,
     )
 }
 
-/** Logotipo de la marca en un cuadrado blanco redondeado, como en las listas. */
+/** Logotipo de la marca en un cuadrado blanco (los logotipos están pensados para fondo blanco). */
 @Composable
 fun BrandTile(brand: String, size: Dp = 44.dp) {
-    Surface(shape = RoundedCornerShape(10.dp), color = Color.White, modifier = Modifier.size(size)) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = Color.White,
+        border = if (Atesta.colors.isDark) null else BorderStroke(1.dp, Atesta.colors.cardBorder),
+        modifier = Modifier.size(size),
+    ) {
         Box(contentAlignment = Alignment.Center) { BrandBadge(brand, size = size - 6.dp) }
     }
 }
@@ -158,7 +169,11 @@ fun StationRow(
     trailing: @Composable RowScope.() -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable(onClickLabel = "Ver o posto", onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BrandTile(station.brand)
@@ -177,21 +192,35 @@ fun StationRow(
     }
 }
 
-/** Pastilla de filtro con flecha, como «Gasolina 95 ▾». */
+/**
+ * Pastilla de filtro, como «Gasolina 95 ▾». El área táctil llega a 48 dp aunque
+ * la pastilla se vea más baja.
+ */
 @Composable
-fun FilterPill(text: String, selected: Boolean = false, onClick: () -> Unit, trailing: @Composable (() -> Unit)? = null) {
+fun FilterPill(
+    text: String,
+    selected: Boolean = false,
+    onClick: () -> Unit,
+    description: String? = null,
+    trailing: @Composable (() -> Unit)? = null,
+) {
     val shape = RoundedCornerShape(50)
-    Box(
-        Modifier
-            .shadow(6.dp, shape, spotColor = if (selected) AtestaGreenLight else Color.Black)
-            .background(if (selected) Brush.verticalGradient(listOf(Color(0xFF1E5A3B), Color(0xFF0F3322))) else CardBrush, shape)
-            .border(BorderStroke(1.dp, if (selected) SolidColor(AtestaGreenLight) else CardBorderBrush), shape)
-            .clip(shape)
-            .clickable(onClick = onClick),
-    ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = if (selected) AtestaGreenLight else Color.White)
-            trailing?.invoke()
+    val c = MaterialTheme.colorScheme
+    val bg = if (selected) c.primaryContainer else Atesta.colors.card
+    val fg = if (selected) c.onPrimaryContainer else c.onSurface
+    Box(Modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .clip(shape)
+                .background(bg, shape)
+                .border(1.dp, if (selected) c.primary else c.outline, shape)
+                .clickable(role = Role.Button, onClick = onClick)
+                .then(if (description != null) Modifier.semantics(mergeDescendants = true) { contentDescription = description } else Modifier),
+        ) {
+            Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = fg, maxLines = 1)
+                trailing?.invoke()
+            }
         }
     }
 }
@@ -199,5 +228,5 @@ fun FilterPill(text: String, selected: Boolean = false, onClick: () -> Unit, tra
 /** Punto de color pequeño. */
 @Composable
 fun Dot(color: Color, size: Dp = 8.dp) {
-    Surface(shape = CircleShape, color = color, modifier = Modifier.size(size)) {}
+    Box(Modifier.size(size).background(color, CircleShape))
 }

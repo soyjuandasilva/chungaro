@@ -92,7 +92,7 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            StatusBarIcons(darkBackground = true)
+            StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
                 title = {

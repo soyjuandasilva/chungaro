@@ -15,6 +15,8 @@ data class AppSettings(
     val alertFuelId: Int? = null,
     /** Avisar solo por las bombas favoritas (si no, todas las de la zona). */
     val alertFavoritesOnly: Boolean = false,
+    /** Tema: "auto" (el del sistema), "light" o "dark". */
+    val themeMode: String = "auto",
 )
 
 class SettingsStore(context: Context) {
@@ -28,6 +30,7 @@ class SettingsStore(context: Context) {
         alertThreshold = prefs.getFloat("alert_threshold", -1f).takeIf { it > 0 }?.toDouble(),
         alertFuelId = prefs.getInt("alert_fuel", 0).takeIf { it > 0 },
         alertFavoritesOnly = prefs.getBoolean("alert_favorites_only", false),
+        themeMode = prefs.getString("theme_mode", "auto") ?: "auto",
     )
 
     fun save(s: AppSettings) {
@@ -39,6 +42,7 @@ class SettingsStore(context: Context) {
             .putFloat("alert_threshold", (s.alertThreshold ?: -1.0).toFloat())
             .putInt("alert_fuel", s.alertFuelId ?: 0)
             .putBoolean("alert_favorites_only", s.alertFavoritesOnly)
+            .putString("theme_mode", s.themeMode)
             .apply()
     }
 

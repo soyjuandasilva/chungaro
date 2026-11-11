@@ -14,7 +14,7 @@ private val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", APP_LOCALE
 fun formatDate(epochDay: Long): String = LocalDate.ofEpochDay(epochDay).format(dateFormatter)
 
 fun formatNumber(v: Double, decimals: Int = 2): String =
-    String.format(Locale.getDefault(), "%,.${decimals}f", v)
+    String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.${decimals}f", v)
 
 fun AppSettings.money(v: Double): String = currency + formatNumber(v)
 

@@ -77,7 +77,7 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            StatusBarIcons(darkBackground = true)
+            StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
                 title = { Text("Bombas favoritas", fontWeight = FontWeight.Bold) },
@@ -300,7 +300,7 @@ private fun FuelGrid(fuels: List<FuelPrice>) {
                         maxLines = 1,
                     )
                     Text(
-                        f.price?.let { String.format(Locale.getDefault(), "%.3f", it) } ?: "—",
+                        f.price?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", it) } ?: "—",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.ExtraBold,
                     )
@@ -340,7 +340,7 @@ private fun FuelLine(f: FuelPrice) {
             }
         }
         Text(
-            f.price?.let { String.format(Locale.getDefault(), "%.3f €/L", it) } ?: "—",
+            f.price?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €/L", it) } ?: "—",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )

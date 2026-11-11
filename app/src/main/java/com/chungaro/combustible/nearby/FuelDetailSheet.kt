@@ -188,7 +188,7 @@ private fun StationCard(
             Column(horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        String.format(Locale.getDefault(), "%.3f", s.station.price),
+                        String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", s.station.price),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = if (best) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
@@ -243,7 +243,7 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
                 }
                 Text(
                     "Desvio estimado: ${formatKm(advice.extraKm)} ida e volta com um consumo de " +
-                        String.format(Locale.getDefault(), "%.1f", consumptionL100) + " L/100 km.",
+                        String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f", consumptionL100) + " L/100 km.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -330,7 +330,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
         Column(horizontalAlignment = Alignment.End) {
             Text(formatEuro(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(
-                if (index == 0) "melhor" else "+" + String.format(Locale.getDefault(), "%.3f", diff),
+                if (index == 0) "melhor" else "+" + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", diff),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (index == 0) GoodGreen else MaterialTheme.colorScheme.error,
             )

@@ -316,7 +316,7 @@ private fun SavingsArt(current: Boolean) {
             Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Poupança por depósito", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color(0xFF14532D))
                 Text(
-                    String.format(Locale.getDefault(), "+%.2f €", value),
+                    String.format(com.chungaro.combustible.ui.APP_LOCALE, "+%.2f €", value),
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF16A34A),

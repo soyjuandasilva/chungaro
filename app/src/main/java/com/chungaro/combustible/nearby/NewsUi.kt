@@ -1,5 +1,7 @@
 package com.chungaro.combustible.nearby
 
+import androidx.compose.material.icons.outlined.Newspaper
+import androidx.compose.material.icons.Icons
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -33,7 +35,7 @@ fun NewsCard(vm: NearbyViewModel, myFuelId: Int) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { vm.loadNews() }
     SectionCard(
-        icon = "📰",
+        icon = Icons.Outlined.Newspaper,
         accent = SectionColors.Amber,
         title = "Próxima semana nas notícias",
         subtitle = "Preço dos combustíveis na próxima semana",

@@ -142,7 +142,7 @@ private fun rememberTips(vm: NearbyViewModel, myFuelId: Int, tankLiters: Double,
     val tips = mutableListOf<Tip>()
     val ready = vm.rows[myFuel.id] as? FuelRowState.Ready
     val names = vm.stationsOf(myFuel.id)?.associateBy { it.id }.orEmpty()
-    fun pct(v: Double) = String.format(Locale.getDefault(), "%.1f%%", abs(v))
+    fun pct(v: Double) = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(v))
 
     // 1) Semana: combustible del vehículo primero, luego los demás con cambios grandes
     val weeklyMine = computeWeekly(zones[myFuel.id].orEmpty(), myStations)

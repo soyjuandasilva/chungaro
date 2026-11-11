@@ -33,7 +33,7 @@ fun WeeklyCard(vm: NearbyViewModel, fuel: FuelType, onOpenStation: (Long) -> Uni
     val stations by remember(fuel.id) { vm.stationsHistory(fuel.id) }.collectAsStateWithLifecycle(emptyList())
     val w = remember(zone, stations) { computeWeekly(zone, stations) }
     val names = vm.stationsOf(fuel.id)?.associateBy { it.id }.orEmpty()
-    val pct = w.changePct?.let { String.format(Locale.getDefault(), "%.1f%%", abs(it)) } ?: ""
+    val pct = w.changePct?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(it)) } ?: ""
 
     val (emoji, title, body, tint) = when (w.advice) {
         WeeklyAdvice.COLLECTING -> Quad(
@@ -115,7 +115,7 @@ private fun ChangeRow(c: StationChange, station: PricedStation?, onOpen: (Long) 
             Column(horizontalAlignment = Alignment.End) {
                 Text(formatEuro(c.now), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    (if (up) "+" else "−") + String.format(Locale.getDefault(), "%.3f", abs(c.diff)),
+                    (if (up) "+" else "−") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", abs(c.diff)),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (up) Red else Green,
                     fontWeight = FontWeight.Bold,

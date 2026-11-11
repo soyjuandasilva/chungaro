@@ -240,7 +240,7 @@ private fun shade(c: Int, t: Float): Int {
  */
 private fun priceBubble(context: Context, price: Double, color: Int, brand: String, logos: Map<String, Bitmap>): Bitmap {
     val d = context.resources.displayMetrics.density
-    val text = String.format(Locale.getDefault(), "%.3f€", price)
+    val text = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f€", price)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = 16 * d
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)

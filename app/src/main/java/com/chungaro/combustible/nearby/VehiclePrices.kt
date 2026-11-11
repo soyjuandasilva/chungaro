@@ -1,5 +1,7 @@
 package com.chungaro.combustible.nearby
 
+import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.outlined.StarOutline
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -135,7 +137,7 @@ fun VehiclePricesSection(
 
         // Lo mejor para tu vehículo
         SectionCard(
-            icon = "⭐",
+            icon = Icons.Outlined.StarOutline,
             accent = SectionColors.Teal,
             title = "Melhores opções",
             subtitle = "Para o teu combustível, a ≤ ${vm.radiusKm} km",
@@ -146,7 +148,7 @@ fun VehiclePricesSection(
 
         // El resto de combustibles
         SectionCard(
-            icon = "⛽",
+            icon = Icons.Outlined.LocalGasStation,
             accent = SectionColors.Purple,
             title = "Outros combustíveis",
             subtitle = "A mais próxima e a mais barata de cada tipo",
@@ -244,7 +246,7 @@ private fun WeeklyChangeBadge(vm: NearbyViewModel, fuelId: Int) {
     val up = pct > 0.05
     val down = pct < -0.05
     Text(
-        (if (up) "↗ +" else if (down) "↘ " else "→ ") + String.format(java.util.Locale.getDefault(), "%.1f%%", pct) + " /sem.",
+        (if (up) "↗ +" else if (down) "↘ " else "→ ") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", pct) + " /sem.",
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
         color = when {
@@ -425,4 +427,4 @@ private fun PriceCell(s: StationAtDistance?, modifier: Modifier, highlight: Bool
     }
 }
 
-private fun tablePrice(v: Double): String = String.format(java.util.Locale.getDefault(), "%.3f", v)
+private fun tablePrice(v: Double): String = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", v)

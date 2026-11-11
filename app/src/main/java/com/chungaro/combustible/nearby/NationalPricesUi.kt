@@ -1,5 +1,7 @@
 package com.chungaro.combustible.nearby
 
+import androidx.compose.material.icons.outlined.Euro
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,7 +86,7 @@ fun NationalPricesCard(vm: NearbyViewModel, myFuelId: Int) {
     val prices = remember(version) { FUEL_TYPES.associate { it.id to vm.nationalPrice(it.id) } }
     val loading = prices.values.all { it == null }
     SectionCard(
-        icon = "💶",
+        icon = Icons.Outlined.Euro,
         accent = SectionColors.Teal,
         title = "Preço médio hoje",
         subtitle = "Todas as bombas de Portugal, em €/L",
@@ -127,7 +129,7 @@ private fun PriceTile(fuel: FuelType, price: NationalPrice?, mine: Boolean, modi
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    price?.let { String.format(Locale.getDefault(), "%.3f", it.average) } ?: "—",
+                    price?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", it.average) } ?: "—",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,

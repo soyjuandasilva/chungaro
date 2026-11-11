@@ -173,9 +173,9 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             ctx,
             Notifier.CHANNEL_PRICES,
             fuel.id,
-            "${fuel.short} a ${String.format(Locale.getDefault(), "%.3f €", cheapest.station.price)}",
-            "$name, a ${String.format(Locale.getDefault(), "%.1f km", cheapest.km)}. " +
-                "Está abaixo do teu alerta (${String.format(Locale.getDefault(), "%.3f €", threshold)}).",
+            "${fuel.short} a ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", cheapest.station.price)}",
+            "$name, a ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f km", cheapest.km)}. " +
+                "Está abaixo do teu alerta (${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", threshold)}).",
         )
     }
 }
@@ -194,10 +194,10 @@ fun reminderStatus(dueEpochDay: Long?, dueOdometer: Double?, today: Long, odomet
     if (dueOdometer != null) {
         if (odometer != null) {
             val left = dueOdometer - odometer
-            parts += if (left <= 0) "ultrapassado em ${String.format(Locale.getDefault(), "%,.0f", -left)} km"
-            else "faltam ${String.format(Locale.getDefault(), "%,.0f", left)} km"
+            parts += if (left <= 0) "ultrapassado em ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", -left)} km"
+            else "faltam ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", left)} km"
         } else {
-            parts += "aos ${String.format(Locale.getDefault(), "%,.0f", dueOdometer)} km"
+            parts += "aos ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%,.0f", dueOdometer)} km"
         }
     }
     return parts.joinToString(" · ").replaceFirstChar { it.uppercase() }

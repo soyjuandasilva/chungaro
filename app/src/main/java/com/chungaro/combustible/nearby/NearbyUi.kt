@@ -36,7 +36,10 @@ import kotlin.math.abs
 /** Litros usados para mostrar cuánto se ahorra en un depósito. */
 const val TANK_LITERS = 50
 
-val FuelType.uiColor: Color get() = Color(color)
+/** Color del combustible para el tema actual (tono profundo en el claro). */
+val FuelType.uiColor: Color
+    @Composable @androidx.compose.runtime.ReadOnlyComposable
+    get() = Color(if (com.chungaro.combustible.ui.Atesta.colors.isDark) color else lightColor)
 
 @Composable
 fun FuelPill(fuel: FuelType, modifier: Modifier = Modifier, compact: Boolean = false) {
@@ -124,11 +127,11 @@ fun stationTitle(s: PricedStation): String =
     // La insignia ya muestra la marca: aquí solo el nombre de la bomba.
     s.name.ifBlank { s.brand }.ifBlank { "Bomba ${s.id}" }
 
-fun formatEuro(v: Double): String = String.format(Locale.getDefault(), "%.3f €", v)
-fun formatMoney(v: Double): String = String.format(Locale.getDefault(), "%.2f €", v)
+fun formatEuro(v: Double): String = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", v)
+fun formatMoney(v: Double): String = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.2f €", v)
 fun formatKm(v: Double): String =
-    if (v < 1) String.format(Locale.getDefault(), "%.0f m", v * 1000)
-    else String.format(Locale.getDefault(), "%.1f km", v)
+    if (v < 1) String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.0f m", v * 1000)
+    else String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f km", v)
 
 fun openMaps(context: Context, s: PricedStation) {
     val label = Uri.encode(stationTitle(s))

@@ -71,7 +71,7 @@ fun VehiclesScreen(
 ) {
     Scaffold(
         topBar = {
-            StatusBarIcons(darkBackground = true)
+            StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
                 title = { Text("Os meus veículos", fontWeight = FontWeight.Bold) },
@@ -165,7 +165,7 @@ fun VehicleEditScreen(
 
     Scaffold(
         topBar = {
-            StatusBarIcons(darkBackground = true)
+            StatusBarIcons()
             TopAppBar(
                 colors = atestaTopBarColors(),
                 title = { Text(if (existing == null) "Novo veículo" else "Editar veículo", fontWeight = FontWeight.Bold) },

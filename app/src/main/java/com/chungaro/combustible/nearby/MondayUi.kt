@@ -120,7 +120,7 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
 }
 
 private fun trendText(pct: Double): String {
-    val v = String.format(Locale.getDefault(), "%.1f%%", abs(pct))
+    val v = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(pct))
     return when {
         pct > 0.05 -> "o preço subiu $v"
         pct < -0.05 -> "o preço desceu $v"

@@ -68,7 +68,7 @@ fun TrendCard(title: String, points: List<PricePoint>, color: Color) {
                         ) {
                             Text(
                                 (if (up) "↗ +" else if (down) "↘ " else "→ ") +
-                                    String.format(Locale.getDefault(), "%.1f%%", pct),
+                                    String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", pct),
                                 color = when {
                                     up -> Up
                                     down -> Down
@@ -141,7 +141,7 @@ private fun TrendChart(points: List<PricePoint>, color: Color) {
 
 @Composable
 fun AdviceBanner(trend: Trend) {
-    val pct = trend.changePct?.let { String.format(Locale.getDefault(), "%.1f%%", abs(it)) } ?: ""
+    val pct = trend.changePct?.let { String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", abs(it)) } ?: ""
     val (emoji, title, sub) = when (trend.advice) {
         Advice.COLLECTING -> Triple(
             "📊",
