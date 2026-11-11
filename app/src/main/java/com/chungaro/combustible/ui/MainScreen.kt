@@ -1,5 +1,8 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +60,6 @@ import com.chungaro.combustible.data.Stats
 import com.chungaro.combustible.data.Summary
 import com.chungaro.combustible.data.Vehicle
 import com.chungaro.combustible.data.description
-import com.chungaro.combustible.data.emoji
 import com.chungaro.combustible.data.pricePerUnit
 
 private const val SECTION_PRICES = 0
@@ -101,7 +103,8 @@ fun MainScreen(
                             Modifier.clickable { menu = true }.padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(vehicle?.let { "${it.emoji} ${it.name}" } ?: "Meu veículo", fontWeight = FontWeight.Bold)
+                            vehicle?.let { Icon(it.icon, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.padding(end = 8.dp)) }
+                            Text(vehicle?.name ?: "Meu veículo", fontWeight = FontWeight.Bold)
                             Icon(Icons.Filled.ArrowDropDown, contentDescription = "Mudar de veículo")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -109,7 +112,7 @@ fun MainScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Column {
-                                            Text("${v.emoji} ${v.name}", fontWeight = if (v.id == vehicle?.id) FontWeight.Bold else FontWeight.Normal)
+                                            Text(v.name, fontWeight = if (v.id == vehicle?.id) FontWeight.Bold else FontWeight.Normal)
                                             if (v.description.isNotBlank()) Text(v.description, style = MaterialTheme.typography.bodySmall)
                                         }
                                     },
@@ -306,14 +309,15 @@ private fun RefuelCard(row: RefuelRow, settings: AppSettings, onClick: () -> Uni
 @Composable
 private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> Unit) {
     // Continúa la barra superior verde oscuro.
-    Column(Modifier.background(AtestaGreen)) {
-        Row(Modifier.fillMaxWidth()) {
+    val c = MaterialTheme.colorScheme
+    Column(Modifier.background(c.background)) {
+        Row(Modifier.fillMaxWidth().selectableGroup()) {
             labels.forEachIndexed { i, label ->
                 val sel = i == selected
                 Column(
                     Modifier
                         .weight(1f)
-                        .clickable { onSelect(i) }
+                        .selectable(selected = sel, role = Role.Tab, onClick = { onSelect(i) })
                         .padding(top = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -321,7 +325,7 @@ private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> 
                         label,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = if (sel) FontWeight.Bold else FontWeight.Medium,
-                        color = if (sel) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
+                        color = if (sel) c.onBackground else c.onSurfaceVariant,
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier.padding(horizontal = 2.dp),
@@ -331,7 +335,7 @@ private fun SectionTabs(labels: List<String>, selected: Int, onSelect: (Int) -> 
                         Modifier
                             .fillMaxWidth(0.7f)
                             .height(3.dp)
-                            .background(if (sel) AtestaGreenLight else androidx.compose.ui.graphics.Color.Transparent),
+                            .background(if (sel) c.primary else androidx.compose.ui.graphics.Color.Transparent),
                     )
                 }
             }

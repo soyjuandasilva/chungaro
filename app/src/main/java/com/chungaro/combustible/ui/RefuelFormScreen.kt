@@ -1,5 +1,6 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -48,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.data.AppSettings
 import com.chungaro.combustible.data.Refuel
 import com.chungaro.combustible.data.Vehicle
-import com.chungaro.combustible.data.emoji
 import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
@@ -137,7 +137,8 @@ fun RefuelFormScreen(
                         FilterChip(
                             selected = v.id == vehicleId,
                             onClick = { vehicleId = v.id },
-                            label = { Text("${v.emoji} ${v.name}") },
+                            label = { Text(v.name) },
+                            leadingIcon = { Icon(v.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
                         )
                     }
                 }

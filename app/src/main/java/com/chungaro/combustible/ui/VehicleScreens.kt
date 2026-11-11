@@ -1,5 +1,6 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +52,6 @@ import com.chungaro.combustible.data.VEHICLE_TYPES
 import com.chungaro.combustible.data.Vehicle
 import com.chungaro.combustible.data.VehicleCatalog
 import com.chungaro.combustible.data.description
-import com.chungaro.combustible.data.emoji
 import com.chungaro.combustible.data.vehicleType
 import com.chungaro.combustible.nearby.DEFAULT_FUEL_ID
 import com.chungaro.combustible.nearby.FUEL_TYPES
@@ -107,7 +107,7 @@ fun VehiclesScreen(
                     border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                 ) {
                     Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(v.emoji, style = MaterialTheme.typography.displaySmall)
+                        Icon(v.icon, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(36.dp))
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(v.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             val desc = v.description
@@ -193,7 +193,8 @@ fun VehicleEditScreen(
                             type = t.id
                             if (!consEdited) cons = editableNumber(t.typicalConsumption, 1)
                         },
-                        label = { Text("${t.emoji} ${t.label}") },
+                        label = { Text(t.label) },
+                        leadingIcon = { Icon(vehicleTypeIcon(t.id), contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                 }
             }

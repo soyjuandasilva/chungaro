@@ -10,7 +10,28 @@ ti, registro de cargas, consumo, gráficos y mantenimiento.
 
 ## Pantallas
 
-Tema oscuro (verde casi negro con acentos verde brillante) en toda la app.
+Tema **claro** y **oscuro** con la misma identidad (verde de combustible sobre
+neutros verdosos). Por defecto sigue al móvil; se fija en Definições → Aparência.
+El claro se lee mejor al sol, en la bomba; el oscuro, de noche en el coche.
+El tour de bienvenida es siempre verde oscuro.
+
+### Sistema de diseño
+
+- **Colores**: todos salen de `ui/Theme.kt` (`MaterialTheme.colorScheme` y
+  `Atesta.colors`: precio, sube/baja, aviso, estrella…). Nada de `Color(0x…)`
+  sueltos en las pantallas. Texto ≥ 4,5:1 y iconos/bordes de controles ≥ 3:1
+  en los dos temas.
+- **Tarjetas**: `cardSurface()` / `DarkCard`, radio 16 dp. Sobre el fondo,
+  borde fino sin sombra; flotando sobre el mapa, sombra sin borde.
+- **Precio**: `PriceChip`, relleno sólido; el texto elige blanco o casi negro
+  según el contraste.
+- **Iconos**: solo Material Icons (nada de emojis como iconos).
+- **Accesibilidad**: pestañas y opciones con `selectable` + `Role`, áreas
+  táctiles ≥ 48 dp, títulos marcados como encabezado; con letra grande las
+  pestañas de Início se desplazan en vez de cortarse.
+- **Números**: siempre en pt-PT (`APP_LOCALE`), sea cual sea el idioma del móvil.
+
+### Lista de pantallas
 
 - **Tour de bienvenida**: la primera vez, 4 pantallas animadas que terminan
   pidiendo la ubicación (se repite desde Definições).
@@ -32,7 +53,7 @@ Tema oscuro (verde casi negro con acentos verde brillante) en toda la app.
   posto; cuánto ahorras frente al más caro.
 - **Alertas de preço**: combustible, precio objetivo y todas las bombas de la
   zona o solo las favoritas (se revisa cada 6 h).
-- **Definições**: accesos (O meu veículo, Alertas, Calculadora, Unidades…),
+- **Definições**: accesos (O meu veículo, Alertas, Calculadora…), aparência,
   vehículos, unidades y copia de seguridad.
 - **O meu veículo**: Preços, Histórico de cargas, Gráficos y Manutenção.
 - **Vehículos**: varios, cada uno con tipo (coche, moto, furgoneta, camión,

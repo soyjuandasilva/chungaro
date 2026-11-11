@@ -1,5 +1,8 @@
 package com.chungaro.combustible.nearby
 
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.LocalGasStation
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -79,7 +82,7 @@ private val RULES = listOf(
     BrandRule(listOf("petroprix"), BrandStyle("P", 0xFF2D3436, 0xFFFFFFFF)),
 )
 
-private val GENERIC = BrandStyle("⛽", 0xFF64748B, 0xFFFFFFFF)
+private val GENERIC = BrandStyle("", 0xFF64748B, 0xFFFFFFFF)
 
 /** Paleta para marcas desconocidas: el color sale del nombre (siempre el mismo). */
 private val FALLBACK_COLORS = longArrayOf(
@@ -191,13 +194,18 @@ private fun InitialsBadge(st: BrandStyle, size: Dp, modifier: Modifier) {
             .border(width = if (st.accent != null) (size.value / 12).dp else 0.dp, color = ring, shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            st.label,
-            style = TextStyle(
-                color = Color(st.foreground),
-                fontSize = fontSize.sp,
-                fontWeight = FontWeight.Black,
-            ),
-        )
+        if (st.label.isEmpty()) {
+            // Bomba sin marca: icono de surtidor en vez de iniciales.
+            Icon(Icons.Filled.LocalGasStation, contentDescription = null, tint = Color(st.foreground), modifier = Modifier.size(size * 0.55f))
+        } else {
+            Text(
+                st.label,
+                style = TextStyle(
+                    color = Color(st.foreground),
+                    fontSize = fontSize.sp,
+                    fontWeight = FontWeight.Black,
+                ),
+            )
+        }
     }
 }

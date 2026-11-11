@@ -18,8 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -104,7 +104,7 @@ fun PricesScreen(vm: PricesViewModel, onBack: () -> Unit) {
             vm.favoritesError?.let { msg -> item { ErrorText(msg) } }
             if (vm.favorites.isEmpty()) {
                 item {
-                    Hint("Procura a tua bomba aqui em baixo e marca-a com ♥ para veres os preços sempre que abrires a app.")
+                    Hint("Procura a tua bomba aqui em baixo e marca-a com a estrela para veres os preços sempre que abrires a app.")
                 }
             } else {
                 items(vm.favorites, key = { "fav-$it" }) { id ->
@@ -239,7 +239,7 @@ private fun StationDialog(vm: PricesViewModel) {
             if (d != null) {
                 val fav = d.id in vm.favorites
                 TextButton(onClick = { vm.toggleFavorite(d) }) {
-                    Icon(if (fav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, contentDescription = null)
+                    Icon(if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder, contentDescription = null)
                     Text(if (fav) "  Remover dos favoritos" else "  Adicionar aos favoritos")
                 }
             }
@@ -360,7 +360,7 @@ private fun StationRow(s: Station, isFavorite: Boolean, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (isFavorite) Icon(Icons.Filled.Favorite, contentDescription = "Favorita", tint = MaterialTheme.colorScheme.primary)
+            if (isFavorite) Icon(Icons.Filled.Star, contentDescription = "Favorita", tint = com.chungaro.combustible.ui.Atesta.colors.star)
         }
     }
 }

@@ -1,5 +1,8 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.material.icons.outlined.PanTool
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.LocalGasStation
 import androidx.compose.material.icons.outlined.StarOutline
 import android.Manifest
@@ -48,7 +51,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.FilterChip
 import com.chungaro.combustible.data.Vehicle
-import com.chungaro.combustible.data.emoji
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -221,16 +223,21 @@ private fun NearestStationCard(vm: NearbyViewModel, myFuelId: Int, onOpen: (Long
 private fun AdviceLine(good: Boolean, title: String, detail: String) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (good) Color(0xFF16A34A).copy(alpha = 0.10f) else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+        color = if (good) Atesta.colors.downContainer else Atesta.colors.warningContainer,
     ) {
         Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (good) "✅" else "✋", style = MaterialTheme.typography.titleMedium)
+            Icon(
+                if (good) Icons.Outlined.CheckCircle else Icons.Outlined.PanTool,
+                contentDescription = null,
+                tint = if (good) Atesta.colors.down else Atesta.colors.warning,
+                modifier = Modifier.size(22.dp),
+            )
             Column(Modifier.padding(start = 10.dp)) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (good) Color(0xFF15803D) else MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(detail, style = MaterialTheme.typography.bodySmall)
             }
@@ -247,11 +254,11 @@ private fun WeeklyChangeBadge(vm: NearbyViewModel, fuelId: Int) {
     val down = pct < -0.05
     Text(
         (if (up) "↗ +" else if (down) "↘ " else "→ ") + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.1f%%", pct) + " /sem.",
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         color = when {
-            up -> Color(0xFFDC2626)
-            down -> Color(0xFF16A34A)
+            up -> Atesta.colors.up
+            down -> Atesta.colors.down
             else -> MaterialTheme.colorScheme.onSurfaceVariant
         },
     )

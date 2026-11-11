@@ -1,5 +1,11 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.inkOn
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.material.icons.outlined.PanTool
+import androidx.compose.material.icons.outlined.CheckCircle
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -55,7 +61,6 @@ import java.util.Locale
 private val Gold = Color(0xFFEAB308)
 private val Silver = Color(0xFF94A3B8)
 private val Bronze = Color(0xFFB45309)
-private val GoodGreen = Color(0xFF16A34A)
 
 /** Panel inferior con el detalle de un combustible: cercana vs barata, ahorro, tendencia y ranking. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,14 +98,14 @@ fun FuelDetailDialog(
                         "Não há bombas com preço a menos de $radiusKm km. A mais próxima:",
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    StationCard("📍 Mais próxima", nearest!!, context, best = false, fuel = fuel, onOpen = onOpenStation)
+                    StationCard("Mais próxima", nearest!!, context, best = false, fuel = fuel, onOpen = onOpenStation)
                 }
                 nearest == null || nearest.station.id == cheapest.station.id -> {
-                    StationCard("⭐ A mais próxima e a mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
+                    StationCard("A mais próxima e a mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
                 }
                 else -> {
-                    StationCard("💰 Mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
-                    StationCard("📍 Mais próxima", nearest, context, best = false, fuel = fuel, onOpen = onOpenStation)
+                    StationCard("Mais barata", cheapest, context, best = true, fuel = fuel, onOpen = onOpenStation)
+                    StationCard("Mais próxima", nearest, context, best = false, fuel = fuel, onOpen = onOpenStation)
                     SavingsBanner(nearest, cheapest, tankLiters, consumptionL100)
                 }
             }
@@ -127,23 +132,26 @@ private fun SheetHeader(fuel: FuelType, result: NearbyResult, radiusKm: Int) {
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(fuel.uiColor, fuel.uiColor.copy(alpha = 0.65f))))
+            .clip(CardShape)
+            .background(fuel.uiColor.copy(alpha = 0.14f))
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(fuel.short, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Dot(fuel.uiColor, 10.dp)
+                    Text(fuel.short, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                }
                 Text(
                     "${result.countInRadius} bombas a ≤ $radiusKm km",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             result.averageInRadius?.let {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Preço médio", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.9f))
-                    Text(formatEuro(it), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Preço médio", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(formatEuro(it), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -195,10 +203,11 @@ private fun StationCard(
                     )
                     Text(" €", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 3.dp))
                 }
+                val go = Modifier.semantics { contentDescription = "Como chegar a ${stationTitle(s.station)}" }
                 if (best) {
-                    Button(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp)) { Text("Ir") }
+                    Button(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp), modifier = go) { Text("Ir") }
                 } else {
-                    OutlinedButton(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp)) { Text("Ir") }
+                    OutlinedButton(onClick = { openMaps(context, s.station) }, contentPadding = PaddingValues(horizontal = 20.dp), modifier = go) { Text("Ir") }
                 }
             }
         }
@@ -212,11 +221,16 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
     val good = advice?.worthIt == true
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = if (good) GoodGreen.copy(alpha = 0.12f) else MaterialTheme.colorScheme.secondaryContainer,
+        color = if (good) Atesta.colors.downContainer else Atesta.colors.warningContainer,
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (good) "✅" else "✋", style = MaterialTheme.typography.headlineSmall)
+                Icon(
+                    if (good) Icons.Outlined.CheckCircle else Icons.Outlined.PanTool,
+                    contentDescription = null,
+                    tint = if (good) Atesta.colors.down else Atesta.colors.warning,
+                    modifier = Modifier.size(26.dp),
+                )
                 Column(Modifier.weight(1f).padding(start = 10.dp)) {
                     Text(
                         if (good) "Compensa ir à mais barata" else "Mais vale ficar pela mais próxima",
@@ -238,7 +252,7 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
                         "Saldo",
                         (if (advice.net >= 0) "+" else "−") + formatMoney(kotlin.math.abs(advice.net)),
                         Modifier.weight(1f),
-                        valueColor = if (good) GoodGreen else MaterialTheme.colorScheme.error,
+                        valueColor = if (good) Atesta.colors.down else Atesta.colors.up,
                     )
                 }
                 Text(
@@ -254,9 +268,9 @@ private fun SavingsBanner(nearest: StationAtDistance, cheapest: StationAtDistanc
 
 @Composable
 private fun MiniStat(label: String, value: String, modifier: Modifier, valueColor: Color = Color.Unspecified) {
-    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface, modifier = modifier) {
+    Surface(shape = RoundedCornerShape(12.dp), color = Atesta.colors.card, modifier = modifier) {
         Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             Text(value, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = valueColor)
         }
     }
@@ -268,14 +282,14 @@ private fun Ranking(result: NearbyResult, onOpen: (Long) -> Unit) {
     val best = list.first().station.price
     val worst = list.last().station.price
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Ranking da zona", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        BlockTitle("Ranking da zona")
         list.forEachIndexed { i, s ->
             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             RankRow(i, s, best, worst, onClick = { onOpen(s.station.id) })
         }
         Text(
             "Toca numa bomba para veres a ficha e a tendência.",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -301,7 +315,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
                 "${index + 1}",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (index < 3) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (index < 3) inkOn(medal) else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         BrandBadge(s.station.brand, size = 30.dp, modifier = Modifier.padding(start = 8.dp))
@@ -322,7 +336,7 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
                             .fillMaxWidth(0.15f + 0.85f * score)
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(if (index == 0) GoodGreen else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
+                            .background(if (index == 0) Atesta.colors.down else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                     )
                 }
             }
@@ -331,8 +345,8 @@ private fun RankRow(index: Int, s: StationAtDistance, best: Double, worst: Doubl
             Text(formatEuro(s.station.price), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Text(
                 if (index == 0) "melhor" else "+" + String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", diff),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (index == 0) GoodGreen else MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (index == 0) Atesta.colors.down else Atesta.colors.up,
             )
         }
     }

@@ -1,5 +1,7 @@
 package com.chungaro.combustible.ui
 
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.Icons
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -87,6 +89,9 @@ private val STEPS = listOf(
 )
 
 private val DeepGreen = Color(0xFF0B3A20)
+// El tour es una pieza de marca: siempre en verde oscuro, con el tema claro o el oscuro.
+private val TourTop = Color(0xFF08130E)
+private val TourAccent = Color(0xFF4ADE80)
 
 /**
  * Tour de bienvenida: se muestra la primera vez que se abre la app (y desde el
@@ -104,7 +109,7 @@ fun QuickTour(onFinish: () -> Unit) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(AtestaGreen, DeepGreen))),
+            .background(Brush.verticalGradient(listOf(TourTop, DeepGreen))),
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -126,7 +131,7 @@ fun QuickTour(onFinish: () -> Unit) {
                         Modifier
                             .padding(horizontal = 4.dp)
                             .size(width = w, height = 8.dp)
-                            .background(if (i == pager.currentPage) AtestaGreenLight else Color.White.copy(alpha = 0.3f), CircleShape),
+                            .background(if (i == pager.currentPage) TourAccent else Color.White.copy(alpha = 0.3f), CircleShape),
                     )
                 }
             }
@@ -139,7 +144,7 @@ fun QuickTour(onFinish: () -> Unit) {
                         scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = AtestaGreenLight, contentColor = DeepGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = TourAccent, contentColor = DeepGreen),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
             ) {
                 Text(if (last) "Usar a minha localização e começar" else "Seguinte", fontWeight = FontWeight.ExtraBold)
@@ -199,12 +204,12 @@ private fun WelcomeArt() {
                     .size(140.dp)
                     .scale(1f + p * 0.9f)
                     .graphicsLayer { alpha = (1f - p) * 0.5f }
-                    .background(AtestaGreenLight, CircleShape),
+                    .background(TourAccent, CircleShape),
             )
         }
         Surface(shape = CircleShape, color = Color.White, shadowElevation = 8.dp, modifier = Modifier.size(140.dp)) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.ic_fuel), contentDescription = null, tint = AtestaGreen, modifier = Modifier.size(72.dp))
+                Icon(painterResource(R.drawable.ic_fuel), contentDescription = null, tint = DeepGreen, modifier = Modifier.size(72.dp))
             }
         }
     }
@@ -271,14 +276,14 @@ private fun MondayArt() {
                         Text("SEGUNDA", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelLarge)
                     }
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("€", color = AtestaGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.displayMedium)
+                        Text("€", color = DeepGreen, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.displayMedium)
                     }
                 }
             }
             Spacer(Modifier.width(20.dp))
             Text(
                 "↘",
-                color = AtestaGreenLight,
+                color = TourAccent,
                 fontWeight = FontWeight.ExtraBold,
                 style = MaterialTheme.typography.displayLarge,
                 modifier = Modifier.graphicsLayer { translationY = bounce * 30f },
@@ -291,7 +296,7 @@ private fun MondayArt() {
                     Text("SEG", color = Color.White, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.labelMedium)
                 }
                 Text(
-                    "⏳ Gasóleo: se puderes, espera por segunda, vai descer   ·   ⛽ Gasolina: abastece antes de segunda      ",
+                    "Gasóleo: se puderes, espera por segunda, vai descer   ·   Gasolina: abastece antes de segunda      ",
                     color = Color(0xFF7C2D12),
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.labelLarge,
@@ -310,7 +315,12 @@ private fun SavingsArt(current: Boolean) {
     val t = rememberInfiniteTransition(label = "car")
     val drive by t.animateFloat(-1f, 1f, infiniteRepeatable(tween(1800), RepeatMode.Reverse), label = "drive")
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🚗", style = MaterialTheme.typography.displayLarge, modifier = Modifier.graphicsLayer { translationX = drive * 60f })
+        Icon(
+            Icons.Filled.DirectionsCar,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(64.dp).graphicsLayer { translationX = drive * 60f },
+        )
         Spacer(Modifier.height(20.dp))
         Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 8.dp, modifier = Modifier.width(260.dp)) {
             Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {

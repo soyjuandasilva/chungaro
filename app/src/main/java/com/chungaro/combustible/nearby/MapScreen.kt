@@ -1,5 +1,6 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
 import android.content.Context
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -340,7 +341,7 @@ private fun meDot(context: Context): Bitmap {
 private fun PriceLegend(min: Double, max: Double, count: Int) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(formatEuro(min), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFF16A34A))
+            Text(formatEuro(min), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.down)
             Box(
                 Modifier
                     .weight(1f)
@@ -357,7 +358,7 @@ private fun PriceLegend(min: Double, max: Double, count: Int) {
                         ),
                     ),
             )
-            Text(formatEuro(max), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color(0xFFDC2626))
+            Text(formatEuro(max), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.up)
         }
         Row {
             Text("mais barata", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))

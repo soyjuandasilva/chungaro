@@ -1,5 +1,10 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.Atesta
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.outlined.PanTool
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.Icons
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -104,15 +109,24 @@ fun comparison(nearest: StationAtDistance, cheapest: StationAtDistance, liters: 
 fun TripAdviceBox(a: TripAdvice) {
     val good = a.worthIt
     Surface(
-        color = if (good) Color(0xFF16A34A).copy(alpha = 0.15f) else MaterialTheme.colorScheme.errorContainer,
+        color = if (good) Atesta.colors.downContainer else Atesta.colors.warningContainer,
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text(
-                if (good) "✅ Compensa ir à mais barata" else "✋ O desvio não compensa",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (good) Icons.Outlined.CheckCircle else Icons.Outlined.PanTool,
+                    contentDescription = null,
+                    tint = if (good) Atesta.colors.down else Atesta.colors.warning,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    if (good) "Compensa ir à mais barata" else "O desvio não compensa",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
             Text(
                 "Poupas ${formatMoney(a.savings)} no depósito; o desvio (~${formatKm(a.extraKm)} ida e volta) " +
                     "gasta cerca de ${formatMoney(a.tripCost)} de combustível. " +

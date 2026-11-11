@@ -1,5 +1,6 @@
 package com.chungaro.combustible.nearby
 
+import com.chungaro.combustible.ui.inkOn
 import androidx.compose.material.icons.outlined.Euro
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.background
@@ -51,10 +52,11 @@ fun FuelSelector(
                 row.forEach { f ->
                     val sel = f.id == selectedId
                     Surface(
+                        selected = sel,
                         onClick = { onSelect(f.id) },
                         shape = RoundedCornerShape(50),
-                        color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.10f),
-                        contentColor = if (sel) Color.White else f.uiColor,
+                        color = if (sel) f.uiColor else f.uiColor.copy(alpha = 0.12f),
+                        contentColor = if (sel) inkOn(f.uiColor) else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     ) {
                         Text(
