@@ -23,8 +23,9 @@ El tour de bienvenida es siempre verde oscuro.
   en los dos temas.
 - **Tarjetas**: `cardSurface()` / `DarkCard`, radio 16 dp. Sobre el fondo,
   borde fino sin sombra; flotando sobre el mapa, sombra sin borde.
-- **Precio**: `PriceChip`, relleno sólido; el texto elige blanco o casi negro
-  según el contraste.
+- **Precio**: `PriceChip`, como los totens de los postos: panel negro en los dos
+  temas, cifras de 7 segmentos (`ui/SegmentDisplay.kt`, con los segmentos apagados
+  tenues) y una franja del color del combustible. La web usa la misma geometría.
 - **Iconos**: solo Material Icons (nada de emojis como iconos).
 - **Accesibilidad**: pestañas y opciones con `selectable` + `Role`, áreas
   táctiles ≥ 48 dp, títulos marcados como encabezado; con letra grande las

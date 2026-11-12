@@ -224,6 +224,19 @@ val AtestaBorder: Color @Composable @ReadOnlyComposable get() = Atesta.colors.ca
 /** Texto casi negro para fondos claros. */
 val DarkInk = Color(0xFF07130D)
 
+/*
+ * Panel de precio de 7 segmentos, como los totens de los postos. Es negro en los dos
+ * temas: es un objeto físico, no una superficie de la app.
+ */
+/** Fondo del panel. */
+val SegmentPanel = Color(0xFF050706)
+/** Segmentos encendidos (≥ 4,5:1 sobre el panel). */
+val SegmentOn = Color(0xFFF4F7F5)
+/** Segmentos apagados: se adivinan detrás, como en un display real. */
+val SegmentOff = Color(0x14F4F7F5)
+/** Texto pequeño dentro del panel (≥ 4,5:1 sobre el panel). */
+val SegmentLabel = Color(0xFF9FB0A6)
+
 private fun contrast(a: Color, b: Color): Float {
     val la = a.luminance()
     val lb = b.luminance()

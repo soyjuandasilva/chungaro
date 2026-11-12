@@ -1,6 +1,10 @@
 package com.chungaro.combustible.nearby
 
 import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.SegmentPanel
+import com.chungaro.combustible.ui.drawSegments
+import com.chungaro.combustible.ui.segmentsWidth
+import androidx.compose.ui.graphics.toArgb
 import android.content.Context
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -237,25 +241,22 @@ private fun shade(c: Int, t: Float): Int {
 /**
  * Marcador con volumen: cuerpo del color de la marca con degradado, borde
  * blanco y sombra; arriba el logotipo en una pastilla blanca y abajo el precio
- * grande; termina en pico.
+ * en un panel negro de 7 segmentos, como el totem del posto; termina en pico.
  */
 private fun priceBubble(context: Context, price: Double, color: Int, brand: String, logos: Map<String, Bitmap>): Bitmap {
     val d = context.resources.displayMetrics.density
-    val text = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f€", price)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 16 * d
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        this.color = android.graphics.Color.WHITE
-        setShadowLayer(2 * d, 0f, 1 * d, 0x55000000)
-    }
+    val text = String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f", price)
+    val digitH = 15 * d
+    val digitsW = segmentsWidth(text, digitH)
+    val panelPadH = 7 * d
+    val panelPadV = 5 * d
     val style = brandStyle(brand)
     val shadowPad = 6 * d
-    val padH = 10 * d
     val logoH = 26 * d
     val gap = 4 * d
-    val textH = paint.textSize * 1.15f
-    val bodyW = maxOf(paint.measureText(text) + padH * 2, 72 * d)
-    val bodyH = 6 * d + logoH + gap + textH + 6 * d
+    val panelH = digitH + panelPadV * 2
+    val bodyW = maxOf(digitsW + panelPadH * 2 + 12 * d, 72 * d)
+    val bodyH = 6 * d + logoH + gap + panelH + 6 * d
     val tail = 9 * d
     val w = bodyW + shadowPad * 2
     val h = bodyH + tail + shadowPad * 2
@@ -322,8 +323,10 @@ private fun priceBubble(context: Context, price: Double, color: Int, brand: Stri
         while (lp.measureText(label) > logoRect.width() - 8 * d && lp.textSize > 6 * d) lp.textSize *= 0.9f
         c.drawText(label, logoRect.centerX(), logoRect.centerY() - (lp.descent() + lp.ascent()) / 2, lp)
     }
-    // Precio
-    c.drawText(text, left + (bodyW - paint.measureText(text)) / 2, logoRect.bottom + gap + paint.textSize * 0.95f, paint)
+    // Precio en el panel negro de 7 segmentos
+    val panel = RectF(left + 6 * d, logoRect.bottom + gap, left + bodyW - 6 * d, logoRect.bottom + gap + panelH)
+    c.drawRoundRect(panel, 6 * d, 6 * d, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = SegmentPanel.toArgb() })
+    drawSegments(c, text, panel.centerX() - digitsW / 2, panel.top + panelPadV, digitH)
     return bmp
 }
 

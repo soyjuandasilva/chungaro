@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -273,13 +275,25 @@ private fun MapArt(current: Boolean, reduce: Boolean) {
     }
 }
 
-/** Marcador como los del mapa: pastilla blanca con el surtidor y el precio. */
+/**
+ * Marcador como los del mapa: el precio en el panel negro de 7 segmentos. El más
+ * barato lleva un aro verde y el surtidor.
+ */
 @Composable
 private fun PricePin(price: String, cheapest: Boolean, modifier: Modifier) {
-    Surface(shape = RoundedCornerShape(12.dp), color = if (cheapest) Brand else Color.White, shadowElevation = 4.dp, modifier = modifier) {
-        Row(Modifier.padding(start = 6.dp, end = 10.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.LocalGasStation, contentDescription = null, tint = if (cheapest) Color.White else Brand, modifier = Modifier.size(16.dp))
-            Text(" $price€", color = if (cheapest) Color.White else CardInk, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = SegmentPanel,
+        shadowElevation = 4.dp,
+        border = if (cheapest) BorderStroke(2.dp, Brand) else null,
+        modifier = modifier,
+    ) {
+        Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (cheapest) {
+                Icon(Icons.Outlined.LocalGasStation, contentDescription = null, tint = SegmentOn, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+            }
+            SegmentDigits(price, 15.dp)
         }
     }
 }

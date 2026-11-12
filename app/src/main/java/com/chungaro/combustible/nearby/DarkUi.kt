@@ -60,7 +60,14 @@ import com.chungaro.combustible.ui.APP_LOCALE
 import com.chungaro.combustible.ui.Atesta
 import com.chungaro.combustible.ui.StatusBarIcons
 import com.chungaro.combustible.ui.atestaTopBarColors
-import com.chungaro.combustible.ui.inkOn
+import com.chungaro.combustible.ui.SegmentDigits
+import com.chungaro.combustible.ui.SegmentLabel
+import com.chungaro.combustible.ui.SegmentPanel
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 /** Precio con coma decimal y €: "1,659€" (siempre en português de Portugal). */
 fun euro3(v: Double): String = String.format(APP_LOCALE, "%.3f€", v)
@@ -93,16 +100,33 @@ fun DarkCard(
 }
 
 /**
- * Etiqueta de precio: relleno sólido y texto con contraste ≥ 4,5:1.
- * Sin [color], el verde de precio del tema.
+ * Precio como en los totens de los postos: panel negro, cifras de 7 segmentos y una
+ * franja a la izquierda del color del combustible ([color]; sin él, el verde de precio).
+ * Con letra grande, las cifras crecen hasta un 40 %.
  */
 @Composable
 fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big: Boolean = false) {
-    val fill = color ?: Atesta.colors.price
-    val ink = if (color == null) Atesta.colors.onPrice else inkOn(fill)
-    Box(Modifier.background(fill, RoundedCornerShape(8.dp))) {
+    val bar = color ?: Atesta.colors.price
+    val shape = RoundedCornerShape(if (big) 9.dp else 7.dp)
+    val scale = LocalDensity.current.fontScale.coerceIn(1f, 1.4f)
+    val digitHeight = (if (big) 24.dp else 18.dp) * scale
+    val spoken = String.format(APP_LOCALE, "%.3f euros por litro", price)
+    Row(
+        Modifier
+            .height(IntrinsicSize.Min)
+            .clip(shape)
+            .background(SegmentPanel, shape)
+            .then(if (Atesta.colors.isDark) Modifier.border(1.dp, Atesta.colors.cardBorder, shape) else Modifier)
+            .clearAndSetSemantics { contentDescription = caption?.let { "$it, $spoken" } ?: spoken },
+    ) {
+        Box(Modifier.width(if (big) 5.dp else 4.dp).fillMaxHeight().background(bar))
         Column(
-            Modifier.padding(horizontal = if (big) 10.dp else 8.dp, vertical = if (caption != null) 3.dp else 5.dp),
+            Modifier.padding(
+                start = if (big) 10.dp else 8.dp,
+                end = if (big) 11.dp else 9.dp,
+                top = if (big) 8.dp else 6.dp,
+                bottom = if (caption != null) 4.dp else if (big) 8.dp else 6.dp,
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Si el precio cambia, la cifra se desliza: hacia abajo si baja, hacia arriba si sube.
@@ -121,16 +145,11 @@ fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big:
                 },
                 label = "price",
             ) { p ->
-                Text(
-                    euro3(p),
-                    color = ink,
-                    fontWeight = FontWeight.Bold,
-                    style = if (big) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    softWrap = false,
-                )
+                SegmentDigits(String.format(APP_LOCALE, "%.3f", p), digitHeight)
             }
-            caption?.let { Text(it, color = ink, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
+            caption?.let {
+                Text(it, color = SegmentLabel, style = MaterialTheme.typography.labelSmall, maxLines = 1, modifier = Modifier.padding(top = 3.dp))
+            }
         }
     }
 }
