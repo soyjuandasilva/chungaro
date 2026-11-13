@@ -15,7 +15,7 @@ python3 - "$SRC" "$OUT" <<'PY'
 import sys, os, io, urllib.request, urllib.parse
 from PIL import Image
 src, out = sys.argv[1], sys.argv[2]
-UA = {"User-Agent": "Mozilla/5.0 (Atesta logo fetcher)"}
+UA = {"User-Agent": "Mozilla/5.0 (Abastece Hoje logo fetcher)"}
 def get(url):
     try:
         req = urllib.request.Request(url, headers=UA)

@@ -314,7 +314,7 @@ fun ChungaroTheme(mode: String = ThemeMode.AUTO, content: @Composable () -> Unit
 /** Barra superior del color del fondo, igual en todas las pantallas. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun atestaTopBarColors(): TopAppBarColors {
+fun abasteceHojeTopBarColors(): TopAppBarColors {
     val c = MaterialTheme.colorScheme
     return TopAppBarDefaults.topAppBarColors(
         containerColor = c.background,

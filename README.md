@@ -93,7 +93,7 @@ combustible del vehículo que estaba elegido pasa a ser el combustible habitual.
 ## Descargar el APK
 
 Cada push compila la app con GitHub Actions. En la pestaña **Actions**, abre
-la última ejecución de **Android** y descarga el artefacto `atesta-apk`.
+la última ejecución de **Android** y descarga el artefacto `abastece-hoje-apk`.
 Los APK se firman con una clave de depuración fija, así que las versiones
 nuevas se instalan encima de la anterior.
 

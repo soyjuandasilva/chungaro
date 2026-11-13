@@ -59,7 +59,7 @@ import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.ui.APP_LOCALE
 import com.chungaro.combustible.ui.AbasteceHoje
 import com.chungaro.combustible.ui.StatusBarIcons
-import com.chungaro.combustible.ui.atestaTopBarColors
+import com.chungaro.combustible.ui.abasteceHojeTopBarColors
 import com.chungaro.combustible.ui.SegmentDigits
 import com.chungaro.combustible.ui.SegmentLabel
 import com.chungaro.combustible.ui.SegmentPanel
@@ -176,7 +176,7 @@ fun DarkTopBar(
 ) {
     StatusBarIcons()
     TopAppBar(
-        colors = atestaTopBarColors(),
+        colors = abasteceHojeTopBarColors(),
         navigationIcon = {
             onBack?.let { IconButton(onClick = it) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") } }
         },
