@@ -360,7 +360,7 @@ private fun StationRow(s: Station, isFavorite: Boolean, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (isFavorite) Icon(Icons.Filled.Star, contentDescription = "Favorita", tint = com.chungaro.combustible.ui.Atesta.colors.star)
+            if (isFavorite) Icon(Icons.Filled.Star, contentDescription = "Favorita", tint = com.chungaro.combustible.ui.AbasteceHoje.colors.star)
         }
     }
 }

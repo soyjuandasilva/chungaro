@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -90,6 +91,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -100,7 +102,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import com.chungaro.combustible.prices.DgegApi
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import com.chungaro.combustible.ui.StatusBarIcons
 import com.chungaro.combustible.ui.appBackground
 import kotlinx.coroutines.delay
@@ -174,14 +176,13 @@ fun MainHome(
         Column(Modifier.fillMaxSize().padding(padding)) {
             // Cabecera
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Logotipo: la gota de Atesta, como el icono de la app.
-                Box(
-                    Modifier.size(40.dp).background(LogoGreen, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(painterResource(R.drawable.ic_logo), contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                }
-                Text("Atesta", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, modifier = Modifier.weight(1f).padding(start = 12.dp))
+                // Logotipo completo de Abastece Hoje, con sus colores para tema claro u oscuro.
+                Image(
+                    painterResource(if (AbasteceHoje.colors.isDark) R.drawable.ic_wordmark_dark else R.drawable.ic_wordmark),
+                    contentDescription = "Abastece Hoje",
+                    modifier = Modifier.height(40.dp).semantics { heading() },
+                )
+                Spacer(Modifier.weight(1f))
                 IconButton(onClick = onAlerts) { Icon(Icons.Outlined.NotificationsNone, contentDescription = "Alertas de preço") }
                 IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, contentDescription = "Definições") }
             }
@@ -223,7 +224,6 @@ fun MainHome(
 }
 
 /** Verde del icono de la app (igual en los dos temas). */
-private val LogoGreen = Color(0xFF15803D)
 
 private const val SEARCH_HINT = "Procurar posto, morada ou marca"
 
@@ -338,7 +338,7 @@ private fun SearchResults(vm: NearbyViewModel, query: String, fuelId: Int, onOpe
         }
         DarkCard {
             results.forEachIndexed { i, (s, km) ->
-                if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
+                if (i > 0) HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                 StationRow(s, km, onClick = { onOpenStation(s.id) }, subtitle = listOfNotNull(km?.let { formatKm(it) }, s.locality.ifBlank { null }).joinToString(" · ")) {
                     prices[s.id]?.let { PriceChip(it.price) }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -463,7 +463,7 @@ private fun MapTab(
                                         else "Não há postos com ${fuel.short} a menos de ${vm.radiusKm} km. Aumenta o raio.",
                                     )
                                     else -> listed.forEachIndexed { i, s ->
-                                        if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
+                                        if (i > 0) HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                                         StationRow(s.station, s.km, onClick = { onOpenStation(s.station.id) }) {
                                             PriceChip(s.station.price, big = true)
                                             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -502,7 +502,7 @@ private fun MapButton(icon: ImageVector, description: String, onClick: () -> Uni
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = Atesta.colors.floating,
+        color = AbasteceHoje.colors.floating,
         contentColor = MaterialTheme.colorScheme.onSurface,
         shadowElevation = 6.dp,
         modifier = Modifier.size(48.dp),

@@ -1,7 +1,7 @@
-# Atesta: Preço do Combustível
+# Abastece Hoje: Preço do Combustível
 
-> Nombre en el móvil: **Atesta** (`app_name` en `app/src/main/res/values/strings.xml`).
-> Título en Google Play: **Atesta: Preço do Combustível**. La interfaz está en
+> Nombre en el móvil: **Abastece Hoje** (`app_name` en `app/src/main/res/values/strings.xml`).
+> Título en Google Play: **Abastece Hoje: Preço do Combustível**. La interfaz está en
 > **português de Portugal**, y le hablamos al usuario **de tú** («o teu veículo»,
 > «toca», «escolhe»), nunca de «você»/«si».
 
@@ -18,7 +18,7 @@ El tour de bienvenida es siempre verde oscuro.
 ### Sistema de diseño
 
 - **Colores**: todos salen de `ui/Theme.kt` (`MaterialTheme.colorScheme` y
-  `Atesta.colors`: precio, sube/baja, aviso, estrella…). Nada de `Color(0x…)`
+  `AbasteceHoje.colors`: precio, sube/baja, aviso, estrella…). Nada de `Color(0x…)`
   sueltos en las pantallas. Texto ≥ 4,5:1 y iconos/bordes de controles ≥ 3:1
   en los dos temas.
 - **Tarjetas**: `cardSurface()` / `DarkCard`, radio 16 dp. Sobre el fondo,
@@ -34,10 +34,15 @@ El tour de bienvenida es siempre verde oscuro.
 
 ### Logotipo
 
-Una gota llena casi hasta la punta, con una ola en la superficie: *atestar o
-depósito*. Está en `res/drawable/ic_launcher_foreground.xml` (icono adaptativo,
-fondo `#15803D`, también monocromo para los iconos temáticos de Android 13) y
-recortado en `res/drawable/ic_logo.xml` (cabecera, tour y notificaciones).
+Una gota verde con una manguera de surtidor y una flecha que baja (el precio), junto a
+«Abastece» en negro y «Hoje» en verde. Los vectores salen del logo original:
+
+- `res/drawable/ic_wordmark.xml` y `ic_wordmark_dark.xml`: el logo completo para tema claro y
+  oscuro (cabecera de Início y tour).
+- `res/drawable/ic_logo_color.xml`: la gota a todo color (tour).
+- `res/drawable/ic_logo.xml`: la gota de un solo color, para teñir (notificaciones).
+- Icono adaptativo: `ic_launcher_foreground.xml` sobre fondo blanco, y
+  `ic_launcher_monochrome.xml` para los iconos temáticos de Android 13.
 
 ### Movimiento
 
@@ -55,7 +60,7 @@ combustible lleva su artículo (`FuelType.withArticle`/`ofThe`: «a Gasolina 95�
 
 ### Lista de pantallas
 
-- **Tour de bienvenida**: la primera vez, 5 páginas (Atesta, mapa, preços y
+- **Tour de bienvenida**: la primera vez, 5 páginas (Abastece Hoje, mapa, preços y
   poupança, segunda-feira, favoritos y alertas) que terminan pidiendo la
   ubicación. Se repite desde Definições.
 - **Início**: logotipo, alertas y Definições; buscador de postos por nombre,

@@ -98,11 +98,11 @@ fun SettingsScreen(
 
             DarkCard {
                 SettingsRow(Icons.Outlined.NotificationsNone, "Alertas de preço", if (settings.alertsEnabled) "Ativos" else "Desligados", onAlerts)
-                HorizontalDivider(color = Atesta.colors.cardBorder)
+                HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                 SettingsRow(Icons.Outlined.Calculate, "Calculadora de poupança", null, onCalculator)
-                HorizontalDivider(color = Atesta.colors.cardBorder)
+                HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                 SettingsRow(Icons.AutoMirrored.Outlined.HelpOutline, "Rever a apresentação", null, onTour)
-                HorizontalDivider(color = Atesta.colors.cardBorder)
+                HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                 SettingsRow(Icons.Outlined.Sync, "Atualização dos preços", "A cada 10 minutos", null)
             }
 
@@ -141,7 +141,7 @@ private fun SettingsRow(icon: ImageVector, title: String, value: String?, onClic
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = Atesta.colors.accent)
+        Icon(icon, contentDescription = null, tint = AbasteceHoje.colors.accent)
         Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f).padding(start = 14.dp))
         value?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         if (onClick != null) {

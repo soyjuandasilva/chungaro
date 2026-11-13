@@ -51,7 +51,7 @@ object NewsApi {
         try {
             conn.connectTimeout = 15_000
             conn.readTimeout = 20_000
-            conn.setRequestProperty("User-Agent", "Atesta-Android/1.0")
+            conn.setRequestProperty("User-Agent", "AbasteceHoje-Android/1.0")
             val code = conn.responseCode
             if (code != HttpURLConnection.HTTP_OK) throw IOException("HTTP $code")
             return conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }

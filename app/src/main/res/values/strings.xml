@@ -1,4 +1,4 @@
 <resources>
-    <!-- Nombre bajo el icono. En Google Play: «Atesta: Preço do Combustível». -->
-    <string name="app_name">Atesta</string>
+    <!-- Nombre bajo el icono. En Google Play: «Abastece Hoje: Preço do Combustível». -->
+    <string name="app_name">Abastece Hoje</string>
 </resources>

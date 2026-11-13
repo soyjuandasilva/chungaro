@@ -1,6 +1,6 @@
 package com.chungaro.combustible.nearby
 
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -44,8 +44,8 @@ import java.util.Locale
 import kotlin.math.abs
 
 private val dayFormat = DateTimeFormatter.ofPattern("d MMM", APP_LOCALE)
-private val Up: Color @Composable get() = Atesta.colors.up
-private val Down: Color @Composable get() = Atesta.colors.down
+private val Up: Color @Composable get() = AbasteceHoje.colors.up
+private val Down: Color @Composable get() = AbasteceHoje.colors.down
 
 /** Tarjeta "Tendência do preço": precio, variación, gráfico y recomendación. */
 @Composable
@@ -117,7 +117,7 @@ fun TrendCard(title: String, points: List<PricePoint>, color: Color) {
 @Composable
 private fun TrendChart(points: List<PricePoint>, color: Color) {
     val grid = MaterialTheme.colorScheme.outlineVariant
-    val ring = Atesta.colors.card
+    val ring = AbasteceHoje.colors.card
     val values = points.map { it.price }
     val min = values.min()
     val max = values.max()

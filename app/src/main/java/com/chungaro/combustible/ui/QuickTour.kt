@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,7 +75,7 @@ private data class TourStep(val title: String, val body: String)
 
 private val STEPS = listOf(
     TourStep(
-        "Bem-vindo à Atesta",
+        "Bem-vindo ao Abastece Hoje",
         "Os preços oficiais de todos os postos de Portugal, para atestares onde fica mais barato.",
     ),
     TourStep(
@@ -123,8 +124,8 @@ fun QuickTour(onFinish: () -> Unit) {
     ) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(R.drawable.ic_logo), contentDescription = null, tint = TourAccent, modifier = Modifier.size(22.dp))
-                Text("Atesta", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                Image(painterResource(R.drawable.ic_wordmark_dark), contentDescription = "Abastece Hoje", modifier = Modifier.height(32.dp))
+                Spacer(Modifier.weight(1f))
                 if (!last) {
                     TextButton(onClick = onFinish) { Text("Saltar", color = Color.White, fontWeight = FontWeight.Bold) }
                 }
@@ -229,9 +230,9 @@ private fun WelcomeArt(reduce: Boolean) {
             }
         }
         // Igual que el icono de la app.
-        Surface(shape = RoundedCornerShape(40.dp), color = Brand, shadowElevation = 8.dp, modifier = Modifier.size(150.dp)) {
+        Surface(shape = RoundedCornerShape(40.dp), color = Color.White, shadowElevation = 8.dp, modifier = Modifier.size(150.dp)) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(painterResource(R.drawable.ic_logo), contentDescription = null, tint = Color.White, modifier = Modifier.size(84.dp))
+                Image(painterResource(R.drawable.ic_logo_color), contentDescription = null, modifier = Modifier.size(104.dp))
             }
         }
     }

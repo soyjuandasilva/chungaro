@@ -1,6 +1,6 @@
 package com.chungaro.combustible.nearby
 
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Icon
@@ -64,8 +64,8 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
     val zonePct = remember(zone) { computeWeekly(zone, emptyList()).changePct }
 
     val (icon, title, color) = when (verdict.kind) {
-        MondayKind.FILL_NOW -> Triple(Icons.Outlined.LocalGasStation, if (days == 1) "Abastece hoje" else "Abastece antes de segunda", Atesta.colors.warning)
-        MondayKind.WAIT -> Triple(Icons.Outlined.Schedule, "Se puderes, espera por segunda", Atesta.colors.down)
+        MondayKind.FILL_NOW -> Triple(Icons.Outlined.LocalGasStation, if (days == 1) "Abastece hoje" else "Abastece antes de segunda", AbasteceHoje.colors.warning)
+        MondayKind.WAIT -> Triple(Icons.Outlined.Schedule, "Se puderes, espera por segunda", AbasteceHoje.colors.down)
         MondayKind.UNCLEAR -> Triple(Icons.AutoMirrored.Outlined.HelpOutline, "Sem previsão clara para segunda", MaterialTheme.colorScheme.onSurfaceVariant)
     }
     val body = when (verdict.kind) {
@@ -102,7 +102,7 @@ fun MondayCard(vm: NearbyViewModel, fuel: FuelType, onOpenNews: (() -> Unit)? = 
                 Surface(
                     onClick = { openLink(context, n.link) },
                     shape = RoundedCornerShape(12.dp),
-                    color = Atesta.colors.card,
+                    color = AbasteceHoje.colors.card,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(Modifier.padding(12.dp)) {

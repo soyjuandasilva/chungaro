@@ -1,6 +1,6 @@
 package com.chungaro.combustible.nearby
 
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.outlined.PanTool
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -44,7 +44,7 @@ const val TANK_LITERS = 50
 /** Color del combustible para el tema actual (tono profundo en el claro). */
 val FuelType.uiColor: Color
     @Composable @androidx.compose.runtime.ReadOnlyComposable
-    get() = Color(if (com.chungaro.combustible.ui.Atesta.colors.isDark) color else lightColor)
+    get() = Color(if (com.chungaro.combustible.ui.AbasteceHoje.colors.isDark) color else lightColor)
 
 /** Abre un enlace en el navegador (si no hay ninguno, no hace nada). */
 internal fun openLink(context: Context, url: String) {

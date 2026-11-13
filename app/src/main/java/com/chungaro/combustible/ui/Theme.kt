@@ -34,14 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 /*
- * Sistema de color de Atesta.
+ * Sistema de color de Abastece Hoje.
  *
  * Dos temas con la misma identidad (verde de combustible sobre neutros verdosos):
  * - Escuro: verde casi negro, para la noche y el interior del coche.
  * - Claro: fondo casi blanco, para leer los precios a pleno sol en la bomba.
  * Por defecto sigue al sistema; se puede fijar en Definições → Aparência.
  *
- * Reglas: todo color sale de aquí (MaterialTheme.colorScheme o Atesta.colors).
+ * Reglas: todo color sale de aquí (MaterialTheme.colorScheme o AbasteceHoje.colors).
  * Texto ≥ 4,5:1 sobre su fondo; iconos, bordes de controles y foco ≥ 3:1.
  */
 
@@ -131,12 +131,12 @@ private val LightScheme = lightColorScheme(
 )
 
 /**
- * Colores con significado propio de Atesta, además del esquema de Material.
+ * Colores con significado propio de Abastece Hoje, además del esquema de Material.
  * Los precios que suben son malos para el conductor (rojo) y los que bajan,
  * buenos (verde); nunca se comunican solo con color: siempre van con flecha o texto.
  */
 @Immutable
-data class AtestaColors(
+data class BrandColors(
     val isDark: Boolean,
     /** Iconos y textos de acento sobre las superficies. */
     val accent: Color,
@@ -164,7 +164,7 @@ data class AtestaColors(
     val floating: Color,
 )
 
-private val DarkAtesta = AtestaColors(
+private val DarkBrand = BrandColors(
     isDark = true,
     accent = Color(0xFF4ADE80),
     card = Color(0xFF0F2018),
@@ -183,7 +183,7 @@ private val DarkAtesta = AtestaColors(
     floating = Color(0xFF16301F),
 )
 
-private val LightAtesta = AtestaColors(
+private val LightBrand = BrandColors(
     isDark = false,
     accent = Color(0xFF15803D),
     card = Color(0xFFFFFFFF),
@@ -202,24 +202,24 @@ private val LightAtesta = AtestaColors(
     floating = Color(0xFFFFFFFF),
 )
 
-val LocalAtestaColors = staticCompositionLocalOf { DarkAtesta }
+val LocalBrandColors = staticCompositionLocalOf { DarkBrand }
 
-/** Acceso a los colores propios: `Atesta.colors.price`. */
-object Atesta {
-    val colors: AtestaColors
+/** Acceso a los colores propios: `AbasteceHoje.colors.price`. */
+object AbasteceHoje {
+    val colors: BrandColors
         @Composable @ReadOnlyComposable
-        get() = LocalAtestaColors.current
+        get() = LocalBrandColors.current
 }
 
 // Alias de los nombres antiguos, ahora según el tema.
 /** Fondo de pantallas y barras. */
-val AtestaGreen: Color @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.background
+val BrandGreen: Color @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme.background
 /** Verde de acento (iconos, pestaña activa, enlaces). */
-val AtestaGreenLight: Color @Composable @ReadOnlyComposable get() = Atesta.colors.accent
+val BrandGreenLight: Color @Composable @ReadOnlyComposable get() = AbasteceHoje.colors.accent
 /** Tarjetas. */
-val AtestaCard: Color @Composable @ReadOnlyComposable get() = Atesta.colors.card
+val BrandCard: Color @Composable @ReadOnlyComposable get() = AbasteceHoje.colors.card
 /** Borde fino de tarjetas y separadores. */
-val AtestaBorder: Color @Composable @ReadOnlyComposable get() = Atesta.colors.cardBorder
+val BrandBorder: Color @Composable @ReadOnlyComposable get() = AbasteceHoje.colors.cardBorder
 
 /** Texto casi negro para fondos claros. */
 val DarkInk = Color(0xFF07130D)
@@ -304,7 +304,7 @@ fun ChungaroTheme(mode: String = ThemeMode.AUTO, content: @Composable () -> Unit
         typography = appTypography(appFontFamily()),
     ) {
         CompositionLocalProvider(
-            LocalAtestaColors provides if (dark) DarkAtesta else LightAtesta,
+            LocalBrandColors provides if (dark) DarkBrand else LightBrand,
             LocalContentColor provides scheme.onBackground,
             content = content,
         )
@@ -330,7 +330,7 @@ fun atestaTopBarColors(): TopAppBarColors {
  * u oscuros sobre fondo claro. Por defecto, según el tema.
  */
 @Composable
-fun StatusBarIcons(darkBackground: Boolean = Atesta.colors.isDark) {
+fun StatusBarIcons(darkBackground: Boolean = AbasteceHoje.colors.isDark) {
     val view = LocalView.current
     if (view.isInEditMode) return
     SideEffect {

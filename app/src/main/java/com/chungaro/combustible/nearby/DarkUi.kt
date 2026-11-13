@@ -57,7 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.ui.APP_LOCALE
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import com.chungaro.combustible.ui.StatusBarIcons
 import com.chungaro.combustible.ui.atestaTopBarColors
 import com.chungaro.combustible.ui.SegmentDigits
@@ -81,7 +81,7 @@ val CardShape = RoundedCornerShape(16.dp)
  */
 @Composable
 fun Modifier.cardSurface(shape: Shape = CardShape, floating: Boolean = false): Modifier {
-    val c = Atesta.colors
+    val c = AbasteceHoje.colors
     return if (floating) {
         this.shadow(8.dp, shape).background(c.floating, shape).clip(shape)
     } else {
@@ -106,7 +106,7 @@ fun DarkCard(
  */
 @Composable
 fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big: Boolean = false) {
-    val bar = color ?: Atesta.colors.price
+    val bar = color ?: AbasteceHoje.colors.price
     val shape = RoundedCornerShape(if (big) 9.dp else 7.dp)
     val scale = LocalDensity.current.fontScale.coerceIn(1f, 1.4f)
     val digitHeight = (if (big) 24.dp else 18.dp) * scale
@@ -116,7 +116,7 @@ fun PriceChip(price: Double, color: Color? = null, caption: String? = null, big:
             .height(IntrinsicSize.Min)
             .clip(shape)
             .background(SegmentPanel, shape)
-            .then(if (Atesta.colors.isDark) Modifier.border(1.dp, Atesta.colors.cardBorder, shape) else Modifier)
+            .then(if (AbasteceHoje.colors.isDark) Modifier.border(1.dp, AbasteceHoje.colors.cardBorder, shape) else Modifier)
             .clearAndSetSemantics { contentDescription = caption?.let { "$it, $spoken" } ?: spoken },
     ) {
         Box(Modifier.width(if (big) 5.dp else 4.dp).fillMaxHeight().background(bar))
@@ -183,7 +183,7 @@ fun DarkTopBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon?.let {
-                    Icon(it, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(24.dp))
+                    Icon(it, contentDescription = null, tint = AbasteceHoje.colors.accent, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(10.dp))
                 }
                 Text(title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
@@ -199,7 +199,7 @@ fun BrandTile(brand: String, size: Dp = 44.dp) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = Color.White,
-        border = if (Atesta.colors.isDark) null else BorderStroke(1.dp, Atesta.colors.cardBorder),
+        border = if (AbasteceHoje.colors.isDark) null else BorderStroke(1.dp, AbasteceHoje.colors.cardBorder),
         modifier = Modifier.size(size),
     ) {
         Box(contentAlignment = Alignment.Center) { BrandBadge(brand, size = size - 6.dp) }
@@ -253,7 +253,7 @@ fun FilterPill(
 ) {
     val shape = RoundedCornerShape(50)
     val c = MaterialTheme.colorScheme
-    val bg = if (selected) c.primaryContainer else Atesta.colors.card
+    val bg = if (selected) c.primaryContainer else AbasteceHoje.colors.card
     val fg = if (selected) c.onPrimaryContainer else c.onSurface
     Box(Modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
         Box(
@@ -284,8 +284,8 @@ enum class Tone { GOOD, BAD, WARN, NEUTRAL }
 /** Color del tono según el tema. */
 @Composable
 fun Tone.color(): Color = when (this) {
-    Tone.GOOD -> Atesta.colors.down
-    Tone.BAD -> Atesta.colors.up
-    Tone.WARN -> Atesta.colors.warning
-    Tone.NEUTRAL -> Atesta.colors.accent
+    Tone.GOOD -> AbasteceHoje.colors.down
+    Tone.BAD -> AbasteceHoje.colors.up
+    Tone.WARN -> AbasteceHoje.colors.warning
+    Tone.NEUTRAL -> AbasteceHoje.colors.accent
 }

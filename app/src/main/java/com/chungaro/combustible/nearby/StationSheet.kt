@@ -5,7 +5,7 @@ import com.chungaro.combustible.ui.sheetEnter
 import com.chungaro.combustible.ui.rememberReduceMotion
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.AnimatedVisibility
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.heading
@@ -70,8 +70,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chungaro.combustible.ui.AtestaBorder
-import com.chungaro.combustible.ui.AtestaGreenLight
+import com.chungaro.combustible.ui.BrandBorder
+import com.chungaro.combustible.ui.BrandGreenLight
 import kotlin.math.roundToInt
 
 /**
@@ -139,7 +139,7 @@ private fun StationDetail(
                         Icon(
                             if (fav) Icons.Filled.Star else Icons.Outlined.StarBorder,
                             contentDescription = if (fav) "Tirar dos favoritos" else "Guardar nos favoritos",
-                            tint = if (fav) Atesta.colors.star else MaterialTheme.colorScheme.onBackground,
+                            tint = if (fav) AbasteceHoje.colors.star else MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -213,13 +213,13 @@ private fun StationDetail(
                     }
                     vm.pricesTime?.let { t ->
                         Column(horizontalAlignment = Alignment.End) {
-                            Text("Atualizado " + agoText(t, now), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Atesta.colors.accent)
+                            Text("Atualizado " + agoText(t, now), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = AbasteceHoje.colors.accent)
                             Text("a cada 10 min", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
                 entries.forEachIndexed { i, (fuel, st) ->
-                    if (i > 0) HorizontalDivider(color = Atesta.colors.cardBorder)
+                    if (i > 0) HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                     val isSel = fuel.id == selFuel
                     Row(
                         Modifier
@@ -244,7 +244,7 @@ private fun StationDetail(
                         else "${selected.short}: ${formatEuro(d)} acima da média da zona",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (d <= 0) Atesta.colors.down else Atesta.colors.up,
+                        color = if (d <= 0) AbasteceHoje.colors.down else AbasteceHoje.colors.up,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     )
                 }
@@ -257,7 +257,7 @@ private fun StationDetail(
             DarkCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Info, contentDescription = null, tint = Atesta.colors.accent)
+                        Icon(Icons.Outlined.Info, contentDescription = null, tint = AbasteceHoje.colors.accent)
                         BlockTitle("Informações do posto", Modifier.padding(start = 10.dp))
                     }
                     InfoLine("Morada", listOf(base.address, base.locality).filter { it.isNotBlank() }.distinct().joinToString(", ").ifBlank { "—" })

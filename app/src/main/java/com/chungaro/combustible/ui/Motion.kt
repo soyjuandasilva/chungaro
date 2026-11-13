@@ -20,7 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 /*
- * Movimiento de Atesta: pocas animaciones y cada una con un porqué.
+ * Movimiento de Abastece Hoje: pocas animaciones y cada una con un porqué.
  * - Pantallas: entran desde la derecha al ir hacia dentro y salen al volver
  *   (dice dónde estás).
  * - Ficha del posto: sube desde abajo, como una hoja encima de Início.

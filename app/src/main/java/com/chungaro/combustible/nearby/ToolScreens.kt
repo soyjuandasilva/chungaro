@@ -1,6 +1,6 @@
 package com.chungaro.combustible.nearby
 
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -62,19 +62,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chungaro.combustible.data.AppSettings
-import com.chungaro.combustible.ui.AtestaBorder
-import com.chungaro.combustible.ui.AtestaCard
-import com.chungaro.combustible.ui.AtestaGreenLight
+import com.chungaro.combustible.ui.BrandBorder
+import com.chungaro.combustible.ui.BrandCard
+import com.chungaro.combustible.ui.BrandGreenLight
 import java.util.Locale
 
 /** Botones − valor + (litros, precio objetivo…). */
 @Composable
 private fun Stepper(text: String, onMinus: () -> Unit, onPlus: () -> Unit) {
-    Surface(shape = RoundedCornerShape(14.dp), color = AtestaCard, border = BorderStroke(1.dp, AtestaBorder)) {
+    Surface(shape = RoundedCornerShape(14.dp), color = BrandCard, border = BorderStroke(1.dp, BrandBorder)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = "Menos", tint = AtestaGreenLight) }
+            IconButton(onClick = onMinus) { Icon(Icons.Filled.Remove, contentDescription = "Menos", tint = BrandGreenLight) }
             Text(text, fontWeight = FontWeight.ExtraBold, modifier = Modifier.width(76.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = "Mais", tint = AtestaGreenLight) }
+            IconButton(onClick = onPlus) { Icon(Icons.Filled.Add, contentDescription = "Mais", tint = BrandGreenLight) }
         }
     }
 }
@@ -121,7 +121,7 @@ fun SavingsCalculatorScreen(vm: NearbyViewModel, fuelId: Int, tankLiters: Double
             } else {
                 DarkCard {
                     options.forEachIndexed { i, s ->
-                        if (i > 0) HorizontalDivider(color = AtestaBorder)
+                        if (i > 0) HorizontalDivider(color = BrandBorder)
                         val isSel = s.station.id == sel?.station?.id
                         StationRow(
                             s.station, s.km,
@@ -208,7 +208,7 @@ fun AlertsScreen(
                             modifier = Modifier.semantics { contentDescription = "Alerta de preço ligado" },
                         )
                     }
-                    HorizontalDivider(color = Atesta.colors.cardBorder)
+                    HorizontalDivider(color = AbasteceHoje.colors.cardBorder)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Combustível", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         var open by remember { mutableStateOf(false) }
@@ -261,7 +261,7 @@ fun AlertsScreen(
             }
             if (saved) {
                 Row(verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Atesta.colors.accent, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = AbasteceHoje.colors.accent, modifier = Modifier.size(20.dp))
                     Text(
                         "Alerta guardado: avisamos-te quando ${f.withArticle} descer de ${String.format(com.chungaro.combustible.ui.APP_LOCALE, "%.3f €", target)}" +
                             (if (favoritesOnly) " numa favorita." else " perto de ti.") + " Verificamos a cada 6 horas.",

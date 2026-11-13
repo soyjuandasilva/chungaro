@@ -1,6 +1,6 @@
 package com.chungaro.combustible.nearby
 
-import com.chungaro.combustible.ui.Atesta
+import com.chungaro.combustible.ui.AbasteceHoje
 import com.chungaro.combustible.ui.SegmentPanel
 import com.chungaro.combustible.ui.drawSegments
 import com.chungaro.combustible.ui.segmentsWidth
